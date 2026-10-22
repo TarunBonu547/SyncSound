@@ -38,12 +38,12 @@ export default function QueueItem({
       </div>
       <div className="queue-actions">
         <button
-          className="btn icon sm"
+          className="btn icon sm primary"
           onClick={onPlay}
           title="Play now"
           aria-label={`Play ${item.title}`}
         >
-          <Play size={14} />
+          <Play size={18} />
         </button>
         <button
           className="btn icon sm"
@@ -51,7 +51,7 @@ export default function QueueItem({
           title="Move up"
           aria-label={`Move ${item.title} up`}
         >
-          <ArrowUp size={14} />
+          <ArrowUp size={17} />
         </button>
         <button
           className="btn icon sm"
@@ -59,7 +59,7 @@ export default function QueueItem({
           title="Move down"
           aria-label={`Move ${item.title} down`}
         >
-          <ArrowDown size={14} />
+          <ArrowDown size={17} />
         </button>
         <button
           className="btn icon sm"
@@ -67,7 +67,7 @@ export default function QueueItem({
           title="Remove from queue"
           aria-label={`Remove ${item.title} from queue`}
         >
-          <X size={14} />
+          <X size={17} />
         </button>
       </div>
     </li>

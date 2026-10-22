@@ -159,7 +159,7 @@ export default function AddToQueueForm({
                   title={inRoom ? 'Add to queue' : 'Join a room first'}
                   aria-label={`Add ${track.title} to the queue`}
                 >
-                  <Plus size={14} />
+                  <Plus size={19} />
                 </button>
                 <button
                   className="btn icon sm primary"
@@ -168,7 +168,7 @@ export default function AddToQueueForm({
                   title={inRoom ? 'Play now' : 'Join a room first'}
                   aria-label={`Play ${track.title} now`}
                 >
-                  <Play size={14} />
+                  <Play size={19} />
                 </button>
               </div>
             </li>

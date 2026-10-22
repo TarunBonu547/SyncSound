@@ -1079,10 +1079,10 @@
 }
 
 .search-list .queue-actions button {
-  width: 44px;
-  height: 44px;
-  min-width: 44px;
-  min-height: 44px;
+  width: 52px;
+  height: 52px;
+  min-width: 52px;
+  min-height: 52px;
   padding: 0;
   display: inline-flex;
   align-items: center;
@@ -1106,6 +1106,85 @@
 
 .search-list .queue-actions button:active:not(:disabled) {
   transform: translateY(0);
+}
+
+/* --- Queue item actions ----------------------------------------------------- */
+/* The shared queue's play, reorder and remove controls. */
+.queue-item .queue-actions {
+  gap: 6px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.queue-item .queue-actions button {
+  width: 48px;
+  height: 48px;
+  min-width: 48px;
+  min-height: 48px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--r-sm);
+  background: rgba(255, 255, 255, 0.7);
+  border: 1px solid var(--border-soft);
+  color: var(--ink);
+  box-shadow: var(--shadow-xs);
+  transition:
+    background-color var(--t-fast) var(--ease-out),
+    color var(--t-fast) var(--ease-out),
+    border-color var(--t-fast) var(--ease-out),
+    box-shadow var(--t-fast) var(--ease-out),
+    transform var(--t-fast) var(--ease-out);
+}
+
+.queue-item .queue-actions button:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.95);
+  border-color: var(--border);
+  transform: translateY(-1px);
+}
+
+.queue-item .queue-actions button:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.queue-item .queue-actions button:focus-visible {
+  outline: 2px solid var(--accent-strong);
+  outline-offset: 2px;
+}
+
+/* Play is the primary action of a queue row. */
+.queue-item .queue-actions button.primary {
+  background: linear-gradient(135deg, var(--peach) 0%, var(--butter) 100%);
+  border-color: transparent;
+  color: var(--text-on-accent);
+  box-shadow: var(--shadow-accent);
+}
+
+.queue-item .queue-actions button.primary:hover:not(:disabled) {
+  filter: brightness(1.05);
+}
+
+/* Remove gets a restrained red/pink hover. */
+.queue-item .queue-actions button:last-child:hover:not(:disabled) {
+  background: var(--pink-wash);
+  border-color: rgba(194, 85, 95, 0.35);
+  color: #8a526b;
+}
+
+.queue-item .queue-actions button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  transform: none;
+}
+
+@media (max-width: 720px) {
+  .queue-item .queue-actions button {
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    min-height: 44px;
+  }
 }
 
 @media (max-width: 720px) {
@@ -1133,11 +1212,45 @@
   }
 
   .search-list .queue-actions button {
-    width: 40px;
-    height: 40px;
-    min-width: 40px;
-    min-height: 40px;
+    width: 50px;
+    height: 50px;
+    min-width: 50px;
+    min-height: 50px;
   }
+}
+
+/* Add is a secondary, neutral action. */
+.search-list .queue-actions button:not(.primary) {
+  background: rgba(255, 255, 250, 0.95);
+  border: 1px solid var(--border);
+  color: var(--ink);
+  box-shadow: var(--shadow-xs);
+}
+
+.search-list .queue-actions button:not(.primary):hover:not(:disabled) {
+  background: #fff;
+  border-color: var(--accent-soft, var(--border));
+  box-shadow: var(--shadow-sm);
+}
+
+/* Play is the primary action of a search result. */
+.search-list .queue-actions button.primary {
+  background: linear-gradient(135deg, var(--peach) 0%, var(--butter) 100%);
+  border: 1px solid transparent;
+  color: var(--text-on-accent);
+  box-shadow: var(--shadow-accent);
+}
+
+.search-list .queue-actions button.primary:hover:not(:disabled) {
+  filter: brightness(1.05);
+  box-shadow: var(--shadow-accent);
+}
+
+.search-list .queue-actions button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  transform: none;
+  filter: none;
 }
 
 /* --- Chat ------------------------------------------------------------------- */
