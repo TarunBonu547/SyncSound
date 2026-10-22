@@ -40,7 +40,7 @@ export default function PlaybackControls({
   return (
     <div className="transport">
       <button
-        className="btn icon"
+        className="music-icon-btn"
         onClick={onRewind5}
         disabled={!ready}
         title="Rewind 5 seconds"
@@ -49,7 +49,7 @@ export default function PlaybackControls({
         <RotateCcw size={18} />
       </button>
       <button
-        className="btn icon"
+        className="music-icon-btn"
         onClick={onPrevious}
         disabled={!hasPrevious}
         title="Previous track"
@@ -67,7 +67,7 @@ export default function PlaybackControls({
         {playing ? <Pause size={24} /> : <Play size={24} />}
       </button>
       <button
-        className="btn icon"
+        className="music-icon-btn"
         onClick={onNext}
         disabled={!hasNext}
         title="Next track"
@@ -76,7 +76,7 @@ export default function PlaybackControls({
         <SkipForward size={18} />
       </button>
       <button
-        className="btn icon"
+        className="music-icon-btn"
         onClick={onForward5}
         disabled={!ready}
         title="Forward 5 seconds"
@@ -85,7 +85,7 @@ export default function PlaybackControls({
         <RotateCw size={18} />
       </button>
       <button
-        className={`btn icon like-btn ${isLiked ? 'is-liked' : ''}`}
+        className={`music-icon-btn like-btn ${isLiked ? 'is-liked' : ''}`}
         onClick={onToggleLike}
         disabled={!hasTrack}
         title={isLiked ? 'Remove from liked songs' : 'Like this song'}

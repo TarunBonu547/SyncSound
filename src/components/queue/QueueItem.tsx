@@ -38,36 +38,36 @@ export default function QueueItem({
       </div>
       <div className="queue-actions">
         <button
-          className="btn icon sm primary"
+          className="music-icon-btn primary"
           onClick={onPlay}
           title="Play now"
           aria-label={`Play ${item.title}`}
         >
-          <Play size={18} />
+          <Play size={20} />
         </button>
         <button
-          className="btn icon sm"
+          className="music-icon-btn"
           onClick={onMoveUp}
           title="Move up"
           aria-label={`Move ${item.title} up`}
         >
-          <ArrowUp size={17} />
+          <ArrowUp size={19} />
         </button>
         <button
-          className="btn icon sm"
+          className="music-icon-btn"
           onClick={onMoveDown}
           title="Move down"
           aria-label={`Move ${item.title} down`}
         >
-          <ArrowDown size={17} />
+          <ArrowDown size={19} />
         </button>
         <button
-          className="btn icon sm"
+          className="music-icon-btn danger"
           onClick={onRemove}
           title="Remove from queue"
           aria-label={`Remove ${item.title} from queue`}
         >
-          <X size={17} />
+          <X size={19} />
         </button>
       </div>
     </li>

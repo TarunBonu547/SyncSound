@@ -153,22 +153,22 @@ export default function AddToQueueForm({
               </div>
               <div className="queue-actions">
                 <button
-                  className="btn icon sm"
+                  className="music-icon-btn"
                   onClick={() => send(onAddToQueue, track, 'Added to the queue')}
                   disabled={!inRoom || busy}
                   title={inRoom ? 'Add to queue' : 'Join a room first'}
                   aria-label={`Add ${track.title} to the queue`}
                 >
-                  <Plus size={19} />
+                  <Plus size={20} />
                 </button>
                 <button
-                  className="btn icon sm primary"
+                  className="music-icon-btn primary"
                   onClick={() => send(onPlayNow, track, 'Playing now')}
                   disabled={!inRoom || busy}
                   title={inRoom ? 'Play now' : 'Join a room first'}
                   aria-label={`Play ${track.title} now`}
                 >
-                  <Play size={19} />
+                  <Play size={20} />
                 </button>
               </div>
             </li>

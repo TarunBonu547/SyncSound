@@ -1007,6 +1007,85 @@
   flex: none;
 }
 
+/* --- Shared music icon buttons --------------------------------------------- */
+/* One standard for every music control: search results, the shared queue, the
+   transport of the player. Sized for a real touch target, with a consistent
+   hover, pressed, disabled and keyboard-focus treatment. */
+.music-icon-btn {
+  width: 52px;
+  height: 52px;
+  min-width: 52px;
+  min-height: 52px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 14px;
+  background: rgba(255, 255, 250, 0.95);
+  border: 1px solid var(--border);
+  color: var(--ink);
+  box-shadow: var(--shadow-xs);
+  cursor: pointer;
+  transition:
+    background-color var(--t-fast) var(--ease-out),
+    color var(--t-fast) var(--ease-out),
+    border-color var(--t-fast) var(--ease-out),
+    box-shadow var(--t-fast) var(--ease-out),
+    transform var(--t-fast) var(--ease-out),
+    filter var(--t-fast) var(--ease-out);
+}
+
+.music-icon-btn:hover:not(:disabled) {
+  background: #fff;
+  border-color: var(--accent-soft, var(--border));
+  box-shadow: var(--shadow-sm);
+  transform: translateY(-1px);
+}
+
+.music-icon-btn:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.music-icon-btn:focus-visible {
+  outline: 2px solid var(--accent-strong);
+  outline-offset: 2px;
+}
+
+.music-icon-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  transform: none;
+  filter: none;
+}
+
+.music-icon-btn.primary {
+  background: linear-gradient(135deg, var(--peach) 0%, var(--butter) 100%);
+  border: 1px solid transparent;
+  color: var(--text-on-accent);
+  box-shadow: var(--shadow-accent);
+}
+
+.music-icon-btn.primary:hover:not(:disabled) {
+  filter: brightness(1.05);
+  box-shadow: var(--shadow-accent);
+}
+
+.music-icon-btn.danger:hover:not(:disabled) {
+  background: var(--pink-wash);
+  border-color: rgba(194, 85, 95, 0.35);
+  color: #8a526b;
+}
+
+@media (max-width: 720px) {
+  .music-icon-btn {
+    width: 48px;
+    height: 48px;
+    min-width: 48px;
+    min-height: 48px;
+    border-radius: 12px;
+  }
+}
+
 /* --- Search results --------------------------------------------------------- */
 /* The search results reuse the queue row, but they are the one place where a
    thumbnail and a title need to stand out, so they get their own scale. */
