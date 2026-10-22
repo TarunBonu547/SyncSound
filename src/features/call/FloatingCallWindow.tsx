@@ -75,6 +75,40 @@ export default function FloatingCallWindow({
 
   const remoteVideoRef = useRef<HTMLVideoElement | null>(null);
   const localVideoRef = useRef<HTMLVideoElement | null>(null);
+
+  // Callback refs: attach the stream as soon as the element mounts, so a
+  // video element that appears after its stream was set still receives it.
+  const setRemoteVideoRef = useCallback((el: HTMLVideoElement | null) => {
+    remoteVideoRef.current = el;
+    if (!el || !remoteStream) return;
+    if (el.srcObject !== remoteStream) el.srcObject = remoteStream;
+    if (typeof console !== 'undefined') {
+      console.debug('[call] remote video mounted', {
+        hasStream: Boolean(remoteStream),
+        tracks: remoteStream.getTracks().map((t) => t.kind),
+        videoWidth: el.videoWidth,
+        videoHeight: el.videoHeight,
+        readyState: el.readyState,
+        paused: el.paused,
+      });
+    }
+  }, [remoteStream]);
+
+  const setLocalVideoRef = useCallback((el: HTMLVideoElement | null) => {
+    localVideoRef.current = el;
+    if (!el || !localStream) return;
+    if (el.srcObject !== localStream) el.srcObject = localStream;
+    if (typeof console !== 'undefined') {
+      console.debug('[call] local video mounted', {
+        hasStream: Boolean(localStream),
+        tracks: localStream.getTracks().map((t) => ({ kind: t.kind, readyState: t.readyState, enabled: t.enabled })),
+        videoWidth: el.videoWidth,
+        videoHeight: el.videoHeight,
+        readyState: el.readyState,
+        paused: el.paused,
+      });
+    }
+  }, [localStream]);
   const windowRef = useRef<HTMLDivElement | null>(null);
 
   const [frame, setFrame] = useState({ x: 0, y: 0, width: 400, height: 560 });
@@ -496,7 +530,7 @@ export default function FloatingCallWindow({
         {status === 'connected' && (
           <div className="call-body call-body-media">
             <div className="call-video">
-              <video ref={remoteVideoRef} className="call-video-el" autoPlay playsInline muted={false} />
+              <video ref={setRemoteVideoRef} className="call-video-el" autoPlay playsInline muted={false} />
               {!remoteCameraEnabled && (
                 <div className="call-video-off">
                   <VideoOff size={20} aria-hidden="true" />
@@ -510,7 +544,7 @@ export default function FloatingCallWindow({
               )}
               {localStream && (
                 <div className="call-preview">
-                  <video ref={localVideoRef} className="call-preview-el" autoPlay playsInline muted />
+                  <video ref={setLocalVideoRef} className="call-preview-el" autoPlay playsInline muted />
                   {!cameraEnabled && (
                     <span className="call-preview-off" aria-hidden="true">
                       <VideoOff size={16} />

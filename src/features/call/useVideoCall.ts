@@ -248,14 +248,16 @@ export function useVideoCall({ socket, roomCode }: { socket: Socket | null; room
     pcRef.current = pc;
     remoteDescriptionRef.current = false;
     pendingCandidatesRef.current = [];
+    if (typeof console !== 'undefined') console.debug('[call] peer connection created', { socketId: socket?.id, roomCode });
 
     const stream = localStreamRef.current;
     if (stream) {
       stream.getTracks().forEach((track) => {
         try {
           pc.addTrack(track, stream);
-        } catch {
-          // A track that cannot be added is reported by the missing stream.
+          if (typeof console !== 'undefined') console.debug('[call] addTrack', { kind: track.kind, readyState: track.readyState, enabled: track.enabled });
+        } catch (err) {
+          if (typeof console !== 'undefined') console.debug('[call] addTrack failed', { kind: track.kind, error: (err as { message?: string })?.message });
         }
       });
     }
@@ -263,6 +265,7 @@ export function useVideoCall({ socket, roomCode }: { socket: Socket | null; room
     pc.onicecandidate = (event) => {
       const callId = callIdRef.current;
       if (!event.candidate || !socket || !roomCode || !callId) return;
+      if (typeof console !== 'undefined') console.debug('[call] ICE candidate sent', { type: event.candidate.type, protocol: event.candidate.protocol });
       socket.emit('call:ice', { code: roomCode, callId, candidate: event.candidate.toJSON() });
     };
 
@@ -270,34 +273,44 @@ export function useVideoCall({ socket, roomCode }: { socket: Socket | null; room
       const track = event.track;
       // The other side adds every track with the same stream, but some
       // browsers report the tracks one at a time and some report an empty
-      // stream. The tracks are therefore gathered into one stream, so the
-      // remote video and the remote audio never replace each other.
+      // stream. The tracks are therefore gathered into one stream, so a
+      // later audio track can never remove an earlier video track.
       const incoming = event.streams && event.streams[0] ? event.streams[0] : null;
       let stream = remoteStreamRef.current;
-      if (incoming) {
-        if (stream && stream !== incoming) {
-          // Keep the tracks that arrived earlier.
-          stream.getTracks().forEach((existing) => {
-            if (!incoming.getTracks().includes(existing)) incoming.addTrack(existing);
-          });
-        }
+      if (incoming && (!stream || stream.getTracks().length === 0)) {
         stream = incoming;
       }
       if (!stream) stream = new MediaStream();
+      if (incoming) {
+        incoming.getTracks().forEach((t) => {
+          if (!stream!.getTracks().includes(t)) {
+            try {
+              stream!.addTrack(t);
+            } catch (err) {
+              if (typeof console !== 'undefined') console.debug('[call] addTrack (from stream) failed', { kind: t.kind, error: (err as { message?: string })?.message });
+            }
+          }
+        });
+      }
       if (!stream.getTracks().includes(track)) {
         try {
           stream.addTrack(track);
-        } catch {
-          // The track may already belong to the stream.
+        } catch (err) {
+          if (typeof console !== 'undefined') console.debug('[call] addTrack failed', { kind: track.kind, error: (err as { message?: string })?.message });
         }
       }
       remoteStreamRef.current = stream;
       setRemoteStream(stream);
       if (typeof console !== 'undefined') {
-        console.debug('[call] remote track', {
+        console.debug('[call] ontrack', {
           kind: track.kind,
           readyState: track.readyState,
-          streamTracks: stream.getTracks().map((t) => t.kind),
+          enabled: track.enabled,
+          muted: track.muted,
+          trackId: track.id,
+          streamId: stream.id,
+          streamTracks: stream.getTracks().map((t) => ({ kind: t.kind, readyState: t.readyState, enabled: t.enabled, id: t.id })),
+          hasLiveVideo: stream.getVideoTracks().some((t) => t.readyState === 'live'),
         });
       }
     };
@@ -406,8 +419,10 @@ export function useVideoCall({ socket, roomCode }: { socket: Socket | null; room
       try {
         const offer = await pc.createOffer();
         await pc.setLocalDescription(offer);
+        if (typeof console !== 'undefined') console.debug('[call] offer created', { signalingState: pc.signalingState });
         socket.emit('call:offer', { code: roomCode, callId: payload.callId, type: 'offer', sdp: offer.sdp });
-      } catch {
+      } catch (err) {
+        if (typeof console !== 'undefined') console.debug('[call] offer failed', { error: (err as { message?: string })?.message });
         fail('The call could not be started.', 'network');
       }
     };
@@ -440,12 +455,15 @@ export function useVideoCall({ socket, roomCode }: { socket: Socket | null; room
       try {
         await pc.setRemoteDescription({ type: 'offer', sdp: payload.sdp });
         remoteDescriptionRef.current = true;
+        if (typeof console !== 'undefined') console.debug('[call] remote description set (offer)', { signalingState: pc.signalingState });
         await flushCandidates();
         const answer = await pc.createAnswer();
         await pc.setLocalDescription(answer);
+        if (typeof console !== 'undefined') console.debug('[call] answer created', { signalingState: pc.signalingState });
         socket.emit('call:answer', { code: roomCode, callId: payload.callId, type: 'answer', sdp: answer.sdp });
         setStatus('connecting');
-      } catch {
+      } catch (err) {
+        if (typeof console !== 'undefined') console.debug('[call] answer failed', { error: (err as { message?: string })?.message });
         fail('The call could not be answered.', 'network');
       }
     };
@@ -458,8 +476,10 @@ export function useVideoCall({ socket, roomCode }: { socket: Socket | null; room
       try {
         await pc.setRemoteDescription({ type: 'answer', sdp: payload.sdp });
         remoteDescriptionRef.current = true;
+        if (typeof console !== 'undefined') console.debug('[call] remote description set (answer)', { signalingState: pc.signalingState });
         await flushCandidates();
-      } catch {
+      } catch (err) {
+        if (typeof console !== 'undefined') console.debug('[call] setRemoteDescription (answer) failed', { error: (err as { message?: string })?.message });
         fail('The call could not be answered.', 'network');
       }
     };
@@ -472,12 +492,14 @@ export function useVideoCall({ socket, roomCode }: { socket: Socket | null; room
       if (!remoteDescriptionRef.current) {
         // The remote description is not ready yet: remember the candidate.
         pendingCandidatesRef.current.push(payload.candidate);
+        if (typeof console !== 'undefined') console.debug('[call] ICE candidate buffered', { queued: pendingCandidatesRef.current.length });
         return;
       }
       try {
         await pc.addIceCandidate(payload.candidate);
-      } catch {
-        // A single bad candidate does not break the connection.
+        if (typeof console !== 'undefined') console.debug('[call] ICE candidate applied');
+      } catch (err) {
+        if (typeof console !== 'undefined') console.debug('[call] addIceCandidate failed', { error: (err as { message?: string })?.message });
       }
     };
 
