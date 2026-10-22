@@ -187,12 +187,20 @@ function registerCallSignaling(io, socket, { getRoom, syncLog = () => {} }) {
     session.timer = setTimeout(() => {
       const current = sessions.get(code);
       if (!current || current.callId !== callId) return;
+      // An answered call is never "unanswered", even if the timer somehow
+      // survives the acceptance.
+      if (current.status !== 'ringing') {
+        console.log('[call] session timer ignored (already answered)', { call: callTag(callId), status: current.status });
+        return;
+      }
+      console.log('[call] session timer fired (no answer)', { call: callTag(callId) });
       clearSession(code);
       io.to(current.initiatorId).emit('call:ended', { callId, reason: 'timeout' });
       io.to(current.peerId).emit('call:ended', { callId, reason: 'timeout' });
     }, RING_TIMEOUT_MS);
     if (typeof session.timer.unref === 'function') session.timer.unref();
 
+    console.log('[call] invite', { call: callTag(callId), participants: room.participants.size, initiator: socket.id, peer: peerId });
     syncLog('call invite', { room: callTag(callId), participants: room.participants.size });
     io.to(peerId).emit('call:incoming', { callId, media: readMedia(payload) });
     if (cb) cb({ ok: true, callId });
@@ -202,18 +210,24 @@ function registerCallSignaling(io, socket, { getRoom, syncLog = () => {} }) {
   socket.on('call:accept', (payload, cb) => {
     const { session, reason } = resolveSession(payload, socket.id);
     if (!session) {
+      console.log('[call] accept rejected (no session)', { reason, socketId: socket.id });
       fail(cb, reason || 'Call no longer available');
       return;
     }
+    // Clear the ring timer on any accept attempt for this call, so an
+    // answered call is never later reported as unanswered.
+    if (session.timer) {
+      clearTimeout(session.timer);
+      session.timer = null;
+      console.log('[call] ring timer cleared on accept', { call: callTag(session.callId) });
+    }
     if (session.peerId !== socket.id || session.status !== 'ringing') {
+      console.log('[call] accept rejected (bad state)', { call: callTag(session.callId), peerId: session.peerId, socketId: socket.id, status: session.status });
       fail(cb, 'Call no longer available');
       return;
     }
     session.status = 'connecting';
-    if (session.timer) {
-      clearTimeout(session.timer);
-      session.timer = null;
-    }
+    console.log('[call] accepted', { call: callTag(session.callId), initiator: session.initiatorId, peer: session.peerId });
     syncLog('call accepted', { call: callTag(session.callId) });
     io.to(session.initiatorId).emit('call:accepted', { callId: session.callId });
     if (cb) cb({ ok: true, callId: session.callId });

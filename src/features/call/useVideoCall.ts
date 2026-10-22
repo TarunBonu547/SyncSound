@@ -466,6 +466,9 @@ export function useVideoCall({ socket, roomCode }: { socket: Socket | null; room
     const onEnded = (payload: { callId?: string; reason?: string }) => {
       if (typeof console !== 'undefined') console.debug('[call] call:ended received', { callId: payload?.callId, reason: payload?.reason, currentCallId: callIdRef.current });
       if (payload?.callId && callIdRef.current && payload.callId !== callIdRef.current) return;
+      // Clear all timers: this call is over.
+      if (ringTimerRef.current !== null) { window.clearTimeout(ringTimerRef.current); ringTimerRef.current = null; }
+      if (connectTimerRef.current !== null) { window.clearTimeout(connectTimerRef.current); connectTimerRef.current = null; }
       const reason = payload?.reason;
       teardown();
       if (reason === 'timeout') {
@@ -590,7 +593,10 @@ export function useVideoCall({ socket, roomCode }: { socket: Socket | null; room
       ringTimerRef.current = window.setTimeout(() => {
         ringTimerRef.current = null;
         if (callIdRef.current !== res.callId) return;
-        if (statusRef.current === 'connected') return;
+        if (statusRef.current === 'connected' || statusRef.current === 'connecting') {
+          if (typeof console !== 'undefined') console.debug('[call] ring timer ignored (already answered/connecting)', { callId: res.callId, status: statusRef.current });
+          return;
+        }
         if (typeof console !== 'undefined') console.debug('[call] ring timer fired (no answer)', { callId: res.callId, status: statusRef.current });
         teardown();
         setError({ code: 'timeout', message: 'Nobody answered the call.' });
