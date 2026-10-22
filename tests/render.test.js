@@ -118,6 +118,83 @@ const click = (element) => {
   element.dispatchEvent(new window.MouseEvent('click', { bubbles: true, cancelable: true }));
 };
 
+/**
+ * A stand-in for the YouTube IFrame player.
+ *
+ * The real API needs the script of YouTube in a browser. The stand-in behaves
+ * like the parts the application uses: it takes over the element it is given,
+ * it knows the video it shows and it reports its state.
+ */
+class FakeYouTubePlayer {
+  constructor(element, options) {
+    this.options = options || {};
+    this.events = this.options.events || {};
+    this.videoId = this.options.videoId || '';
+    this.state = 5; // cued
+    this.currentTime = 0;
+    this.duration = 0;
+    FakeYouTubePlayer.instances.push(this);
+    // The real API replaces the element with its own iframe.
+    const iframe = element.ownerDocument.createElement('iframe');
+    iframe.setAttribute('title', 'YouTube video player');
+    iframe.setAttribute('src', `https://www.youtube.com/embed/${this.videoId}`);
+    element.parentNode.replaceChild(iframe, element);
+    this.iframe = iframe;
+    setTimeout(() => {
+      if (this.events.onReady) this.events.onReady({ target: this });
+    }, 0);
+  }
+
+  getVideoData() {
+    return { video_id: this.videoId };
+  }
+
+  getPlayerState() {
+    return this.state;
+  }
+
+  getCurrentTime() {
+    return this.currentTime;
+  }
+
+  getDuration() {
+    return this.duration;
+  }
+
+  getIframe() {
+    return this.iframe;
+  }
+
+  playVideo() {
+    this.setState(1);
+  }
+
+  pauseVideo() {
+    this.setState(2);
+  }
+
+  seekTo(time) {
+    this.currentTime = time;
+  }
+
+  cueVideoById(id) {
+    this.videoId = id;
+    this.setState(5);
+  }
+
+  destroy() {
+    if (this.iframe && this.iframe.parentNode) this.iframe.parentNode.removeChild(this.iframe);
+  }
+
+  setState(state) {
+    this.state = state;
+    if (this.events.onStateChange) this.events.onStateChange({ data: state, target: this });
+  }
+}
+FakeYouTubePlayer.instances = [];
+// The application finds the API through the window, exactly as in a browser.
+window.YT = { Player: FakeYouTubePlayer };
+
 try {
   const { render } = await import('../.render-check/render-entry.js');
   const body = window.document.body;
@@ -145,10 +222,41 @@ try {
   check('the video call button is on the screen', Boolean(body.querySelector('.room-header button')), 'no button');
   check('no error was reported by React', problems.length === 0, problems.join(' | '));
 
+  // --- the name is asked for before the room is entered ---------------------------
+  const joinCodeInput = body.querySelector('#join-room-code');
+  check('the room code field is there', Boolean(joinCodeInput), 'no #join-room-code');
+  typeInto(joinCodeInput, 'SS-NOSUCHROOM');
+  const joinButton = findByText('button', 'Join Room');
+  check('the join button is there', Boolean(joinButton), 'no join button');
+  click(joinButton);
+  await wait(400);
+  const nameError = body.querySelector('#join-room-display-name-error');
+  check('a join without a name is refused', Boolean(nameError), 'no name error');
+  check(
+    'the name error explains what is missing',
+    nameError && /name/i.test(nameError.textContent || ''),
+    nameError && nameError.textContent,
+  );
+  const codeChip = body.querySelector('.room-code-chip');
+  check(
+    'the room was not entered',
+    codeChip && (codeChip.textContent || '').trim() === '—',
+    codeChip && codeChip.textContent,
+  );
+
   // --- a room is created for real ----------------------------------------------
-  const nameInput = body.querySelector('#create-room-name');
-  check('the room name field is there', Boolean(nameInput), 'no #create-room-name');
-  typeInto(nameInput, 'Render Check');
+  const nameInput = body.querySelector('#create-room-display-name');
+  check('the display name field is there', Boolean(nameInput), 'no #create-room-display-name');
+  typeInto(nameInput, 'Render Bot');
+  await wait(200);
+  check(
+    'the name error is gone when a name is written',
+    !body.querySelector('#join-room-display-name-error'),
+    'the error is still there',
+  );
+  const roomNameInput = body.querySelector('#create-room-name');
+  check('the room name field is there', Boolean(roomNameInput), 'no #create-room-name');
+  typeInto(roomNameInput, 'Render Check');
   const createButton = findByText('button', 'Create Room');
   check('the create button is there', Boolean(createButton), 'no create button');
   click(createButton);
@@ -160,6 +268,17 @@ try {
   check('the queue is in the room view', Boolean(body.querySelector('.queue-list') || body.querySelector('.queue-empty')), 'no queue');
   check('the chat is in the room view', Boolean(body.querySelector('.chat-head')), 'no chat');
   check('the stage is in the room view', Boolean(body.querySelector('.stage')), 'no .stage');
+
+  // --- the name is shown in the room ---------------------------------------------
+  const memberNames = [...body.querySelectorAll('.chat-member-name')].map((el) => (el.textContent || '').trim());
+  check('the member list carries the name', memberNames.includes('Render Bot'), memberNames);
+  const profileName = body.querySelector('.side-profile-text strong');
+  check('the sidebar carries the name', profileName && profileName.textContent === 'Render Bot', profileName && profileName.textContent);
+  check(
+    'the name is remembered for the next visit',
+    window.localStorage.getItem('syncsound-display-name') === 'Render Bot',
+    window.localStorage.getItem('syncsound-display-name'),
+  );
 
   // --- the search of the add form ----------------------------------------------
   const searchInput = body.querySelector('#queue-url-input');
@@ -184,6 +303,99 @@ try {
     check('the queue of the room has the track', /1 song lined up/.test(after), after.slice(0, 300));
     check('the track is in the shared queue', after.includes(firstTitle.slice(0, 18)), after.slice(0, 300));
     check('the interface confirms the add', after.includes('Added to the queue'), after.slice(0, 300));
+  }
+
+  // --- the video of the room plays in the stage ---------------------------------
+  // The second result is played, so the stage shows a video of its own.
+  const playedRow = rows[1] || rows[0];
+  const playButton = playedRow ? playedRow.querySelectorAll('.queue-actions button')[1] : null;
+  check('the play button of the result is there', Boolean(playButton), 'no play button');
+  if (playButton) {
+    click(playButton);
+    await wait(2500);
+
+    const stageVideo = body.querySelector('.stage-video');
+    check('the player has a container for the video', Boolean(stageVideo), 'no .stage-video');
+    const frames = stageVideo ? stageVideo.querySelectorAll('iframe') : [];
+    check('the video plays in the stage', frames.length === 1, `${frames.length} iframes`);
+    check('the stage shows the video', Boolean(body.querySelector('.stage.has-video')), 'the stage has no video');
+    check(
+      'only one player was created',
+      FakeYouTubePlayer.instances.length === 1,
+      `${FakeYouTubePlayer.instances.length} players`,
+    );
+    const player = FakeYouTubePlayer.instances[0];
+    check(
+      'the player knows a video of YouTube',
+      player && /^[A-Za-z0-9_-]{11}$/.test(player.videoId || ''),
+      player && player.videoId,
+    );
+    // The artwork of the track carries the id of its video.
+    const thumb = body.querySelector('.queue-item.is-current .queue-thumb');
+    const thumbId = thumb ? (thumb.getAttribute('src') || '').split('/vi/')[1] : '';
+    const videoId = thumbId ? thumbId.split('/')[0] : '';
+    check(
+      'the stage plays the video of the room',
+      Boolean(videoId) && Boolean(player) && player.videoId === videoId,
+      { videoId, player: player && player.videoId },
+    );
+    check(
+      'the video sits in the stage, not beside it',
+      Boolean(stageVideo) && stageVideo.contains(frames[0]),
+      'the video is not in the stage',
+    );
+
+    // --- the title, the artist, the heart and the progress stay in place ---------
+    const title = body.querySelector('.track-title');
+    check('the title of the track is on the screen', Boolean(title), 'no .track-title');
+    check(
+      'the title is the one of the room',
+      title && !/nothing playing|loading/i.test(title.textContent || ''),
+      title && title.textContent,
+    );
+    check('the artist is on the screen', Boolean(body.querySelector('.track-channel')), 'no .track-channel');
+    check('the favourite button is on the screen', Boolean(body.querySelector('.like-btn')), 'no .like-btn');
+    check(
+      'the progress bar is on the screen',
+      Boolean(body.querySelector('.scrubber input[type="range"]')),
+      'no scrubber',
+    );
+
+    // --- the mini player stays compact -------------------------------------------
+    check(
+      'the mini player has no second video',
+      body.querySelectorAll('.mini-player iframe').length === 0,
+      'the mini player has a video',
+    );
+    const miniTitle = body.querySelector('.mini-player-title');
+    check('the mini player shows the track', Boolean(miniTitle), 'no .mini-player-title');
+
+    // --- the next track takes over the same player --------------------------------
+    const items = body.querySelectorAll('.queue-item');
+    if (items.length > 1) {
+      const other = items[0];
+      const otherId = ((other.querySelector('.queue-thumb') || {}).getAttribute?.('src') || '')
+        .split('/vi/')[1]
+        ?.split('/')[0];
+      const otherPlay = other.querySelector('.queue-actions button');
+      click(otherPlay);
+      await wait(2000);
+      check(
+        'the player is not created a second time',
+        FakeYouTubePlayer.instances.length === 1,
+        `${FakeYouTubePlayer.instances.length} players`,
+      );
+      check(
+        'there is still one video in the stage',
+        body.querySelectorAll('.stage-video iframe').length === 1,
+        `${body.querySelectorAll('.stage-video iframe').length} iframes`,
+      );
+      check(
+        'the player takes the video of the other track',
+        Boolean(otherId) && FakeYouTubePlayer.instances[0].videoId === otherId,
+        { otherId, player: FakeYouTubePlayer.instances[0].videoId },
+      );
+    }
   }
 
   // --- the navigation opens the other screens ----------------------------------

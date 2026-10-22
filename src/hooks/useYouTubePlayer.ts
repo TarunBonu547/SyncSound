@@ -33,6 +33,15 @@ type SyncTarget = {
 /** Below this difference a seek is skipped, so the player is not nudged. */
 const SEEK_EPSILON = 0.35;
 
+/**
+ * How long a video may take to arrive.
+ *
+ * The script of the IFrame API can be slow or blocked by the network. A
+ * video that does not arrive in this time is reported, so the stage does not
+ * wait for it forever.
+ */
+const LOAD_TIMEOUT_MS = 15000;
+
 /** Id of the element the IFrame API takes over. */
 const PLAYER_ELEMENT_ID = 'yt-player';
 
@@ -134,6 +143,8 @@ export function useYouTubePlayer(hostRef: RefObject<HTMLElement | null>) {
   /** The element the IFrame API takes over. React never owns it. */
   const playerElementRef = useRef<HTMLElement | null>(null);
   const ownPlayerRef = useRef<any>(null);
+  /** The timer that reports a video that does not arrive. */
+  const loadTimerRef = useRef<number | null>(null);
   /** Guards against creating a second player for the same container. */
   const creatingRef = useRef(false);
   /** Creates the player, but only while the current instance is mounted. */
@@ -197,6 +208,29 @@ export function useYouTubePlayer(hostRef: RefObject<HTMLElement | null>) {
     }
   }, [playerVideoId]);
 
+  /** Stops the timer that reports a video that does not arrive. */
+  const clearLoadTimer = useCallback(() => {
+    if (loadTimerRef.current === null) return;
+    window.clearTimeout(loadTimerRef.current);
+    loadTimerRef.current = null;
+  }, []);
+
+  /**
+   * Reports a video that does not arrive.
+   *
+   * The script of the IFrame API can be slow or blocked by the network. The
+   * stage says so instead of showing a loading sign for ever.
+   */
+  const armLoadTimer = useCallback(() => {
+    clearLoadTimer();
+    loadTimerRef.current = window.setTimeout(() => {
+      loadTimerRef.current = null;
+      if (readyRef.current) return;
+      setError('The video did not load. Check the connection and try again.');
+      syncDebug('player load timeout', { videoId: loadedVideoRef.current });
+    }, LOAD_TIMEOUT_MS);
+  }, [clearLoadTimer]);
+
   /**
    * Creates the player for a video.
    *
@@ -228,8 +262,10 @@ export function useYouTubePlayer(hostRef: RefObject<HTMLElement | null>) {
       try {
         const player = new window.YT.Player(playerElement, {
           videoId,
-          height: '200',
-          width: '320',
+          // The size of the stage. The rules of the interface fill the
+          // container anyway, so the video never stretches.
+          height: '360',
+          width: '640',
           // The video starts by itself when the room starts the track. The
           // browser may still refuse it, then the interface asks for a click.
           playerVars: {
@@ -244,6 +280,10 @@ export function useYouTubePlayer(hostRef: RefObject<HTMLElement | null>) {
               if (!isCurrentRef.current()) return;
               readyRef.current = true;
               setReady(true);
+              // The video arrived: a report of a slow load is not true any
+              // more.
+              clearLoadTimer();
+              setError(null);
               syncDebug('player ready', { videoId });
               const wanted = loadedVideoRef.current;
               if (wanted && playerVideoId() !== wanted) {
@@ -286,13 +326,16 @@ export function useYouTubePlayer(hostRef: RefObject<HTMLElement | null>) {
         syncDebug('player create failed', { message: (e as Error)?.message });
       }
     },
-    [hostRef, playerVideoId, applyTarget],
+    [hostRef, playerVideoId, applyTarget, clearLoadTimer],
   );
 
   useEffect(() => {
     let cancelled = false;
     const instance = ++activeInstance;
     readyRef.current = false;
+    // The container of the player. It is read here, because the cleanup
+    // below may run long after the last render.
+    const host = hostRef.current;
     // Only the newest player instance may act on the shared state.
     isCurrentRef.current = () => !cancelled && activeInstance === instance;
     createPlayerRef.current = createPlayer;
@@ -352,6 +395,7 @@ export function useYouTubePlayer(hostRef: RefObject<HTMLElement | null>) {
       cancelled = true;
       clearInterval(interval);
       clearInterval(watchdog);
+      clearLoadTimer();
       isCurrentRef.current = () => false;
       createPlayerRef.current = () => {};
       if (activeInstance !== instance) return; // a newer instance owns the player
@@ -365,10 +409,9 @@ export function useYouTubePlayer(hostRef: RefObject<HTMLElement | null>) {
       playerRef.current = null;
       creatingRef.current = false;
       // The container is free again, so a new player may take it.
-      const host = hostRef.current;
       if (host) hostsWithPlayer.delete(host);
     };
-  }, [createPlayer, applyTarget, hostRef]);
+  }, [createPlayer, applyTarget, hostRef, clearLoadTimer]);
 
   /** Load a video and describe the state it should end up in. */
   const load = useCallback(
@@ -376,6 +419,8 @@ export function useYouTubePlayer(hostRef: RefObject<HTMLElement | null>) {
       setError(null);
       loadedVideoRef.current = videoId;
       targetRef.current = { videoId, position, playing };
+      // The video has to arrive: a player that stays away is reported.
+      armLoadTimer();
       const player = playerRef.current;
       if (!player) {
         // The player does not exist yet: it is created for this video as
@@ -391,7 +436,7 @@ export function useYouTubePlayer(hostRef: RefObject<HTMLElement | null>) {
       }
       applyTarget();
     },
-    [applyTarget, playerVideoId],
+    [applyTarget, playerVideoId, armLoadTimer],
   );
 
   /** Apply a state to the video that is already loaded. */

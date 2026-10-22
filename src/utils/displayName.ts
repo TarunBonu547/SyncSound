@@ -14,6 +14,8 @@ export const MAX_DISPLAY_NAME = 24;
 export function normalizeDisplayName(value: string): string {
   if (typeof value !== 'string') return '';
   const cleaned = value
+    // The control characters are removed on purpose: a name is text.
+    // eslint-disable-next-line no-control-regex
     .replace(/[\u0000-\u001f\u007f]/g, ' ')
     .replace(/\s+/g, ' ')
     .trim();

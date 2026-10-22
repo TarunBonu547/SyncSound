@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { Copy, Check } from 'lucide-react';
 import { useSocket } from '../hooks/useSocket';
+import { readClientId } from '../utils/clientId';
 import { normalizeDisplayName, saveDisplayName } from '../utils/displayName';
 import DisplayNameField from '../components/common/DisplayNameField';
 
@@ -22,6 +23,20 @@ export default function CreateRoom({
   const [nameError, setNameError] = useState('');
   const [room, setRoom] = useState<{ code: string; link: string } | null>(null);
   const [copied, setCopied] = useState('');
+  /**
+   * The id of this tab. The server uses it to recognise the person, so the
+   * creator stays the host after a refresh.
+   */
+  const clientId = useRef(readClientId());
+
+  /**
+   * A name that is written is not a wrong name any more.
+   *
+   * The field of the lobby and the field of this card share the name, so the
+   * error of the last attempt goes away as soon as there is a name, no matter
+   * where it was typed.
+   */
+  const visibleNameError = nameError && !normalizeDisplayName(displayName) ? nameError : '';
 
   const generate = () => {
     if (!name.trim()) {
@@ -42,14 +57,18 @@ export default function CreateRoom({
     setError('');
     setNameError('');
     saveDisplayName(who);
-    socket.emit('create-room', { name, displayName: who }, (res: any) => {
-      if (!res?.ok) {
-        setError(res?.error || 'Failed');
-        return;
-      }
-      setRoom({ code: res.code, link: `${window.location.origin}/?room=${res.code}` });
-      if (onCreated) onCreated(res.code, res.name);
-    });
+    socket.emit(
+      'create-room',
+      { name, clientId: clientId.current, displayName: who },
+      (res: any) => {
+        if (!res?.ok) {
+          setError(res?.error || 'Failed');
+          return;
+        }
+        setRoom({ code: res.code, link: `${window.location.origin}/?room=${res.code}` });
+        if (onCreated) onCreated(res.code, res.name);
+      },
+    );
   };
 
   const copy = async (val: string, key: string) => {
@@ -70,7 +89,7 @@ export default function CreateRoom({
         id="create-room-display-name"
         value={displayName}
         onChange={onDisplayNameChange}
-        error={nameError}
+        error={visibleNameError}
       />
 
       <label className="field-label" htmlFor="create-room-name">

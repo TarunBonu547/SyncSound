@@ -79,9 +79,19 @@ class RoomState {
     if (!identity) {
       const isHost = isCreator || this.hostClientId === null;
       if (isHost) this.hostClientId = id;
-      // A client without a name keeps the name of its role.
-      const fallback = isHost ? 'Host' : `Listener ${(this.guestCounter += 1)}`;
-      identity = { name: name || fallback, isHost };
+      // A client without a name keeps the name of its role. Only the members
+      // that really need a fallback are counted, so the numbers of the
+      // fallback names follow each other.
+      let identityName = name;
+      if (!identityName) {
+        if (isHost) {
+          identityName = 'Host';
+        } else {
+          this.guestCounter += 1;
+          identityName = `Listener ${this.guestCounter}`;
+        }
+      }
+      identity = { name: identityName, isHost };
       this.identities.set(id, identity);
     } else if (name && name !== identity.name) {
       // The member chose another name: the identity of the client follows it.

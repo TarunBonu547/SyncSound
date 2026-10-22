@@ -15,7 +15,7 @@ import {
   type SearchResult,
 } from './utils/youtubeSearch';
 import { avatarFor } from './utils/avatar';
-import { normalizeDisplayName, readDisplayName } from './utils/displayName';
+import { normalizeDisplayName, readDisplayName, saveDisplayName } from './utils/displayName';
 import Sidebar, { type NavTarget } from './components/layout/Sidebar';
 import RoomHeader from './components/layout/RoomHeader';
 import MainPlayer from './components/player/MainPlayer';
@@ -51,6 +51,16 @@ export default function App() {
    */
   const [displayNameInput, setDisplayNameInput] = useState(() => readDisplayName());
   const displayName = useMemo(() => normalizeDisplayName(displayNameInput), [displayNameInput]);
+
+  /**
+   * The name is remembered while it is typed.
+   *
+   * So a refresh does not ask for it again, and so the room of the next visit
+   * already knows how this person wants to be called.
+   */
+  useEffect(() => {
+    saveDisplayName(displayNameInput);
+  }, [displayNameInput]);
 
   /** The lobby has three parts: the start screen, the search and the library. */
   const [view, setView] = useState<View>('home');
@@ -687,6 +697,23 @@ export default function App() {
     }
   };
 
+  /**
+   * The browser refused to start the video on its own.
+   *
+   * The room already plays the track, so only this client is behind: the
+   * player is moved onto the position of the room and started there. The
+   * room is not told about it, because the room did not change.
+   */
+  const requestPlay = () => {
+    const player = ytRef.current;
+    const pb = roomPbRef.current;
+    const expected = pb ? expectedPosition(pb) : player.getCurrentTime();
+    // The target waits for the player, so a video that is still loading is
+    // started as soon as it is ready.
+    player.syncTo(expected, true);
+    player.play();
+  };
+
   /** Moves the playhead. The room is told about the last position only. */
   const handleSeek = (value: number) => {
     yt.seek(value);
@@ -829,6 +856,7 @@ export default function App() {
             playerError={yt.error}
             onSeek={handleSeek}
             onTogglePlayback={togglePlayback}
+            onRequestPlay={requestPlay}
             onRewind5={yt.rewind5}
             onForward5={yt.forward5}
             onPrevious={playPrevious}

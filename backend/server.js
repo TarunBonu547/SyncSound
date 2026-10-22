@@ -86,6 +86,8 @@ function readRoomName(value) {
 function readDisplayName(value) {
   if (typeof value !== 'string') return null;
   const name = value
+    // The control characters are removed on purpose: a name is text.
+    // eslint-disable-next-line no-control-regex
     .replace(/[\u0000-\u001f\u007f]/g, ' ')
     .replace(/\s+/g, ' ')
     .trim();

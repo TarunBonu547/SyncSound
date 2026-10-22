@@ -67,22 +67,34 @@ export default function JoinRoom({ displayName, onDisplayNameChange, onJoined }:
     });
   };
 
+  /**
+   * A name that is written is not a wrong name any more.
+   *
+   * The field of the lobby and the field of this card share the name, so the
+   * error of the last attempt goes away as soon as there is a name, no matter
+   * where it was typed.
+   */
+  const visibleNameError = nameError && !normalizeDisplayName(displayName) ? nameError : '';
+
   // An invite link joins the room right away, so the other person only has
   // to open the link. The name of the last visit is used, so the listeners
   // know who arrived.
   useEffect(() => {
-    if (!linkCode.current || !socket || linkJoinStarted) return;
-    linkJoinStarted = true;
+    if (!linkCode.current || !socket) return;
     const who = normalizeDisplayName(displayName);
     if (!who) {
-      // Without a name the room is not entered: the person chooses one first.
+      // Without a name the room is not entered: the person chooses one
+      // first, and the room waits for that name.
       setNameError('Please enter the name the others will see');
       return;
     }
+    if (linkJoinStarted) return;
+    linkJoinStarted = true;
+    setNameError('');
     join(linkCode.current);
     // The join runs once for the link, not on every render.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [socket]);
+  }, [socket, displayName]);
 
   return (
     <div className="card room-card fade-in-up">
@@ -94,7 +106,7 @@ export default function JoinRoom({ displayName, onDisplayNameChange, onJoined }:
         id="join-room-display-name"
         value={displayName}
         onChange={onDisplayNameChange}
-        error={nameError}
+        error={visibleNameError}
       />
 
       <label className="field-label" htmlFor="join-room-code">
@@ -103,10 +115,10 @@ export default function JoinRoom({ displayName, onDisplayNameChange, onJoined }:
       <input
         id="join-room-code"
         className="input"
-          placeholder="Room code (e.g. SS-AB12CD)"
-          value={code}
-          onChange={(e) => setCode(e.target.value)}
-        />
+        placeholder="Room code (e.g. SS-AB12CD)"
+        value={code}
+        onChange={(e) => setCode(e.target.value)}
+      />
       {status === 'error' && (
         <p className="error-text" role="alert" style={{ marginTop: 8 }}>
           {message}

@@ -8,10 +8,11 @@
     "build": "tsc -b && vite build",
     "lint": "oxlint",
     "preview": "vite preview",
-    "test": "node tests/room.test.js && node tests/chat.test.js && node tests/queue.test.js && node tests/youtube-search.test.js && node tests/youtube-search-client.test.js && npm run test:render",
+    "test": "node tests/room.test.js && node tests/chat.test.js && node tests/queue.test.js && node tests/display-name.test.js && node tests/youtube-search.test.js && node tests/youtube-search-client.test.js && npm run test:render",
     "test:room": "node tests/room.test.js",
     "test:chat": "node tests/chat.test.js",
     "test:queue": "node tests/queue.test.js",
+    "test:display-name": "node tests/display-name.test.js",
     "test:search": "node tests/youtube-search.test.js && node tests/youtube-search-client.test.js",
     "test:render": "vite build --ssr tests/render-entry.tsx --outDir .render-check --emptyOutDir --logLevel warn && node tests/render.test.js"
   },

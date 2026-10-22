@@ -253,6 +253,50 @@ with a single column below 720px (the navigation becomes a menu). The
 interface honours `prefers-reduced-motion`, and every control can be reached
 with the keyboard.
 
+## The video of the room
+
+The stage shows the **real video** of the track, not only its artwork. It is
+the YouTube IFrame Player API (`src/hooks/useYouTubePlayer.ts`) that puts an
+iframe into the stage; the artwork stays behind it as the picture of a track
+that is still loading.
+
+- The player is created **once** for the container of the stage. A track that
+  changes is cued in the same player, so a room never ends up with two
+  videos in the stage.
+- The player is not owned by React: the API replaces the element it is given
+  with its own iframe, so the element lives outside of React and the rest of
+  the interface keeps updating.
+- The video fills the stage (16:9) without stretching and without overflow;
+  the title, the artist, the heart and the scrubber stay where they were.
+- The **mini player** stays compact: it shows the artwork, the title and the
+  progress of the track, but no second video.
+- Loading, a video that is not available, a video whose owner does not allow
+  it to be played and a browser that refuses the automatic start are all
+  reported in the stage. The rules of YouTube are respected: nothing is
+  worked around.
+- The room stays the authority: play, pause, seek, the track change and the
+  end of a track are the commands of the server, exactly as before.
+
+## The name of a person
+
+Every person chooses the name the others see before the room is entered.
+The field sits on both ways into a room: **Start a room** and **Enter a
+room**.
+
+- The name is at most 24 characters long, the spaces are tidied up and the
+  control characters are removed. A name that is empty after that is refused
+  with a hint in the field.
+- The name is remembered in the browser (`localStorage`), so a refresh or the
+  next room does not ask for it again.
+- The name is **text of the user**: it is only ever shown as text, never as
+  markup, and it never identifies anybody. The client id of the tab stays the
+  identity, so two people may carry the same name without breaking anything.
+- The name travels through `create-room` and `join-room` and comes back in
+  the member list, in the chat and in the presence of the room.
+- A client that does not send a name (an older version) keeps a safe
+  fallback: the host is *Host*, every other member is *Listener 1*, *Listener
+  2* and so on.
+
 ## Tests
 
 The tests talk to a running backend, so start it first:
@@ -267,8 +311,9 @@ npm test                   # in another one
 | `npm run test:room` | Creating, joining and leaving a room, the host role, the member list, the case insensitive room code and the presence updates. |
 | `npm run test:chat` | Sending and receiving messages, the empty and too long rules, the membership check, the isolation between rooms and the history of the room. |
 | `npm run test:queue` | The commands of the interface that the other tests do not touch: moving a track, taking a track out, the play and pause command with its position, the report that a track ended and the refusal of a command of a stranger. |
+| `npm run test:display-name` | The name a person is seen under: the cleaning of the name in the browser, the name in the member list and in the chat, two people with the same name and the fallback of an older client. |
 | `npm run test:search` | The search of the backend against a stub of YouTube (validation, mapping, pagination, quota, invalid key, broken answers) and the search client of the browser (reading the answers, ignoring a slow answer of an older search). |
-| `npm run test:render` | The whole interface in a DOM: the screens really paint, a room is really created, a track is really searched and really enters the shared queue, and the navigation really opens the other screens. |
+| `npm run test:render` | The whole interface in a DOM: the screens really paint, a name is asked for before the room is entered, a room is really created, a track is really searched and really enters the shared queue, the video of the room really plays in the stage and the navigation really opens the other screens. |
 
 Both tests use several real clients at the same time. The search test starts
 its own backend and its own stub of YouTube, so it needs neither a key nor a
