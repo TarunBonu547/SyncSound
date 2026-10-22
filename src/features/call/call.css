@@ -245,6 +245,8 @@
   position: relative;
   width: 100%;
   aspect-ratio: 16 / 9;
+  /* Older mobile browsers ignore aspect-ratio: keep a real height. */
+  min-height: 160px;
   overflow: hidden;
   border-radius: var(--r-md);
   background: var(--ink);
@@ -290,6 +292,8 @@
   bottom: 10px;
   width: 96px;
   aspect-ratio: 3 / 4;
+  /* Older mobile browsers ignore aspect-ratio: keep a real height. */
+  min-height: 128px;
   overflow: hidden;
   border-radius: var(--r-sm);
   border: 1px solid rgba(255, 255, 255, 0.4);

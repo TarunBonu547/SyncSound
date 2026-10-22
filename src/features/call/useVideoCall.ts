@@ -195,14 +195,28 @@ export function useVideoCall({ socket, roomCode }: { socket: Socket | null; room
         audio,
         video: wantVideo ? { width: { ideal: 640 }, height: { ideal: 480 }, facingMode: 'user' } : false,
       });
+      if (typeof console !== 'undefined') {
+        console.debug('[call] acquired media', {
+          audioTracks: stream.getAudioTracks().map((t) => ({ enabled: t.enabled, readyState: t.readyState, muted: t.muted })),
+          videoTracks: stream.getVideoTracks().map((t) => ({ enabled: t.enabled, readyState: t.readyState, muted: t.muted, settings: t.getSettings() })),
+        });
+      }
       return { stream, error: null, audioOnly: false };
     } catch (err) {
+      if (typeof console !== 'undefined') {
+        console.debug('[call] getUserMedia failed', { name: (err as { name?: string })?.name, message: (err as { message?: string })?.message });
+      }
       const failure = describeMediaError(err);
       if (!wantVideo) return { stream: null, error: failure, audioOnly: false };
       // The camera can fail on its own: an audio only call is still a call.
       try {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio, video: false });
-        return {
+         const stream = await navigator.mediaDevices.getUserMedia({ audio, video: false });
+         if (typeof console !== 'undefined') {
+           console.debug('[call] acquired audio only', {
+             audioTracks: stream.getAudioTracks().map((t) => ({ enabled: t.enabled, readyState: t.readyState, muted: t.muted })),
+           });
+         }
+         return {
           stream,
           audioOnly: true,
           error: { code: failure.code, message: `${failure.message} The call continues without video.` },

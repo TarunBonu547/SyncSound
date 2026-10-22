@@ -144,7 +144,8 @@ export default function FloatingCallWindow({
     return () => window.removeEventListener('resize', onResize);
   }, [open]);
 
-  // Attach the streams to the video elements.
+  // Attach the streams to the video elements. The refs are read at attach
+  // time, so a video element that mounts later still receives its stream.
   useEffect(() => {
     const el = remoteVideoRef.current;
     if (!el) return;
@@ -154,6 +155,8 @@ export default function FloatingCallWindow({
       console.debug('[call] remote video element', {
         hasStream: Boolean(remoteStream),
         tracks: remoteStream.getTracks().map((t) => t.kind),
+        videoWidth: el.videoWidth,
+        videoHeight: el.videoHeight,
         status,
       });
     }
@@ -164,6 +167,13 @@ export default function FloatingCallWindow({
         .catch((err) => {
           if (typeof console !== 'undefined') console.debug('[call] remote play() rejected', { name: (err as { name?: string })?.name });
           reportRemoteAudioBlocked(true);
+          // Mobile browsers may reject the first attempt: retry once.
+          window.setTimeout(() => {
+            const e2 = remoteVideoRef.current;
+            if (!e2 || e2.srcObject !== remoteStream) return;
+            const retry = e2.play();
+            if (retry) retry.then(() => reportRemoteAudioBlocked(false)).catch(() => reportRemoteAudioBlocked(true));
+          }, 600);
         });
     }
   }, [remoteStream, reportRemoteAudioBlocked, status]);
@@ -172,9 +182,27 @@ export default function FloatingCallWindow({
     const el = localVideoRef.current;
     if (!el) return;
     if (el.srcObject !== localStream) el.srcObject = localStream;
-    if (localStream) {
-      const attempt = el.play();
-      if (attempt) attempt.catch(() => undefined);
+    if (!localStream) return;
+    if (typeof console !== 'undefined') {
+      console.debug('[call] local preview element', {
+        hasStream: Boolean(localStream),
+        tracks: localStream.getTracks().map((t) => ({ kind: t.kind, enabled: t.enabled, readyState: t.readyState, muted: t.muted })),
+        videoWidth: el.videoWidth,
+        videoHeight: el.videoHeight,
+      });
+    }
+    const attempt = el.play();
+    if (attempt) {
+      attempt.catch(() => {
+        if (typeof console !== 'undefined') console.debug('[call] local play() rejected');
+        // Retry once: mobile browsers can be strict about the first attempt.
+        window.setTimeout(() => {
+          const e2 = localVideoRef.current;
+          if (!e2 || e2.srcObject !== localStream) return;
+          const retry = e2.play();
+          if (retry) retry.catch(() => undefined);
+        }, 600);
+      });
     }
   }, [localStream, status]);
 
