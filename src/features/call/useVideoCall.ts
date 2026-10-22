@@ -253,14 +253,48 @@ export function useVideoCall({ socket, roomCode }: { socket: Socket | null; room
     };
 
     pc.ontrack = (event) => {
-      const stream = event.streams[0] || new MediaStream([event.track]);
+      const track = event.track;
+      // The other side adds every track with the same stream, but some
+      // browsers report the tracks one at a time and some report an empty
+      // stream. The tracks are therefore gathered into one stream, so the
+      // remote video and the remote audio never replace each other.
+      const incoming = event.streams && event.streams[0] ? event.streams[0] : null;
+      let stream = remoteStreamRef.current;
+      if (incoming) {
+        if (stream && stream !== incoming) {
+          // Keep the tracks that arrived earlier.
+          stream.getTracks().forEach((existing) => {
+            if (!incoming.getTracks().includes(existing)) incoming.addTrack(existing);
+          });
+        }
+        stream = incoming;
+      }
+      if (!stream) stream = new MediaStream();
+      if (!stream.getTracks().includes(track)) {
+        try {
+          stream.addTrack(track);
+        } catch {
+          // The track may already belong to the stream.
+        }
+      }
       remoteStreamRef.current = stream;
       setRemoteStream(stream);
+      if (typeof console !== 'undefined') {
+        console.debug('[call] remote track', {
+          kind: track.kind,
+          readyState: track.readyState,
+          streamTracks: stream.getTracks().map((t) => t.kind),
+        });
+      }
     };
 
     pc.onconnectionstatechange = () => {
       const state = pc.connectionState;
-      if (state === 'connected') {
+      const ice = pc.iceConnectionState;
+      if (typeof console !== 'undefined') {
+        console.debug('[call] peer state', { peer: state, ice, signaling: pc.signalingState });
+      }
+      if (state === 'connected' || ice === 'connected' || ice === 'completed') {
         if (recoverTimerRef.current !== null) {
           window.clearTimeout(recoverTimerRef.current);
           recoverTimerRef.current = null;
@@ -269,7 +303,7 @@ export function useVideoCall({ socket, roomCode }: { socket: Socket | null; room
         setError(null);
         return;
       }
-      if (state === 'failed') {
+      if (state === 'failed' || ice === 'failed') {
         setError({ code: 'network', message: 'The call could not be established. Check your network and try again.' });
         setStatus('failed');
         return;
@@ -286,7 +320,18 @@ export function useVideoCall({ socket, roomCode }: { socket: Socket | null; room
     };
 
     pc.oniceconnectionstatechange = () => {
-      if (pc.iceConnectionState === 'failed') {
+      const ice = pc.iceConnectionState;
+      if (typeof console !== 'undefined') {
+        console.debug('[call] ice state', { ice, peer: pc.connectionState, signaling: pc.signalingState });
+      }
+      if (ice === 'connected' || ice === 'completed') {
+        if (recoverTimerRef.current !== null) {
+          window.clearTimeout(recoverTimerRef.current);
+          recoverTimerRef.current = null;
+        }
+        setStatus('connected');
+        setError(null);
+      } else if (ice === 'failed') {
         setError({ code: 'network', message: 'No network path to the other side was found.' });
         setStatus('failed');
       }
@@ -341,6 +386,7 @@ export function useVideoCall({ socket, roomCode }: { socket: Socket | null; room
 
     const onAccepted = async (payload: { callId?: string }) => {
       if (!payload?.callId || callIdRef.current !== payload.callId) return;
+      if (pcRef.current) return; // the peer connection already exists
       setStatus('connecting');
       const pc = createPeer();
       try {
@@ -374,6 +420,7 @@ export function useVideoCall({ socket, roomCode }: { socket: Socket | null; room
     const onOffer = async (payload: { callId?: string; type?: string; sdp?: string }) => {
       if (!payload?.callId || !payload.sdp) return;
       if (callIdRef.current && callIdRef.current !== payload.callId) return;
+      if (pcRef.current) return; // the peer connection already exists
       callIdRef.current = payload.callId;
       const pc = createPeer();
       try {

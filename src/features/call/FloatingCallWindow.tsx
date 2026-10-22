@@ -150,11 +150,21 @@ export default function FloatingCallWindow({
     if (!el) return;
     if (el.srcObject !== remoteStream) el.srcObject = remoteStream;
     if (!remoteStream) return;
+    if (typeof console !== 'undefined') {
+      console.debug('[call] remote video element', {
+        hasStream: Boolean(remoteStream),
+        tracks: remoteStream.getTracks().map((t) => t.kind),
+        status,
+      });
+    }
     const attempt = el.play();
     if (attempt) {
       attempt
         .then(() => reportRemoteAudioBlocked(false))
-        .catch(() => reportRemoteAudioBlocked(true));
+        .catch((err) => {
+          if (typeof console !== 'undefined') console.debug('[call] remote play() rejected', { name: (err as { name?: string })?.name });
+          reportRemoteAudioBlocked(true);
+        });
     }
   }, [remoteStream, reportRemoteAudioBlocked, status]);
 
@@ -458,7 +468,7 @@ export default function FloatingCallWindow({
         {status === 'connected' && (
           <div className="call-body call-body-media">
             <div className="call-video">
-              <video ref={remoteVideoRef} className="call-video-el" autoPlay playsInline />
+              <video ref={remoteVideoRef} className="call-video-el" autoPlay playsInline muted={false} />
               {!remoteCameraEnabled && (
                 <div className="call-video-off">
                   <VideoOff size={20} aria-hidden="true" />
