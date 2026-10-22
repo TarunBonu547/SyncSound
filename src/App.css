@@ -1016,6 +1016,7 @@
   height: 52px;
   min-width: 52px;
   min-height: 52px;
+  flex-shrink: 0;
   padding: 0;
   display: inline-flex;
   align-items: center;
@@ -1162,6 +1163,7 @@
   height: 52px;
   min-width: 52px;
   min-height: 52px;
+  flex-shrink: 0;
   padding: 0;
   display: inline-flex;
   align-items: center;
@@ -1196,10 +1198,11 @@
 }
 
 .queue-item .queue-actions button {
-  width: 48px;
-  height: 48px;
-  min-width: 48px;
-  min-height: 48px;
+  width: 52px;
+  height: 52px;
+  min-width: 52px;
+  min-height: 52px;
+  flex-shrink: 0;
   padding: 0;
   display: inline-flex;
   align-items: center;
@@ -1259,10 +1262,10 @@
 
 @media (max-width: 720px) {
   .queue-item .queue-actions button {
-    width: 44px;
-    height: 44px;
-    min-width: 44px;
-    min-height: 44px;
+    width: 50px;
+    height: 50px;
+    min-width: 50px;
+    min-height: 50px;
   }
 }
 
