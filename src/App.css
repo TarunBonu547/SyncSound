@@ -1007,6 +1007,139 @@
   flex: none;
 }
 
+/* --- Search results --------------------------------------------------------- */
+/* The search results reuse the queue row, but they are the one place where a
+   thumbnail and a title need to stand out, so they get their own scale. */
+.search-list .queue-row {
+  gap: 14px;
+  padding: 12px 14px;
+  border-radius: var(--r-md);
+  border: 1px solid transparent;
+  transition:
+    background-color var(--t-base) var(--ease-out),
+    border-color var(--t-base) var(--ease-out),
+    transform var(--t-fast) var(--ease-out);
+}
+
+.search-list .queue-row:hover {
+  background: rgba(255, 255, 255, 0.86);
+  border-color: var(--border-soft);
+}
+
+.search-list .queue-row:focus-within {
+  background: rgba(255, 255, 255, 0.9);
+  border-color: var(--accent-soft, var(--border-soft));
+  box-shadow: 0 0 0 2px var(--accent-wash, rgba(255, 225, 138, 0.25));
+}
+
+.search-list .queue-thumb {
+  width: 68px;
+  height: 68px;
+  border-radius: 12px;
+  object-fit: cover;
+  box-shadow: var(--shadow-xs);
+  background: #fff;
+  flex: none;
+}
+
+.search-list .queue-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.search-list .queue-title {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.35;
+  color: var(--ink);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.search-list .queue-channel {
+  margin: 0;
+  font-size: 12.5px;
+  line-height: 1.35;
+  color: var(--text-muted);
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.search-list .queue-actions {
+  gap: 8px;
+  flex: none;
+}
+
+.search-list .queue-actions button {
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--r-sm);
+  transition:
+    background-color var(--t-fast) var(--ease-out),
+    color var(--t-fast) var(--ease-out),
+    box-shadow var(--t-fast) var(--ease-out),
+    transform var(--t-fast) var(--ease-out);
+}
+
+.search-list .queue-actions button:focus-visible {
+  outline: 2px solid var(--accent-strong);
+  outline-offset: 2px;
+}
+
+.search-list .queue-actions button:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+.search-list .queue-actions button:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+@media (max-width: 720px) {
+  .search-list .queue-thumb {
+    width: 56px;
+    height: 56px;
+    border-radius: 10px;
+  }
+
+  .search-list .queue-row {
+    gap: 10px;
+    padding: 10px 12px;
+  }
+
+  .search-list .queue-title {
+    font-size: 14px;
+  }
+
+  .search-list .queue-channel {
+    font-size: 12px;
+  }
+
+  .search-list .queue-actions {
+    gap: 6px;
+  }
+
+  .search-list .queue-actions button {
+    width: 40px;
+    height: 40px;
+    min-width: 40px;
+    min-height: 40px;
+  }
+}
+
 /* --- Chat ------------------------------------------------------------------- */
 .chat-card {
   flex: 1;
