@@ -326,6 +326,11 @@ export function useVideoCall({ socket, roomCode }: { socket: Socket | null; room
           window.clearTimeout(recoverTimerRef.current);
           recoverTimerRef.current = null;
         }
+        if (connectTimerRef.current !== null) {
+          window.clearTimeout(connectTimerRef.current);
+          connectTimerRef.current = null;
+          if (typeof console !== 'undefined') console.debug('[call] connect timer cleared (connected)', { peer: state, ice });
+        }
         setStatus('connected');
         setError(null);
         return;
@@ -355,6 +360,11 @@ export function useVideoCall({ socket, roomCode }: { socket: Socket | null; room
         if (recoverTimerRef.current !== null) {
           window.clearTimeout(recoverTimerRef.current);
           recoverTimerRef.current = null;
+        }
+        if (connectTimerRef.current !== null) {
+          window.clearTimeout(connectTimerRef.current);
+          connectTimerRef.current = null;
+          if (typeof console !== 'undefined') console.debug('[call] connect timer cleared (ice connected)', { ice });
         }
         setStatus('connected');
         setError(null);
@@ -393,6 +403,7 @@ export function useVideoCall({ socket, roomCode }: { socket: Socket | null; room
     };
 
     const onIncoming = (payload: { callId?: string; media?: 'video' | 'audio' }) => {
+      if (typeof console !== 'undefined') console.debug('[call] call:incoming received', { callId: payload?.callId, media: payload?.media });
       if (!payload?.callId) return;
       // Both sides rang at the same time: the incoming call wins, the
       // outgoing one is dropped by the server on its own.
@@ -412,10 +423,28 @@ export function useVideoCall({ socket, roomCode }: { socket: Socket | null; room
     };
 
     const onAccepted = async (payload: { callId?: string }) => {
+      if (typeof console !== 'undefined') console.debug('[call] call:accepted received', { callId: payload?.callId, currentCallId: callIdRef.current });
       if (!payload?.callId || callIdRef.current !== payload.callId) return;
       if (pcRef.current) return; // the peer connection already exists
+      // The other side accepted: the ring timer is no longer needed.
+      if (ringTimerRef.current !== null) {
+        window.clearTimeout(ringTimerRef.current);
+        ringTimerRef.current = null;
+        if (typeof console !== 'undefined') console.debug('[call] ring timer cleared (accepted)', { callId: payload.callId });
+      }
       setStatus('connecting');
       const pc = createPeer();
+      // Guard against a call that never connects.
+      if (connectTimerRef.current !== null) window.clearTimeout(connectTimerRef.current);
+      connectTimerRef.current = window.setTimeout(() => {
+        connectTimerRef.current = null;
+        if (callIdRef.current !== payload.callId) return;
+        if (statusRef.current === 'connected') return;
+        teardown();
+        setError({ code: 'timeout', message: 'The call could not be connected in time.' });
+        setStatus('failed');
+      }, CONNECT_TIMEOUT_MS);
+      if (typeof console !== 'undefined') console.debug('[call] connect timer started (caller)', { callId: payload.callId, ms: CONNECT_TIMEOUT_MS });
       try {
         const offer = await pc.createOffer();
         await pc.setLocalDescription(offer);
@@ -435,6 +464,7 @@ export function useVideoCall({ socket, roomCode }: { socket: Socket | null; room
     };
 
     const onEnded = (payload: { callId?: string; reason?: string }) => {
+      if (typeof console !== 'undefined') console.debug('[call] call:ended received', { callId: payload?.callId, reason: payload?.reason, currentCallId: callIdRef.current });
       if (payload?.callId && callIdRef.current && payload.callId !== callIdRef.current) return;
       const reason = payload?.reason;
       teardown();
@@ -560,10 +590,13 @@ export function useVideoCall({ socket, roomCode }: { socket: Socket | null; room
       ringTimerRef.current = window.setTimeout(() => {
         ringTimerRef.current = null;
         if (callIdRef.current !== res.callId) return;
+        if (statusRef.current === 'connected') return;
+        if (typeof console !== 'undefined') console.debug('[call] ring timer fired (no answer)', { callId: res.callId, status: statusRef.current });
         teardown();
         setError({ code: 'timeout', message: 'Nobody answered the call.' });
         setStatus('failed');
       }, RING_TIMEOUT_MS);
+      if (typeof console !== 'undefined') console.debug('[call] ring timer started', { callId: res.callId, ms: RING_TIMEOUT_MS });
     });
   }, [socket, roomCode, acquireMedia, sendMediaState, teardown]);
 
@@ -600,11 +633,14 @@ export function useVideoCall({ socket, roomCode }: { socket: Socket | null; room
       sendMediaState();
       connectTimerRef.current = window.setTimeout(() => {
         connectTimerRef.current = null;
+        if (callIdRef.current !== call.callId) return;
         if (statusRef.current === 'connected') return;
+        if (typeof console !== 'undefined') console.debug('[call] connect timer fired (callee)', { callId: call.callId, status: statusRef.current });
         teardown();
         setError({ code: 'timeout', message: 'The call could not be connected in time.' });
         setStatus('failed');
       }, CONNECT_TIMEOUT_MS);
+      if (typeof console !== 'undefined') console.debug('[call] connect timer started (callee)', { callId: call.callId, ms: CONNECT_TIMEOUT_MS });
     });
   }, [socket, roomCode, acquireMedia, sendMediaState, teardown]);
 
