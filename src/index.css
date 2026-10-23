@@ -142,7 +142,6 @@ img {
 /* --- Scrollbars ---------------------------------------------------------- */
 .main::-webkit-scrollbar,
 .right::-webkit-scrollbar,
-.sidebar::-webkit-scrollbar,
 .chat-scroll::-webkit-scrollbar,
 .drawer-panel::-webkit-scrollbar,
 .home::-webkit-scrollbar {
@@ -151,7 +150,6 @@ img {
 
 .main::-webkit-scrollbar-thumb,
 .right::-webkit-scrollbar-thumb,
-.sidebar::-webkit-scrollbar-thumb,
 .chat-scroll::-webkit-scrollbar-thumb,
 .drawer-panel::-webkit-scrollbar-thumb,
 .home::-webkit-scrollbar-thumb {

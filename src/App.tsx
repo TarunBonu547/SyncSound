@@ -16,7 +16,6 @@ import {
 } from './utils/youtubeSearch';
 import { avatarFor } from './utils/avatar';
 import { normalizeDisplayName, readDisplayName, saveDisplayName } from './utils/displayName';
-import Sidebar, { type NavTarget } from './components/layout/Sidebar';
 import RoomHeader from './components/layout/RoomHeader';
 import MainPlayer from './components/player/MainPlayer';
 import MiniPlayer from './components/player/MiniPlayer';
@@ -35,6 +34,17 @@ import './App.css';
 const DRIFT_THRESHOLD = 1.2;
 
 type View = 'home' | 'room' | 'search' | 'library';
+
+type NavTarget =
+  | 'home'
+  | 'room'
+  | 'search'
+  | 'liked-songs'
+  | 'playlists'
+  | 'recently-played'
+  | 'create-room'
+  | 'join-room'
+  | 'settings';
 
 export default function App() {
   /** React owned, always empty container for the YouTube IFrame player. */
@@ -821,19 +831,6 @@ export default function App() {
           </div>
         </header>
 
-        <Sidebar
-          active={activeNav}
-          connected={connected}
-          roomCode={room.roomCode}
-          roomName={room.roomName}
-          clientId={clientId}
-          displayName={displayName}
-          onNavigate={navigate}
-          onLibrary={goLibrary}
-          onSettings={() => setSettingsOpen(true)}
-          onLeave={leaveRoom}
-        />
-
         <main className="main">
           <RoomHeader
             roomCode={room.roomCode}
@@ -1172,6 +1169,9 @@ export default function App() {
                 { id: 'playlists', label: 'Your Library' },
                 { id: 'recently-played', label: 'Recently played' },
                 { id: 'room', label: 'Your room' },
+                { id: 'create-room', label: 'Create room' },
+                { id: 'join-room', label: 'Join room' },
+                { id: 'settings', label: 'Settings' },
               ] as { id: NavTarget; label: string }[]
             ).map((item) => (
               <button
@@ -1181,6 +1181,10 @@ export default function App() {
                   if (item.id === 'liked-songs') goLibrary('liked');
                   else if (item.id === 'playlists') goLibrary('playlists');
                   else if (item.id === 'recently-played') goLibrary('recent');
+                  else if (item.id === 'settings') {
+                    setMobileNav(false);
+                    setSettingsOpen(true);
+                  }
                   else navigate(item.id);
                 }}
               >
