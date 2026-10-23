@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import type { Socket } from 'socket.io-client';
 import AgoraRTC from 'agora-rtc-sdk-ng';
 import type { IAgoraRTCClient, ICameraVideoTrack, IMicrophoneAudioTrack, IRemoteAudioTrack } from 'agora-rtc-sdk-ng';
+import { API_URL } from '../../utils/youtubeSearch';
 
 export type CallStatus =
   | 'idle' | 'requesting' | 'calling' | 'ringing' | 'connecting' | 'connected' | 'ended' | 'failed';
@@ -103,7 +104,7 @@ export function useVideoCall({ socket, roomCode }: { socket: Socket | null; room
 
   const fetchToken = useCallback(async (channel: string, uid: string) => {
     const socketId = socket?.id || '';
-    const url = `/api/agora/token?code=${encodeURIComponent(roomCode || '')}&channel=${encodeURIComponent(channel)}&uid=${encodeURIComponent(uid)}&socketId=${encodeURIComponent(socketId)}`;
+    const url = `${API_URL}/api/agora/token?code=${encodeURIComponent(roomCode || '')}&channel=${encodeURIComponent(channel)}&uid=${encodeURIComponent(uid)}&socketId=${encodeURIComponent(socketId)}`;
     const res = await fetch(url);
     const data = await res.json();
     if (!res.ok || !data?.ok) throw new Error(data?.error || 'token failed');
