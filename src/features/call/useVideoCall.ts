@@ -91,11 +91,12 @@ export function useVideoCall({ socket, roomCode, clientId }: { socket: Socket | 
       if (wantVideo) {
         try { videoTrack = await AgoraRTC.createCameraVideoTrack(); } catch { audioOnly = true; }
       }
-      localAudioRef.current = audioTrack;
-      localVideoRef.current = videoTrack;
-      const stream = new MediaStream();
-      // expose via tracks not MediaStream; UI uses localStream for preview? Keep null-ish but set a dummy
-      setLocalStream(stream);
+       localAudioRef.current = audioTrack;
+       localVideoRef.current = videoTrack;
+       const stream = new MediaStream();
+       if (audioTrack?.getMediaStreamTrack) stream.addTrack(audioTrack.getMediaStreamTrack());
+       if (videoTrack?.getMediaStreamTrack) stream.addTrack(videoTrack.getMediaStreamTrack());
+       setLocalStream(stream);
       return { ok: true, audioOnly, error: null as CallError | null };
     } catch (err) {
       return { ok: false, audioOnly: false, error: describeMediaError(err) };
@@ -121,13 +122,20 @@ export function useVideoCall({ socket, roomCode, clientId }: { socket: Socket | 
     client.on('user-published', async (user, mediaType) => {
       await client.subscribe(user, mediaType);
       if (mediaType === 'video') {
-const stream = new MediaStream();
-setRemoteStream(stream);
+        const stream = new MediaStream();
+        if (user.videoTrack?.getMediaStreamTrack) stream.addTrack(user.videoTrack.getMediaStreamTrack());
+        setRemoteStream(stream);
       }
       if (mediaType === 'audio') {
         (user.audioTrack as IRemoteAudioTrack)?.play();
       }
       setStatus('connected');
+    });
+    client.on('user-unpublished', (_user, mediaType) => {
+      if (mediaType === 'video') setRemoteStream(null);
+    });
+    client.on('user-left', () => {
+      setRemoteStream(null);
     });
     client.on('user-unpublished', () => {});
     client.on('user-left', () => {
