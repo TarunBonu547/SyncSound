@@ -462,6 +462,7 @@ app.get('/api/agora/token', (req, res) => {
     return res.status(503).json({ ok: false, error: 'Agora not configured' });
   }
   const socketId = typeof req.query.socketId === 'string' ? req.query.socketId.trim() : '';
+  const code = typeof req.query.code === 'string' ? req.query.code.trim() : '';
   if (!socketId) {
     return res.status(400).json({ ok: false, error: 'Missing socket id' });
   }
@@ -488,8 +489,15 @@ app.get('/api/agora/token', (req, res) => {
   if (channel !== code) {
     return res.status(403).json({ ok: false, error: 'Channel mismatch' });
   }
-  const token = issueRtcToken({ appId, appCertificate, channelName: channel, uid });
+  let token;
+  try {
+    token = issueRtcToken({ appId, appCertificate, channelName: channel, uid });
+  } catch (err) {
+    syncLog('agora token issuance threw', { message: err?.message });
+    return res.status(500).json({ ok: false, error: 'Token issuance failed' });
+  }
   if (!token) {
+    syncLog('agora token issuance failed', { channel, uid });
     return res.status(500).json({ ok: false, error: 'Token issuance failed' });
   }
   return res.json({ ok: true, token, appId, channel, uid, expiresInSeconds: 3600 });
