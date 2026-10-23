@@ -135,7 +135,7 @@ export default function App() {
   });
 
   /** The two person call. It only uses the socket, never the music protocol. */
-  const call = useVideoCall({ socket, roomCode: room.roomCode });
+  const call = useVideoCall({ socket, roomCode: room.roomCode, clientId });
 
   /** Where the room timeline says the playhead should be right now. */
   const expectedPosition = (p: PlaybackState) => {

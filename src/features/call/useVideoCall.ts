@@ -21,7 +21,7 @@ function describeMediaError(err: unknown): CallError {
   return { code: 'unknown', message: 'Camera and microphone could not be started.' };
 }
 
-export function useVideoCall({ socket, roomCode }: { socket: Socket | null; roomCode: string | null }) {
+export function useVideoCall({ socket, roomCode, clientId }: { socket: Socket | null; roomCode: string | null; clientId: string | null }) {
   const [status, setStatus] = useState<CallStatus>('idle');
   const [error, setError] = useState<CallError | null>(null);
   const [incoming, setIncoming] = useState<IncomingCall | null>(null);
@@ -104,16 +104,18 @@ export function useVideoCall({ socket, roomCode }: { socket: Socket | null; room
 
   const fetchToken = useCallback(async (channel: string, uid: string) => {
     const socketId = socket?.id || '';
-    const url = `${API_URL}/api/agora/token?code=${encodeURIComponent(roomCode || '')}&channel=${encodeURIComponent(channel)}&uid=${encodeURIComponent(uid)}&socketId=${encodeURIComponent(socketId)}`;
+    const effectiveUid = uid || clientId || socketId;
+    const url = `${API_URL}/api/agora/token?code=${encodeURIComponent(roomCode || '')}&channel=${encodeURIComponent(channel)}&uid=${encodeURIComponent(effectiveUid)}&socketId=${encodeURIComponent(socketId)}`;
     const res = await fetch(url);
     const data = await res.json();
     if (!res.ok || !data?.ok) throw new Error(data?.error || 'token failed');
     return data;
-  }, [socket, roomCode]);
+  }, [socket, roomCode, clientId]);
 
   const joinAgora = useCallback(async (channel: string, uid: string) => {
     const appId = import.meta.env.VITE_AGORA_APP_ID as string;
-    const { token } = await fetchToken(channel, uid);
+    const effectiveUid = uid || clientId || socket?.id || '';
+    const { token } = await fetchToken(channel, effectiveUid);
     const client = AgoraRTC.createClient({ mode: 'rtc', codec: 'vp8' });
     clientRef.current = client;
     client.on('user-published', async (user, mediaType) => {
@@ -131,7 +133,7 @@ setRemoteStream(stream);
     client.on('user-left', () => {
       setRemoteStream(null);
     });
-    await client.join(appId, channel, token, uid as string);
+    await client.join(appId, channel, token, effectiveUid);
     const tracks: (IMicrophoneAudioTrack | ICameraVideoTrack)[] = [];
     if (localAudioRef.current) tracks.push(localAudioRef.current);
     if (localVideoRef.current) tracks.push(localVideoRef.current);
@@ -151,7 +153,7 @@ setRemoteStream(stream);
       if (!res?.ok) { await teardown(); setError({ code: 'busy', message: res?.error || 'could not start' }); setStatus('failed'); return; }
       callIdRef.current = res.callId || null;
       roleRef.current = 'caller';
-      try { await joinAgora(roomCode as string, socket.id as string); } catch { await teardown(); setError({ code: 'network', message: 'join failed' }); setStatus('failed'); return; }
+      try { await joinAgora(roomCode as string, (clientId || socket?.id || '') as string); } catch { await teardown(); setError({ code: 'network', message: 'join failed' }); setStatus('failed'); return; }
       ringTimerRef.current = window.setTimeout(async () => {
         if (statusRef.current === 'connected' || statusRef.current === 'connecting') return;
         await teardown(); setError({ code: 'timeout', message: 'Nobody answered.' }); setStatus('failed');
@@ -174,7 +176,7 @@ setRemoteStream(stream);
     setStatus('connecting');
     socket.emit('call:accept', { code: roomCode, callId: call.callId }, async (res: { ok?: boolean; error?: string }) => {
       if (!res?.ok) { await teardown(); setError({ code: 'busy', message: res?.error || 'could not accept' }); setStatus('failed'); return; }
-      try { await joinAgora(roomCode as string, socket.id as string); } catch { await teardown(); setError({ code: 'network', message: 'join failed' }); setStatus('failed'); }
+      try { await joinAgora(roomCode as string, (clientId || socket?.id || '') as string); } catch { await teardown(); setError({ code: 'network', message: 'join failed' }); setStatus('failed'); }
     });
   }, [socket, roomCode, acquireMedia, teardown, joinAgora]);
 
