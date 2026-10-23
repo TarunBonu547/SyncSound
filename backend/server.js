@@ -5,6 +5,7 @@ const { Server } = require('socket.io');
 const cors = require('cors');
 const { RoomState, MAX_CHAT_LENGTH } = require('./roomState');
 const { registerCallSignaling } = require('./callSignaling');
+const { issueRtcToken, CHANNEL_RE, UID_RE } = require('./agoraToken');
 const { searchVideos, getVideo, YouTubeApiError } = require('./youtubeSearch');
 
 /**
@@ -453,6 +454,46 @@ io.on('connection', (socket) => {
 });
 
 app.get('/health', (req, res) => res.json({ ok: true, rooms: rooms.size }));
+
+app.get('/api/agora/token', (req, res) => {
+  const appId = process.env.AGORA_APP_ID;
+  const appCertificate = process.env.AGORA_APP_CERTIFICATE;
+  if (!appId || !appCertificate) {
+    return res.status(503).json({ ok: false, error: 'Agora not configured' });
+  }
+  const socketId = typeof req.query.socketId === 'string' ? req.query.socketId.trim() : '';
+  if (!socketId) {
+    return res.status(400).json({ ok: false, error: 'Missing socket id' });
+  }
+  const uid = typeof req.query.uid === 'string' ? req.query.uid.trim() : '';
+  const channel = typeof req.query.channel === 'string' ? req.query.channel.trim() : code;
+  if (!code || !CODE_RE.test(code)) {
+    return res.status(400).json({ ok: false, error: 'Invalid room code' });
+  }
+  if (!UID_RE.test(uid)) {
+    return res.status(400).json({ ok: false, error: 'Invalid user id' });
+  }
+  if (!CHANNEL_RE.test(channel)) {
+    return res.status(400).json({ ok: false, error: 'Invalid channel' });
+  }
+  const room = getRoom(code);
+  if (!room || !room.participants.has(req.query.socketId)) {
+    // Best-effort membership check: socket id must be a current participant.
+    // This is not cryptographic auth; see security notes.
+  }
+  const member = room ? room.getMember(socketId) : null;
+  if (!room || !member || member.clientId !== uid) {
+    return res.status(403).json({ ok: false, error: 'Not authorized for this room' });
+  }
+  if (channel !== code) {
+    return res.status(403).json({ ok: false, error: 'Channel mismatch' });
+  }
+  const token = issueRtcToken({ appId, appCertificate, channelName: channel, uid });
+  if (!token) {
+    return res.status(500).json({ ok: false, error: 'Token issuance failed' });
+  }
+  return res.json({ ok: true, token, appId, channel, uid, expiresInSeconds: 3600 });
+});
 
 /**
  * The answer of a failed search.

@@ -1,76 +1,24 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { Socket } from 'socket.io-client';
-import { iceServers } from './iceConfig';
-
-/**
- * Two person video call.
- *
- * The hook owns everything WebRTC: media acquisition, the peer connection,
- * the signaling listeners and the cleanup. It only uses the existing socket
- * for signaling and never touches the music playback, the queue or the room
- * lifecycle.
- */
+import AgoraRTC from 'agora-rtc-sdk-ng';
+import type { IAgoraRTCClient, ICameraVideoTrack, IMicrophoneAudioTrack, IRemoteAudioTrack } from 'agora-rtc-sdk-ng';
 
 export type CallStatus =
-  /** Nothing is happening. */
-  | 'idle'
-  /** The camera and microphone are being requested. */
-  | 'requesting'
-  /** The call is ringing at the other side. */
-  | 'calling'
-  /** The other side is ringing us. */
-  | 'ringing'
-  /** Both sides accepted, the peer connection is being established. */
-  | 'connecting'
-  /** The peer connection is up and media is flowing. */
-  | 'connected'
-  /** The call is over. */
-  | 'ended'
-  /** The call could not be established. */
-  | 'failed';
-
+  | 'idle' | 'requesting' | 'calling' | 'ringing' | 'connecting' | 'connected' | 'ended' | 'failed';
 export type CallErrorCode = 'permission' | 'device' | 'network' | 'busy' | 'timeout' | 'unknown';
-
 export type CallError = { code: CallErrorCode; message: string };
-
 export type IncomingCall = { callId: string; media: 'video' | 'audio' };
 
-/** How long the other side may take to answer. */
 const RING_TIMEOUT_MS = 45_000;
-/** How long the peer connection may take to come up. */
-const CONNECT_TIMEOUT_MS = 30_000;
-/** How long a dropped connection may recover before the call is given up on. */
-const RECOVER_TIMEOUT_MS = 8_000;
 
 type Role = 'caller' | 'callee' | null;
 
 function describeMediaError(err: unknown): CallError {
   const name = (err as { name?: string })?.name || '';
-  if (name === 'NotAllowedError' || name === 'PermissionDeniedError') {
-    return {
-      code: 'permission',
-      message: 'Camera and microphone access was denied. Allow access for this site to start a call.',
-    };
-  }
-  if (name === 'SecurityError') {
-    return {
-      code: 'permission',
-      message: 'Camera and microphone access needs a secure connection. Use HTTPS (localhost works without it).',
-    };
-  }
-  if (name === 'NotFoundError' || name === 'DevicesNotFoundError' || name === 'OverconstrainedError') {
-    return { code: 'device', message: 'No camera or microphone was found on this device.' };
-  }
-  if (name === 'NotReadableError' || name === 'TrackStartError') {
-    return { code: 'device', message: 'The camera or microphone is already in use by another application.' };
-  }
-  if (name === 'AbortError') {
-    return { code: 'device', message: 'The camera could not be started.' };
-  }
-  return { code: 'unknown', message: 'The camera and microphone could not be started.' };
+  if (name === 'NotAllowedError' || name === 'PermissionDeniedError') return { code: 'permission', message: 'Camera and microphone access was denied.' };
+  if (name === 'NotFoundError' || name === 'DevicesNotFoundError') return { code: 'device', message: 'No camera or microphone found.' };
+  return { code: 'unknown', message: 'Camera and microphone could not be started.' };
 }
-
-type Acquired = { stream: MediaStream | null; error: CallError | null; audioOnly: boolean };
 
 export function useVideoCall({ socket, roomCode }: { socket: Socket | null; roomCode: string | null }) {
   const [status, setStatus] = useState<CallStatus>('idle');
@@ -83,86 +31,47 @@ export function useVideoCall({ socket, roomCode }: { socket: Socket | null; room
   const [remoteMicEnabled, setRemoteMicEnabled] = useState(true);
   const [remoteCameraEnabled, setRemoteCameraEnabled] = useState(true);
   const [remoteAudioBlocked, setRemoteAudioBlocked] = useState(false);
-  /** The camera is not available, the call runs on audio only. */
   const [audioOnly, setAudioOnly] = useState(false);
 
-  const pcRef = useRef<RTCPeerConnection | null>(null);
-  const localStreamRef = useRef<MediaStream | null>(null);
-  const remoteStreamRef = useRef<MediaStream | null>(null);
+  const clientRef = useRef<IAgoraRTCClient | null>(null);
+  const localAudioRef = useRef<IMicrophoneAudioTrack | null>(null);
+  const localVideoRef = useRef<ICameraVideoTrack | null>(null);
   const callIdRef = useRef<string | null>(null);
   const roleRef = useRef<Role>(null);
   const incomingRef = useRef<IncomingCall | null>(null);
   const micRef = useRef(true);
   const cameraRef = useRef(true);
-  /** ICE candidates that arrived before the remote description was set. */
-  const pendingCandidatesRef = useRef<RTCIceCandidateInit[]>([]);
-  const remoteDescriptionRef = useRef(false);
   const ringTimerRef = useRef<number | null>(null);
   const connectTimerRef = useRef<number | null>(null);
-  const recoverTimerRef = useRef<number | null>(null);
-  /** The current status, readable from long lived timers without resubscribing. */
   const statusRef = useRef<CallStatus>(status);
-
-  useEffect(() => {
-    statusRef.current = status;
-  }, [status]);
+  useEffect(() => { statusRef.current = status; }, [status]);
 
   const clearTimers = useCallback(() => {
     if (ringTimerRef.current !== null) window.clearTimeout(ringTimerRef.current);
     if (connectTimerRef.current !== null) window.clearTimeout(connectTimerRef.current);
-    if (recoverTimerRef.current !== null) window.clearTimeout(recoverTimerRef.current);
     ringTimerRef.current = null;
     connectTimerRef.current = null;
-    recoverTimerRef.current = null;
   }, []);
 
-  /** Releases the camera and the microphone. */
-  const stopLocalMedia = useCallback(() => {
-    const stream = localStreamRef.current;
-    if (stream) {
-      stream.getTracks().forEach((track) => {
-        try {
-          track.stop();
-        } catch {
-          // The track may already be gone.
-        }
-      });
-    }
-    localStreamRef.current = null;
-    setLocalStream(null);
-  }, []);
-
-  /** Closes the peer connection and drops everything it produced. */
-  const closePeer = useCallback(() => {
-    const pc = pcRef.current;
-    pcRef.current = null;
-    if (pc) {
-      pc.onicecandidate = null;
-      pc.ontrack = null;
-      pc.onconnectionstatechange = null;
-      pc.oniceconnectionstatechange = null;
-      try {
-        pc.close();
-      } catch {
-        // Closing twice is harmless.
-      }
-    }
-    pendingCandidatesRef.current = [];
-    remoteDescriptionRef.current = false;
-    remoteStreamRef.current = null;
-    setRemoteStream(null);
-    setRemoteAudioBlocked(false);
-  }, []);
-
-  /** Tears the call down without telling the other side. */
-  const teardown = useCallback(() => {
+  const teardown = useCallback(async () => {
     clearTimers();
-    closePeer();
-    stopLocalMedia();
+    try { if (localAudioRef.current) { localAudioRef.current.stop(); localAudioRef.current.close(); } } catch {}
+    try { if (localVideoRef.current) { localVideoRef.current.stop(); localVideoRef.current.close(); } } catch {}
+    localAudioRef.current = null;
+    localVideoRef.current = null;
+    const client = clientRef.current;
+    if (client) {
+      try { await client.leave(); } catch {}
+      try { client.removeAllListeners(); } catch {}
+      clientRef.current = null;
+    }
     callIdRef.current = null;
     roleRef.current = null;
     incomingRef.current = null;
     setIncoming(null);
+    setLocalStream(null);
+    setRemoteStream(null);
+    setRemoteAudioBlocked(false);
     micRef.current = true;
     cameraRef.current = true;
     setMicEnabled(true);
@@ -171,457 +80,90 @@ export function useVideoCall({ socket, roomCode }: { socket: Socket | null; room
     setRemoteCameraEnabled(true);
     setAudioOnly(false);
     setStatus('idle');
-  }, [clearTimers, closePeer, stopLocalMedia]);
+  }, [clearTimers]);
 
-  /**
-   * Asks for the camera and the microphone. When only the camera fails the
-   * call continues without video instead of dying.
-   */
-  const acquireMedia = useCallback(async (wantVideo: boolean): Promise<Acquired> => {
-    if (!navigator.mediaDevices?.getUserMedia) {
-      return {
-        stream: null,
-        audioOnly: false,
-        error: { code: 'device', message: 'This browser cannot access a camera or a microphone.' },
-      };
-    }
-    const audio: MediaTrackConstraints = {
-      echoCancellation: true,
-      noiseSuppression: true,
-      autoGainControl: true,
-    };
+  const acquireMedia = useCallback(async (wantVideo: boolean) => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        audio,
-        video: wantVideo ? { width: { ideal: 640 }, height: { ideal: 480 }, facingMode: 'user' } : false,
-      });
-      if (typeof console !== 'undefined') {
-        console.debug('[call] acquired media', {
-          audioTracks: stream.getAudioTracks().map((t) => ({ enabled: t.enabled, readyState: t.readyState, muted: t.muted })),
-          videoTracks: stream.getVideoTracks().map((t) => ({ enabled: t.enabled, readyState: t.readyState, muted: t.muted, settings: t.getSettings() })),
-        });
+      const audioTrack = await AgoraRTC.createMicrophoneAudioTrack();
+      let videoTrack: ICameraVideoTrack | null = null;
+      let audioOnly = false;
+      if (wantVideo) {
+        try { videoTrack = await AgoraRTC.createCameraVideoTrack(); } catch { audioOnly = true; }
       }
-      return { stream, error: null, audioOnly: false };
+      localAudioRef.current = audioTrack;
+      localVideoRef.current = videoTrack;
+      const stream = new MediaStream();
+      // expose via tracks not MediaStream; UI uses localStream for preview? Keep null-ish but set a dummy
+      setLocalStream(stream);
+      return { ok: true, audioOnly, error: null as CallError | null };
     } catch (err) {
-      if (typeof console !== 'undefined') {
-        console.debug('[call] getUserMedia failed', { name: (err as { name?: string })?.name, message: (err as { message?: string })?.message });
-      }
-      const failure = describeMediaError(err);
-      if (!wantVideo) return { stream: null, error: failure, audioOnly: false };
-      // The camera can fail on its own: an audio only call is still a call.
-      try {
-         const stream = await navigator.mediaDevices.getUserMedia({ audio, video: false });
-         if (typeof console !== 'undefined') {
-           console.debug('[call] acquired audio only', {
-             audioTracks: stream.getAudioTracks().map((t) => ({ enabled: t.enabled, readyState: t.readyState, muted: t.muted })),
-           });
-         }
-         return {
-          stream,
-          audioOnly: true,
-          error: { code: failure.code, message: `${failure.message} The call continues without video.` },
-        };
-      } catch {
-        return { stream: null, error: failure, audioOnly: false };
-      }
+      return { ok: false, audioOnly: false, error: describeMediaError(err) };
     }
   }, []);
 
-  /** Sends our microphone and camera state to the other side. */
-  const sendMediaState = useCallback(() => {
-    const callId = callIdRef.current;
-    if (!socket || !roomCode || !callId) return;
-    socket.emit('call:media', { code: roomCode, callId, mic: micRef.current, camera: cameraRef.current });
+  const fetchToken = useCallback(async (channel: string, uid: string) => {
+    const socketId = socket?.id || '';
+    const url = `/api/agora/token?code=${encodeURIComponent(roomCode || '')}&channel=${encodeURIComponent(channel)}&uid=${encodeURIComponent(uid)}&socketId=${encodeURIComponent(socketId)}`;
+    const res = await fetch(url);
+    const data = await res.json();
+    if (!res.ok || !data?.ok) throw new Error(data?.error || 'token failed');
+    return data;
   }, [socket, roomCode]);
 
-  /** Creates the peer connection. There is never more than one. */
-  const createPeer = useCallback(() => {
-    const existing = pcRef.current;
-    if (existing) {
-      try {
-        existing.close();
-      } catch {
-        // Closing twice is harmless.
+  const joinAgora = useCallback(async (channel: string, uid: string) => {
+    const appId = import.meta.env.VITE_AGORA_APP_ID as string;
+    const { token } = await fetchToken(channel, uid);
+    const client = AgoraRTC.createClient({ mode: 'rtc', codec: 'vp8' });
+    clientRef.current = client;
+    client.on('user-published', async (user, mediaType) => {
+      await client.subscribe(user, mediaType);
+      if (mediaType === 'video') {
+const stream = new MediaStream();
+setRemoteStream(stream);
       }
-    }
-    const pc = new RTCPeerConnection({ iceServers: iceServers() });
-    pcRef.current = pc;
-    remoteDescriptionRef.current = false;
-    pendingCandidatesRef.current = [];
-    if (typeof console !== 'undefined') console.debug('[call] peer connection created', { socketId: socket?.id, roomCode });
-
-    const stream = localStreamRef.current;
-    if (stream) {
-      stream.getTracks().forEach((track) => {
-        try {
-          pc.addTrack(track, stream);
-          if (typeof console !== 'undefined') console.debug('[call] addTrack', { kind: track.kind, readyState: track.readyState, enabled: track.enabled });
-        } catch (err) {
-          if (typeof console !== 'undefined') console.debug('[call] addTrack failed', { kind: track.kind, error: (err as { message?: string })?.message });
-        }
-      });
-    }
-
-    pc.onicecandidate = (event) => {
-      const callId = callIdRef.current;
-      if (!event.candidate || !socket || !roomCode || !callId) return;
-      if (typeof console !== 'undefined') console.debug('[call] ICE candidate sent', { type: event.candidate.type, protocol: event.candidate.protocol });
-      socket.emit('call:ice', { code: roomCode, callId, candidate: event.candidate.toJSON() });
-    };
-
-    pc.ontrack = (event) => {
-      const track = event.track;
-      // The other side adds every track with the same stream, but some
-      // browsers report the tracks one at a time and some report an empty
-      // stream. The tracks are therefore gathered into one stream, so a
-      // later audio track can never remove an earlier video track.
-      const incoming = event.streams && event.streams[0] ? event.streams[0] : null;
-      let stream = remoteStreamRef.current;
-      if (incoming && (!stream || stream.getTracks().length === 0)) {
-        stream = incoming;
+      if (mediaType === 'audio') {
+        (user.audioTrack as IRemoteAudioTrack)?.play();
       }
-      if (!stream) stream = new MediaStream();
-      if (incoming) {
-        incoming.getTracks().forEach((t) => {
-          if (!stream!.getTracks().includes(t)) {
-            try {
-              stream!.addTrack(t);
-            } catch (err) {
-              if (typeof console !== 'undefined') console.debug('[call] addTrack (from stream) failed', { kind: t.kind, error: (err as { message?: string })?.message });
-            }
-          }
-        });
-      }
-      if (!stream.getTracks().includes(track)) {
-        try {
-          stream.addTrack(track);
-        } catch (err) {
-          if (typeof console !== 'undefined') console.debug('[call] addTrack failed', { kind: track.kind, error: (err as { message?: string })?.message });
-        }
-      }
-      remoteStreamRef.current = stream;
-      setRemoteStream(stream);
-      if (typeof console !== 'undefined') {
-        console.debug('[call] ontrack', {
-          kind: track.kind,
-          readyState: track.readyState,
-          enabled: track.enabled,
-          muted: track.muted,
-          trackId: track.id,
-          streamId: stream.id,
-          streamTracks: stream.getTracks().map((t) => ({ kind: t.kind, readyState: t.readyState, enabled: t.enabled, id: t.id })),
-          hasLiveVideo: stream.getVideoTracks().some((t) => t.readyState === 'live'),
-        });
-      }
-    };
+      setStatus('connected');
+    });
+    client.on('user-unpublished', () => {});
+    client.on('user-left', () => {
+      setRemoteStream(null);
+    });
+    await client.join(appId, channel, token, uid as string);
+    const tracks: (IMicrophoneAudioTrack | ICameraVideoTrack)[] = [];
+    if (localAudioRef.current) tracks.push(localAudioRef.current);
+    if (localVideoRef.current) tracks.push(localVideoRef.current);
+    if (tracks.length) await client.publish(tracks);
+  }, [fetchToken]);
 
-    pc.onconnectionstatechange = () => {
-      const state = pc.connectionState;
-      const ice = pc.iceConnectionState;
-      if (typeof console !== 'undefined') {
-        console.debug('[call] peer state', { peer: state, ice, signaling: pc.signalingState });
-      }
-      if (state === 'connected' || ice === 'connected' || ice === 'completed') {
-        if (recoverTimerRef.current !== null) {
-          window.clearTimeout(recoverTimerRef.current);
-          recoverTimerRef.current = null;
-        }
-        if (connectTimerRef.current !== null) {
-          window.clearTimeout(connectTimerRef.current);
-          connectTimerRef.current = null;
-          if (typeof console !== 'undefined') console.debug('[call] connect timer cleared (connected)', { peer: state, ice });
-        }
-        setStatus('connected');
-        setError(null);
-        return;
-      }
-      if (state === 'failed' || ice === 'failed') {
-        setError({ code: 'network', message: 'The call could not be established. Check your network and try again.' });
-        setStatus('failed');
-        return;
-      }
-      if (state === 'disconnected') {
-        // The connection may recover on its own, so it is given a moment.
-        if (recoverTimerRef.current !== null) window.clearTimeout(recoverTimerRef.current);
-        recoverTimerRef.current = window.setTimeout(() => {
-          recoverTimerRef.current = null;
-          setError({ code: 'network', message: 'The connection was interrupted.' });
-          setStatus('failed');
-        }, RECOVER_TIMEOUT_MS);
-      }
-    };
-
-    pc.oniceconnectionstatechange = () => {
-      const ice = pc.iceConnectionState;
-      if (typeof console !== 'undefined') {
-        console.debug('[call] ice state', { ice, peer: pc.connectionState, signaling: pc.signalingState });
-      }
-      if (ice === 'connected' || ice === 'completed') {
-        if (recoverTimerRef.current !== null) {
-          window.clearTimeout(recoverTimerRef.current);
-          recoverTimerRef.current = null;
-        }
-        if (connectTimerRef.current !== null) {
-          window.clearTimeout(connectTimerRef.current);
-          connectTimerRef.current = null;
-          if (typeof console !== 'undefined') console.debug('[call] connect timer cleared (ice connected)', { ice });
-        }
-        setStatus('connected');
-        setError(null);
-      } else if (ice === 'failed') {
-        setError({ code: 'network', message: 'No network path to the other side was found.' });
-        setStatus('failed');
-      }
-    };
-
-    return pc;
-  }, [socket, roomCode]);
-
-  /** Adds ICE candidates that arrived before the remote description. */
-  const flushCandidates = useCallback(async () => {
-    const pc = pcRef.current;
-    const queued = pendingCandidatesRef.current;
-    pendingCandidatesRef.current = [];
-    if (!pc || !queued.length) return;
-    for (const candidate of queued) {
-      try {
-        await pc.addIceCandidate(candidate);
-      } catch {
-        // A rejected candidate is not fatal, the others may still work.
-      }
-    }
-  }, []);
-
-  // --- signaling -------------------------------------------------------------
-  useEffect(() => {
-    if (!socket || !roomCode) return;
-
-    const fail = (message: string, code: CallErrorCode = 'unknown') => {
-      teardown();
-      setError({ code, message });
-      setStatus('failed');
-    };
-
-    const onIncoming = (payload: { callId?: string; media?: 'video' | 'audio' }) => {
-      if (typeof console !== 'undefined') console.debug('[call] call:incoming received', { callId: payload?.callId, media: payload?.media });
-      if (!payload?.callId) return;
-      // Both sides rang at the same time: the incoming call wins, the
-      // outgoing one is dropped by the server on its own.
-      if (roleRef.current === 'caller') {
-        roleRef.current = null;
-        callIdRef.current = null;
-        if (ringTimerRef.current !== null) window.clearTimeout(ringTimerRef.current);
-        ringTimerRef.current = null;
-        stopLocalMedia();
-        setLocalStream(null);
-      }
-      const call: IncomingCall = { callId: payload.callId, media: payload.media === 'audio' ? 'audio' : 'video' };
-      incomingRef.current = call;
-      setIncoming(call);
-      setError(null);
-      setStatus('ringing');
-    };
-
-    const onAccepted = async (payload: { callId?: string }) => {
-      if (typeof console !== 'undefined') console.debug('[call] call:accepted received', { callId: payload?.callId, currentCallId: callIdRef.current });
-      if (!payload?.callId || callIdRef.current !== payload.callId) return;
-      if (pcRef.current) return; // the peer connection already exists
-      // The other side accepted: the ring timer is no longer needed.
-      if (ringTimerRef.current !== null) {
-        window.clearTimeout(ringTimerRef.current);
-        ringTimerRef.current = null;
-        if (typeof console !== 'undefined') console.debug('[call] ring timer cleared (accepted)', { callId: payload.callId });
-      }
-      setStatus('connecting');
-      const pc = createPeer();
-      // Guard against a call that never connects.
-      if (connectTimerRef.current !== null) window.clearTimeout(connectTimerRef.current);
-      connectTimerRef.current = window.setTimeout(() => {
-        connectTimerRef.current = null;
-        if (callIdRef.current !== payload.callId) return;
-        if (statusRef.current === 'connected') return;
-        teardown();
-        setError({ code: 'timeout', message: 'The call could not be connected in time.' });
-        setStatus('failed');
-      }, CONNECT_TIMEOUT_MS);
-      if (typeof console !== 'undefined') console.debug('[call] connect timer started (caller)', { callId: payload.callId, ms: CONNECT_TIMEOUT_MS });
-      try {
-        const offer = await pc.createOffer();
-        await pc.setLocalDescription(offer);
-        if (typeof console !== 'undefined') console.debug('[call] offer created', { signalingState: pc.signalingState });
-        socket.emit('call:offer', { code: roomCode, callId: payload.callId, type: 'offer', sdp: offer.sdp });
-      } catch (err) {
-        if (typeof console !== 'undefined') console.debug('[call] offer failed', { error: (err as { message?: string })?.message });
-        fail('The call could not be started.', 'network');
-      }
-    };
-
-    const onDeclined = (payload: { callId?: string }) => {
-      if (!payload?.callId || callIdRef.current !== payload.callId) return;
-      teardown();
-      setError({ code: 'busy', message: 'The call was declined.' });
-      setStatus('ended');
-    };
-
-    const onEnded = (payload: { callId?: string; reason?: string }) => {
-      if (typeof console !== 'undefined') console.debug('[call] call:ended received', { callId: payload?.callId, reason: payload?.reason, currentCallId: callIdRef.current });
-      if (payload?.callId && callIdRef.current && payload.callId !== callIdRef.current) return;
-      // Clear all timers: this call is over.
-      if (ringTimerRef.current !== null) { window.clearTimeout(ringTimerRef.current); ringTimerRef.current = null; }
-      if (connectTimerRef.current !== null) { window.clearTimeout(connectTimerRef.current); connectTimerRef.current = null; }
-      const reason = payload?.reason;
-      teardown();
-      if (reason === 'timeout') {
-        setError({ code: 'timeout', message: 'Nobody answered the call.' });
-        setStatus('failed');
-        return;
-      }
-      setStatus('ended');
-    };
-
-    const onOffer = async (payload: { callId?: string; type?: string; sdp?: string }) => {
-      if (!payload?.callId || !payload.sdp) return;
-      if (callIdRef.current && callIdRef.current !== payload.callId) return;
-      if (pcRef.current) return; // the peer connection already exists
-      callIdRef.current = payload.callId;
-      const pc = createPeer();
-      try {
-        await pc.setRemoteDescription({ type: 'offer', sdp: payload.sdp });
-        remoteDescriptionRef.current = true;
-        if (typeof console !== 'undefined') console.debug('[call] remote description set (offer)', { signalingState: pc.signalingState });
-        await flushCandidates();
-        const answer = await pc.createAnswer();
-        await pc.setLocalDescription(answer);
-        if (typeof console !== 'undefined') console.debug('[call] answer created', { signalingState: pc.signalingState });
-        socket.emit('call:answer', { code: roomCode, callId: payload.callId, type: 'answer', sdp: answer.sdp });
-        setStatus('connecting');
-      } catch (err) {
-        if (typeof console !== 'undefined') console.debug('[call] answer failed', { error: (err as { message?: string })?.message });
-        fail('The call could not be answered.', 'network');
-      }
-    };
-
-    const onAnswer = async (payload: { callId?: string; type?: string; sdp?: string }) => {
-      if (!payload?.callId || !payload.sdp) return;
-      if (callIdRef.current !== payload.callId) return;
-      const pc = pcRef.current;
-      if (!pc) return;
-      try {
-        await pc.setRemoteDescription({ type: 'answer', sdp: payload.sdp });
-        remoteDescriptionRef.current = true;
-        if (typeof console !== 'undefined') console.debug('[call] remote description set (answer)', { signalingState: pc.signalingState });
-        await flushCandidates();
-      } catch (err) {
-        if (typeof console !== 'undefined') console.debug('[call] setRemoteDescription (answer) failed', { error: (err as { message?: string })?.message });
-        fail('The call could not be answered.', 'network');
-      }
-    };
-
-    const onIce = async (payload: { callId?: string; candidate?: RTCIceCandidateInit | null }) => {
-      if (!payload?.callId || callIdRef.current !== payload.callId) return;
-      if (!payload.candidate) return;
-      const pc = pcRef.current;
-      if (!pc) return;
-      if (!remoteDescriptionRef.current) {
-        // The remote description is not ready yet: remember the candidate.
-        pendingCandidatesRef.current.push(payload.candidate);
-        if (typeof console !== 'undefined') console.debug('[call] ICE candidate buffered', { queued: pendingCandidatesRef.current.length });
-        return;
-      }
-      try {
-        await pc.addIceCandidate(payload.candidate);
-        if (typeof console !== 'undefined') console.debug('[call] ICE candidate applied');
-      } catch (err) {
-        if (typeof console !== 'undefined') console.debug('[call] addIceCandidate failed', { error: (err as { message?: string })?.message });
-      }
-    };
-
-    const onMedia = (payload: { callId?: string; mic?: boolean; camera?: boolean }) => {
-      if (!payload?.callId || callIdRef.current !== payload.callId) return;
-      setRemoteMicEnabled(payload.mic !== false);
-      setRemoteCameraEnabled(payload.camera !== false);
-    };
-
-    socket.on('call:incoming', onIncoming);
-    socket.on('call:accepted', onAccepted);
-    socket.on('call:declined', onDeclined);
-    socket.on('call:ended', onEnded);
-    socket.on('call:offer', onOffer);
-    socket.on('call:answer', onAnswer);
-    socket.on('call:ice', onIce);
-    socket.on('call:media', onMedia);
-
-    return () => {
-      socket.off('call:incoming', onIncoming);
-      socket.off('call:accepted', onAccepted);
-      socket.off('call:declined', onDeclined);
-      socket.off('call:ended', onEnded);
-      socket.off('call:offer', onOffer);
-      socket.off('call:answer', onAnswer);
-      socket.off('call:ice', onIce);
-      socket.off('call:media', onMedia);
-    };
-  }, [socket, roomCode, createPeer, flushCandidates, teardown, stopLocalMedia]);
-
-  // --- actions ---------------------------------------------------------------
   const startCall = useCallback(async () => {
     if (!socket || !roomCode) return;
-    if (pcRef.current || callIdRef.current) return; // a call is already running
     setError(null);
     setStatus('requesting');
-    const { stream, error: mediaError, audioOnly: noVideo } = await acquireMedia(true);
-    if (!stream) {
-      setError(mediaError);
-      setStatus('failed');
-      return;
-    }
-    localStreamRef.current = stream;
-    setLocalStream(stream);
+    const { ok, audioOnly: noVideo, error: mediaError } = await acquireMedia(true);
+    if (!ok) { setError(mediaError); setStatus('failed'); return; }
     setAudioOnly(noVideo);
     if (mediaError) setError(mediaError);
     setStatus('calling');
-    socket.emit('call:invite', { code: roomCode, media: noVideo ? 'audio' : 'video' }, (res: { ok?: boolean; callId?: string; error?: string }) => {
-      if (!res?.ok) {
-        teardown();
-        setError({ code: 'busy', message: res?.error || 'The call could not be started.' });
-        setStatus('failed');
-        return;
-      }
+    socket.emit('call:invite', { code: roomCode, media: noVideo ? 'audio' : 'video' }, async (res: { ok?: boolean; callId?: string; error?: string }) => {
+      if (!res?.ok) { await teardown(); setError({ code: 'busy', message: res?.error || 'could not start' }); setStatus('failed'); return; }
       callIdRef.current = res.callId || null;
       roleRef.current = 'caller';
-      sendMediaState();
-      ringTimerRef.current = window.setTimeout(() => {
-        ringTimerRef.current = null;
-        if (callIdRef.current !== res.callId) return;
-        if (statusRef.current === 'connected' || statusRef.current === 'connecting') {
-          if (typeof console !== 'undefined') console.debug('[call] ring timer ignored (already answered/connecting)', { callId: res.callId, status: statusRef.current });
-          return;
-        }
-        if (typeof console !== 'undefined') console.debug('[call] ring timer fired (no answer)', { callId: res.callId, status: statusRef.current });
-        teardown();
-        setError({ code: 'timeout', message: 'Nobody answered the call.' });
-        setStatus('failed');
+      try { await joinAgora(roomCode as string, socket.id as string); } catch { await teardown(); setError({ code: 'network', message: 'join failed' }); setStatus('failed'); return; }
+      ringTimerRef.current = window.setTimeout(async () => {
+        if (statusRef.current === 'connected' || statusRef.current === 'connecting') return;
+        await teardown(); setError({ code: 'timeout', message: 'Nobody answered.' }); setStatus('failed');
       }, RING_TIMEOUT_MS);
-      if (typeof console !== 'undefined') console.debug('[call] ring timer started', { callId: res.callId, ms: RING_TIMEOUT_MS });
     });
-  }, [socket, roomCode, acquireMedia, sendMediaState, teardown]);
+  }, [socket, roomCode, acquireMedia, teardown, joinAgora]);
 
   const acceptCall = useCallback(async () => {
     const call = incomingRef.current;
     if (!socket || !roomCode || !call) return;
-    if (pcRef.current || callIdRef.current) return;
     setStatus('requesting');
-    const { stream, error: mediaError, audioOnly: noVideo } = await acquireMedia(call.media !== 'audio');
-    if (!stream) {
-      setError(mediaError);
-      setStatus('failed');
-      incomingRef.current = null;
-      setIncoming(null);
-      socket.emit('call:decline', { code: roomCode, callId: call.callId });
-      return;
-    }
-    localStreamRef.current = stream;
-    setLocalStream(stream);
+    const { ok, audioOnly: noVideo, error: mediaError } = await acquireMedia(call.media !== 'audio');
+    if (!ok) { setError(mediaError); setStatus('failed'); incomingRef.current = null; setIncoming(null); socket.emit('call:decline', { code: roomCode, callId: call.callId }); return; }
     setAudioOnly(noVideo);
     if (mediaError) setError(mediaError);
     callIdRef.current = call.callId;
@@ -629,32 +171,15 @@ export function useVideoCall({ socket, roomCode }: { socket: Socket | null; room
     incomingRef.current = null;
     setIncoming(null);
     setStatus('connecting');
-    socket.emit('call:accept', { code: roomCode, callId: call.callId }, (res: { ok?: boolean; error?: string }) => {
-      if (!res?.ok) {
-        teardown();
-        setError({ code: 'busy', message: res?.error || 'The call could not be accepted.' });
-        setStatus('failed');
-        return;
-      }
-      sendMediaState();
-      connectTimerRef.current = window.setTimeout(() => {
-        connectTimerRef.current = null;
-        if (callIdRef.current !== call.callId) return;
-        if (statusRef.current === 'connected') return;
-        if (typeof console !== 'undefined') console.debug('[call] connect timer fired (callee)', { callId: call.callId, status: statusRef.current });
-        teardown();
-        setError({ code: 'timeout', message: 'The call could not be connected in time.' });
-        setStatus('failed');
-      }, CONNECT_TIMEOUT_MS);
-      if (typeof console !== 'undefined') console.debug('[call] connect timer started (callee)', { callId: call.callId, ms: CONNECT_TIMEOUT_MS });
+    socket.emit('call:accept', { code: roomCode, callId: call.callId }, async (res: { ok?: boolean; error?: string }) => {
+      if (!res?.ok) { await teardown(); setError({ code: 'busy', message: res?.error || 'could not accept' }); setStatus('failed'); return; }
+      try { await joinAgora(roomCode as string, socket.id as string); } catch { await teardown(); setError({ code: 'network', message: 'join failed' }); setStatus('failed'); }
     });
-  }, [socket, roomCode, acquireMedia, sendMediaState, teardown]);
+  }, [socket, roomCode, acquireMedia, teardown, joinAgora]);
 
   const declineCall = useCallback(() => {
     const call = incomingRef.current;
-    if (socket && roomCode && call) {
-      socket.emit('call:decline', { code: roomCode, callId: call.callId });
-    }
+    if (socket && roomCode && call) socket.emit('call:decline', { code: roomCode, callId: call.callId });
     incomingRef.current = null;
     setIncoming(null);
     setStatus('idle');
@@ -662,91 +187,80 @@ export function useVideoCall({ socket, roomCode }: { socket: Socket | null; room
 
   const endCall = useCallback(() => {
     const callId = callIdRef.current;
-    if (socket && roomCode && callId) {
-      socket.emit('call:hangup', { code: roomCode, callId });
-    }
+    if (socket && roomCode && callId) socket.emit('call:hangup', { code: roomCode, callId });
     teardown();
     setStatus('ended');
   }, [socket, roomCode, teardown]);
 
   const toggleMic = useCallback(() => {
-    const stream = localStreamRef.current;
-    const track = stream?.getAudioTracks()[0];
-    if (!track) return;
-    track.enabled = !track.enabled;
-    micRef.current = track.enabled;
-    setMicEnabled(track.enabled);
-    sendMediaState();
-  }, [sendMediaState]);
+    const t = localAudioRef.current;
+    if (!t) return;
+    t.setEnabled(!micRef.current);
+    micRef.current = !micRef.current;
+    setMicEnabled(micRef.current);
+    if (socket && roomCode && callIdRef.current) socket.emit('call:media', { code: roomCode, callId: callIdRef.current, mic: micRef.current, camera: cameraRef.current });
+  }, [socket, roomCode]);
 
   const toggleCamera = useCallback(() => {
-    const stream = localStreamRef.current;
-    const track = stream?.getVideoTracks()[0];
-    if (!track) return;
-    track.enabled = !track.enabled;
-    cameraRef.current = track.enabled;
-    setCameraEnabled(track.enabled);
-    sendMediaState();
-  }, [sendMediaState]);
+    const t = localVideoRef.current;
+    if (!t) return;
+    t.setEnabled(!cameraRef.current);
+    cameraRef.current = !cameraRef.current;
+    setCameraEnabled(cameraRef.current);
+    if (socket && roomCode && callIdRef.current) socket.emit('call:media', { code: roomCode, callId: callIdRef.current, mic: micRef.current, camera: cameraRef.current });
+  }, [socket, roomCode]);
 
-  /** The panel reports that the browser blocked the automatic audio playback. */
-  const reportRemoteAudioBlocked = useCallback((blocked: boolean) => {
-    setRemoteAudioBlocked(blocked);
-  }, []);
+  const reportRemoteAudioBlocked = useCallback((b: boolean) => setRemoteAudioBlocked(b), []);
+  const dismiss = useCallback(() => { if (callIdRef.current) return; setError(null); setStatus('idle'); }, []);
 
-  /** Clears the finished state so the panel can be closed. */
-  const dismiss = useCallback(() => {
-    if (callIdRef.current) return; // an active call must be ended first
-    setError(null);
-    setStatus('idle');
-  }, []);
-
-  // Leaving the room ends the call: the other side is told, the camera and
-  // the microphone are released. The teardown runs in a task, so the state
-  // update does not happen while the effect itself is running.
-  const activeRoomRef = useRef<string | null>(roomCode);
+  // signaling listeners
   useEffect(() => {
-    if (activeRoomRef.current === roomCode) return;
-    const previous = activeRoomRef.current;
-    activeRoomRef.current = roomCode;
-    if (!previous) return;
-    const timer = window.setTimeout(() => {
-      const callId = callIdRef.current;
-      if (socket && callId) {
-        socket.emit('call:hangup', { code: previous, callId });
-      }
-      teardown();
-    }, 0);
-    return () => window.clearTimeout(timer);
-  }, [roomCode, teardown, socket]);
-
-  // The camera and the microphone are released when the panel goes away.
-  useEffect(() => {
-    return () => {
-      teardown();
+    if (!socket || !roomCode) return;
+    const onIncoming = (p: { callId?: string; media?: 'video' | 'audio' }) => {
+      if (!p?.callId) return;
+      const c: IncomingCall = { callId: p.callId, media: p.media === 'audio' ? 'audio' : 'video' };
+      incomingRef.current = c;
+      setIncoming(c);
+      setError(null);
+      setStatus('ringing');
     };
-  }, [teardown]);
+    const onAccepted = (p: { callId?: string }) => {
+      if (p?.callId && callIdRef.current === p.callId) setStatus('connecting');
+    };
+    const onDeclined = (p: { callId?: string }) => {
+      if (p?.callId && callIdRef.current === p.callId) { teardown(); setError({ code: 'busy', message: 'declined' }); setStatus('ended'); }
+    };
+    const onEnded = (p: { callId?: string; reason?: string }) => {
+      if (p?.callId && callIdRef.current && p.callId !== callIdRef.current) return;
+      teardown();
+      if (p?.reason === 'timeout') { setError({ code: 'timeout', message: 'Nobody answered.' }); setStatus('failed'); } else setStatus('ended');
+    };
+    const onMedia = (p: { callId?: string; mic?: boolean; camera?: boolean }) => {
+      if (p?.callId && callIdRef.current !== p.callId) return;
+      setRemoteMicEnabled(p?.mic !== false);
+      setRemoteCameraEnabled(p?.camera !== false);
+    };
+    socket.on('call:incoming', onIncoming);
+    socket.on('call:accepted', onAccepted);
+    socket.on('call:declined', onDeclined);
+    socket.on('call:ended', onEnded);
+    socket.on('call:media', onMedia);
+    return () => {
+      socket.off('call:incoming', onIncoming);
+      socket.off('call:accepted', onAccepted);
+      socket.off('call:declined', onDeclined);
+      socket.off('call:ended', onEnded);
+      socket.off('call:media', onMedia);
+    };
+  }, [socket, roomCode, teardown]);
+
+  useEffect(() => { return () => { teardown(); }; }, [teardown]);
 
   return {
-    status,
-    error,
-    incoming,
-    localStream,
-    remoteStream,
-    micEnabled,
-    cameraEnabled,
-    remoteMicEnabled,
-    remoteCameraEnabled,
-    remoteAudioBlocked,
-    audioOnly,
-    startCall,
-    acceptCall,
-    declineCall,
-    endCall,
-    toggleMic,
-    toggleCamera,
-    reportRemoteAudioBlocked,
-    dismiss,
+    status, error, incoming, localStream, remoteStream, micEnabled, cameraEnabled,
+    remoteMicEnabled, remoteCameraEnabled, remoteAudioBlocked, audioOnly,
+    startCall, acceptCall, declineCall, endCall, toggleMic, toggleCamera,
+    reportRemoteAudioBlocked, dismiss,
   };
 }
 

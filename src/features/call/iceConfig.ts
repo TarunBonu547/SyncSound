@@ -41,10 +41,10 @@ function readUrls(value: unknown): string[] {
  * The ICE servers for this deployment. An invalid or missing configuration
  * falls back to the public STUN servers instead of failing the call.
  */
-export function iceServers(): IceServer[] {
+export function iceServers(env: Record<string, unknown> = (import.meta as { env?: Record<string, unknown> }).env || {}): IceServer[] {
   const servers: IceServer[] = [];
 
-  const raw = import.meta.env.VITE_ICE_SERVERS;
+  const raw = env.VITE_ICE_SERVERS;
   if (typeof raw === 'string' && raw.trim()) {
     try {
       const parsed = JSON.parse(raw);
@@ -66,11 +66,11 @@ export function iceServers(): IceServer[] {
     }
   }
 
-  const turnUrl = import.meta.env.VITE_TURN_URL;
+  const turnUrl = env.VITE_TURN_URL;
   if (typeof turnUrl === 'string' && turnUrl && !servers.some((s) => JSON.stringify(s.urls).includes('turn:'))) {
     const server: IceServer = { urls: turnUrl };
-    const username = import.meta.env.VITE_TURN_USERNAME;
-    const credential = import.meta.env.VITE_TURN_CREDENTIAL;
+    const username = env.VITE_TURN_USERNAME;
+    const credential = env.VITE_TURN_CREDENTIAL;
     if (typeof username === 'string' && username) server.username = username;
     if (typeof credential === 'string' && credential) server.credential = credential;
     servers.push(server);
@@ -80,6 +80,6 @@ export function iceServers(): IceServer[] {
 }
 
 /** True when the deployment has a TURN server configured. */
-export function hasTurnServer(): boolean {
-  return iceServers().some((server) => JSON.stringify(server.urls).includes('turn:'));
+export function hasTurnServer(env: Record<string, unknown> = (import.meta as { env?: Record<string, unknown> }).env || {}): boolean {
+  return iceServers(env).some((server) => JSON.stringify(server.urls).includes('turn:'));
 }
