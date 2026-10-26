@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react';
-import { Play, Plus, Search, Loader2, Link2, Heart } from 'lucide-react';
+import { Play, Plus, Search, Loader2, Link2, Heart, Send, X } from 'lucide-react';
 import { extractVideoId } from '../../hooks/useYouTubePlayer';
 import { formatDuration } from '../../utils/youtubeSearch';
 import type { SearchResult } from '../../utils/youtubeSearch';
@@ -55,8 +55,12 @@ export default function AddToQueueForm({
   const [busy, setBusy] = useState(false);
   /** Dedication drafts for search results, keyed by video id. */
   const [dedicationDrafts, setDedicationDrafts] = useState<Record<string, string>>({});
+  /** Track ids whose dedication editor is currently open. */
+  const [editingTrackIds, setEditingTrackIds] = useState<Set<string>>(new Set());
   /** Dedication draft for a pasted YouTube link. */
   const [pastedDedication, setPastedDedication] = useState('');
+  /** True when the pasted-link dedication editor is open. */
+  const [isPastedDedicationEditing, setIsPastedDedicationEditing] = useState(false);
 
   /** Sends the track to the room and reports what the server said. */
   const send = useCallback(
@@ -86,6 +90,40 @@ export default function AddToQueueForm({
   const dedicationFor = (track: SearchResult) => dedicationDrafts[track.id] || '';
   const setDedicationFor = (track: SearchResult, value: string) => {
     setDedicationDrafts((prev) => ({ ...prev, [track.id]: value }));
+  };
+  const isEditing = (track: SearchResult) => editingTrackIds.has(track.id);
+
+  const toggleDedicationEditing = (track: SearchResult) => {
+    if (isEditing(track)) {
+      setEditingTrackIds((prev) => {
+        const next = new Set(prev);
+        next.delete(track.id);
+        return next;
+      });
+    } else {
+      setEditingTrackIds((prev) => {
+        const next = new Set(prev);
+        next.add(track.id);
+        return next;
+      });
+    }
+  };
+
+  const saveDedicationFor = (track: SearchResult) => {
+    setEditingTrackIds((prev) => {
+      const next = new Set(prev);
+      next.delete(track.id);
+      return next;
+    });
+  };
+
+  const cancelDedicationFor = (track: SearchResult) => {
+    setDedicationFor(track, '');
+    setEditingTrackIds((prev) => {
+      const next = new Set(prev);
+      next.delete(track.id);
+      return next;
+    });
   };
 
   return (
@@ -146,13 +184,18 @@ export default function AddToQueueForm({
             <button
               type="button"
               className="dedication-toggle"
-              onClick={() => setPastedDedication((d) => (d ? '' : ''))}
-              aria-expanded={Boolean(pastedDedication)}
+              onClick={() => {
+                setIsPastedDedicationEditing((prev) => !prev);
+                if (!isPastedDedicationEditing) setPastedDedication('');
+              }}
+              aria-expanded={isPastedDedicationEditing}
             >
               <Heart size={14} aria-hidden="true" />
-              <span>{pastedDedication ? 'Edit note' : 'Add a note ❤️'}</span>
+              <span>
+                {isPastedDedicationEditing ? 'Cancel note' : 'Add a note ❤️'}
+              </span>
             </button>
-            {pastedDedication && (
+            {isPastedDedicationEditing && (
               <div className="dedication-editor">
                 <textarea
                   className="input dedication-textarea"
@@ -166,6 +209,27 @@ export default function AddToQueueForm({
                 <span className="dedication-counter">
                   {pastedDedication.length} / {MAX_DEDICATION_LENGTH}
                 </span>
+                <div className="dedication-editor-actions">
+                  <button
+                    type="button"
+                    className="btn icon sm"
+                    onClick={() => {
+                      setPastedDedication('');
+                      setIsPastedDedicationEditing(false);
+                    }}
+                    aria-label="Cancel note"
+                  >
+                    <X size={14} aria-hidden="true" />
+                  </button>
+                  <button
+                    type="button"
+                    className="btn icon sm primary"
+                    onClick={() => setIsPastedDedicationEditing(false)}
+                    aria-label="Save note"
+                  >
+                    <Send size={14} aria-hidden="true" />
+                  </button>
+                </div>
               </div>
             )}
           </div>
@@ -186,7 +250,6 @@ export default function AddToQueueForm({
       {results.length > 0 && (
         <ul className="queue-list" style={{ marginTop: 12 }}>
           {results.map((track) => {
-            const hasDraft = Boolean(dedicationDrafts[track.id]);
             return (
               <li className="queue-row" key={track.id}>
                 <img className="queue-thumb" src={track.thumbnail} alt="" />
@@ -201,17 +264,15 @@ export default function AddToQueueForm({
                   <button
                     type="button"
                     className="dedication-toggle"
-                    onClick={() =>
-                      setDedicationFor(track, hasDraft ? '' : dedicationDrafts[track.id] || '')
-                    }
-                    aria-expanded={hasDraft}
-                    title={hasDraft ? 'Remove note' : 'Add a note'}
+                    onClick={() => toggleDedicationEditing(track)}
+                    aria-expanded={isEditing(track)}
+                    title={isEditing(track) ? 'Cancel note' : 'Add a note'}
                     aria-label={`Add a note to ${track.title}`}
                   >
                     <Heart size={14} aria-hidden="true" />
-                    <span>{hasDraft ? 'Note added' : 'Add a note ❤️'}</span>
+                    <span>{isEditing(track) ? 'Cancel note' : 'Add a note ❤️'}</span>
                   </button>
-                  {hasDraft && (
+                  {isEditing(track) && (
                     <div className="dedication-editor">
                       <textarea
                         className="input dedication-textarea"
@@ -225,6 +286,24 @@ export default function AddToQueueForm({
                       <span className="dedication-counter">
                         {dedicationFor(track).length} / {MAX_DEDICATION_LENGTH}
                       </span>
+                      <div className="dedication-editor-actions">
+                        <button
+                          type="button"
+                          className="btn icon sm"
+                          onClick={() => cancelDedicationFor(track)}
+                          aria-label="Cancel note"
+                        >
+                          <X size={14} aria-hidden="true" />
+                        </button>
+                        <button
+                          type="button"
+                          className="btn icon sm primary"
+                          onClick={() => saveDedicationFor(track)}
+                          aria-label="Save note"
+                        >
+                          <Send size={14} aria-hidden="true" />
+                        </button>
+                      </div>
                     </div>
                   )}
                   <button
