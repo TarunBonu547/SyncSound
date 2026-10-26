@@ -55,6 +55,14 @@
   --reply-rose-wash: rgba(217, 154, 167, 0.14);
   --reply-lavender-wash: rgba(184, 172, 222, 0.14);
 
+  /* --- Icon system ------------------------------------------------------ */
+  --icon-size-xs: 14px;
+  --icon-size-sm: 16px;
+  --icon-size-md: 18px;
+  --icon-size-lg: 20px;
+  --icon-size-xl: 24px;
+  --icon-stroke-width: 2px;
+
   /* --- Typography ------------------------------------------------------- */
   --font-sans: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
 
@@ -268,6 +276,41 @@ img {
 .btn.icon.sm {
   width: 32px;
   min-height: 32px;
+}
+
+/* --- Shared icon system ------------------------------------------------- */
+/* Consistent stroke weight and alignment for every lucide icon used inside
+   buttons and interactive elements. Size is controlled by each icon's `size`
+   prop so individual components can vary scale. Color and disabled states
+   are inherited from the parent automatically. */
+.btn svg,
+[class*="-icon"] svg,
+.chat-reply-btn svg,
+.chat-reply-cancel svg {
+  stroke-width: var(--icon-stroke-width);
+  vector-effect: non-scaling-stroke;
+  flex: none;
+  display: block;
+}
+
+/* Icons inside buttons that also carry a label stay vertically centered. */
+.btn svg {
+  margin-inline-end: 6px;
+}
+
+.btn.icon svg,
+.btn.icon.sm svg {
+  margin-inline-end: 0;
+}
+
+/* Larger default for primary playback controls. */
+.play-btn svg,
+.music-icon-btn.primary svg,
+.mini-player-play svg {
+  width: var(--icon-size-xl);
+  height: var(--icon-size-xl);
+  min-width: var(--icon-size-xl);
+  min-height: var(--icon-size-xl);
 }
 
 .btn.sm {

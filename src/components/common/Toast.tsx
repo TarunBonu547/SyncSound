@@ -12,8 +12,8 @@ export default function Toast({ message, tone = 'info', onDismiss }: ToastProps)
   return (
     <div className={`toast toast-${tone}`} role="status" aria-live="polite">
       <span className="toast-message">{message}</span>
-      <button className="btn icon sm toast-dismiss" onClick={onDismiss} title="Dismiss" aria-label="Dismiss">
-        <X size={14} />
+      <button className="btn icon toast-dismiss" onClick={onDismiss} title="Dismiss" aria-label="Dismiss">
+        <X size={18} />
       </button>
     </div>
   );

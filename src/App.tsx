@@ -817,7 +817,7 @@ export default function App() {
               title="Open the chat"
               aria-label="Open the chat"
             >
-              <MessageCircle size={16} aria-hidden="true" />
+              <MessageCircle size={20} aria-hidden="true" />
               <span>Chat</span>
             </button>
             <span
@@ -953,7 +953,7 @@ export default function App() {
                 title="Open the menu"
                 aria-label="Open the menu"
               >
-                <Menu size={18} aria-hidden="true" />
+                <Menu size={20} aria-hidden="true" />
               </button>
               <button className="wordmark-btn" onClick={goHome} title="SyncSound home" aria-label="SyncSound home">
                 <span className="wordmark">
@@ -1050,7 +1050,7 @@ export default function App() {
               <span className="room-return-text">Room {room.roomCode}</span>
               <span className="room-return-note"> keeps playing</span>
               <span className="room-return-action">Back to the room</span>
-              <ArrowLeft size={15} className="room-return-icon" aria-hidden="true" />
+              <ArrowLeft size={18} className="room-return-icon" aria-hidden="true" />
             </button>
           )}
         </div>
@@ -1102,7 +1102,7 @@ export default function App() {
                 Close
               </button>
               <button className="btn danger" onClick={() => { if (window.confirm("Leave this room?")) leaveRoom(); }}>
-                <LogOut size={15} aria-hidden="true" /> Leave room
+                <LogOut size={18} aria-hidden="true" /> Leave room
               </button>
             </div>
           </div>
@@ -1136,7 +1136,7 @@ export default function App() {
                   }
                 }}
               >
-                <Copy size={15} aria-hidden="true" /> Copy link
+                <Copy size={18} aria-hidden="true" /> Copy link
               </button>
             </div>
           </div>
@@ -1159,12 +1159,12 @@ export default function App() {
                 <em>Sync</em>Sound
               </span>
               <button
-                className="btn icon sm"
+                className="btn icon"
                 onClick={() => setMobileNav(false)}
                 title="Close the menu"
                 aria-label="Close the menu"
               >
-                <X size={15} aria-hidden="true" />
+                <X size={20} aria-hidden="true" />
               </button>
             </div>
             <div className="side-section">
@@ -1219,7 +1219,7 @@ export default function App() {
             </div>
             {room.roomCode && (
               <button className="side-link" onClick={leaveRoom}>
-                <LogOut size={17} aria-hidden="true" /> Leave room
+                <LogOut size={18} aria-hidden="true" /> Leave room
               </button>
             )}
           </div>

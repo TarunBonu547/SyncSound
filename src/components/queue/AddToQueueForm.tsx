@@ -88,7 +88,7 @@ export default function AddToQueueForm({
 
       <div className="queue-form">
         <span className="search-icon" aria-hidden="true">
-          <Search size={15} />
+          <Search size={16} />
         </span>
         <input
           className="input"
@@ -105,7 +105,7 @@ export default function AddToQueueForm({
           }}
         />
         <button className="btn" onClick={() => runSearch()} disabled={searching}>
-          {searching ? <Loader2 size={15} className="spin" /> : null}
+          {searching ? <Loader2 size={16} className="spin" /> : null}
           {searching ? 'Searching…' : 'Search'}
         </button>
         <button
@@ -121,7 +121,7 @@ export default function AddToQueueForm({
           disabled={!pastedId || !inRoom}
           title={inRoom ? 'Play the pasted link for everybody' : 'Join a room first'}
         >
-          <Link2 size={15} aria-hidden="true" /> Load
+          <Link2 size={16} aria-hidden="true" /> Load
         </button>
         <button className="btn primary" onClick={addQueue} disabled={adding || !inRoom}>
           {adding ? 'Adding…' : 'Add to Queue'}
@@ -191,7 +191,7 @@ export default function AddToQueueForm({
           onClick={() => runSearch(nextPageToken)}
           disabled={searching}
         >
-          {searching ? <Loader2 size={14} className="spin" /> : null} Load more
+          {searching ? <Loader2 size={16} className="spin" /> : null} Load more
         </button>
       )}
     </section>

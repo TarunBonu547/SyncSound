@@ -199,7 +199,7 @@ export default function SearchView({ inRoom, onAddToQueue, onPlayNow, onGoHome }
 
       {loading && (
         <p className="search-state" role="status">
-          <Loader2 size={15} className="spin" /> Searching YouTube…
+          <Loader2 size={16} className="spin" /> Searching YouTube…
         </p>
       )}
 
@@ -237,7 +237,7 @@ export default function SearchView({ inRoom, onAddToQueue, onPlayNow, onGoHome }
               title={inRoom ? 'Add to the shared queue' : 'Join a room first'}
               aria-label={`Add ${results[0].title} to the queue`}
             >
-              <Plus size={15} /> Queue
+              <Plus size={16} /> Queue
             </button>
             <button
               className="btn primary sm"
@@ -246,7 +246,7 @@ export default function SearchView({ inRoom, onAddToQueue, onPlayNow, onGoHome }
               title={inRoom ? 'Play for everybody now' : 'Join a room first'}
               aria-label={`Play ${results[0].title} now`}
             >
-              <Play size={15} /> Play
+              <Play size={16} /> Play
             </button>
           </div>
         </div>
@@ -273,7 +273,7 @@ export default function SearchView({ inRoom, onAddToQueue, onPlayNow, onGoHome }
                     title={inRoom ? 'Add to the shared queue' : 'Join a room first'}
                     aria-label={`Add ${track.title} to the queue`}
                   >
-                    <Plus size={14} />
+                    <Plus size={16} />
                   </button>
                   <button
                     className="btn icon sm primary"
@@ -282,7 +282,7 @@ export default function SearchView({ inRoom, onAddToQueue, onPlayNow, onGoHome }
                     title={inRoom ? 'Play for everybody now' : 'Join a room first'}
                     aria-label={`Play ${track.title} now`}
                   >
-                    <Play size={14} />
+                    <Play size={16} />
                   </button>
                 </div>
               </li>
@@ -291,7 +291,7 @@ export default function SearchView({ inRoom, onAddToQueue, onPlayNow, onGoHome }
 
           {nextPageToken && (
             <button className="btn soft" onClick={loadMore} disabled={loadingMore} style={{ marginTop: 12 }}>
-              {loadingMore ? <Loader2 size={14} className="spin" /> : null}
+              {loadingMore ? <Loader2 size={16} className="spin" /> : null}
               {loadingMore ? 'Loading…' : 'Load more'}
             </button>
           )}
@@ -302,7 +302,7 @@ export default function SearchView({ inRoom, onAddToQueue, onPlayNow, onGoHome }
         <p className="hint search-room-hint">
           A room is needed to add a track to a queue.
           <button className="link-button" onClick={onGoHome}>
-            Create or join a room <ArrowRight size={13} />
+            Create or join a room <ArrowRight size={16} />
           </button>
         </p>
       )}

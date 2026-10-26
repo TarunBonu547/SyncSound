@@ -177,7 +177,7 @@ export default function MainPlayer({
           {needsGesture && !failed && (
             <div className="stage-overlay" role="status">
               <button className="btn primary" onClick={onRequestPlay}>
-                <Play size={15} aria-hidden="true" /> Play the video
+                <Play size={16} aria-hidden="true" /> Play the video
               </button>
               <span className="stage-overlay-hint">
                 The browser blocked the automatic start. One click and the room
@@ -231,19 +231,19 @@ export default function MainPlayer({
       <div className="quick-actions">
         <button className="quick-action" onClick={onInvite} title="Invite a friend to this room">
           <span className="qa-icon qa-icon-mint" aria-hidden="true">
-            <UserPlus size={17} />
+            <UserPlus size={18} />
           </span>
           <span>Invite Friend</span>
         </button>
         <button className="quick-action" onClick={onVideoCall} title="Start a video call">
           <span className="qa-icon qa-icon-lavender" aria-hidden="true">
-            <Video size={17} />
+            <Video size={18} />
           </span>
           <span>Video Call</span>
         </button>
         <button className="quick-action" onClick={onFocusQueueInput} title="Search for a song">
           <span className="qa-icon qa-icon-butter" aria-hidden="true">
-            <Plus size={17} />
+            <Plus size={18} />
           </span>
           <span>Add Song</span>
         </button>

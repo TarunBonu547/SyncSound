@@ -117,7 +117,7 @@ export default function CreateRoom({
           <div className="copy-row">
             <input className="input room-code" readOnly value={room.code} />
             <button className="btn" onClick={() => copy(room.code, 'code')}>
-              {copied === 'code' ? <Check size={14} /> : <Copy size={14} />} {copied === 'code' ? 'Copied' : 'Copy'}
+              {copied === 'code' ? <Check size={16} /> : <Copy size={16} />} {copied === 'code' ? 'Copied' : 'Copy'}
             </button>
           </div>
 
@@ -127,7 +127,7 @@ export default function CreateRoom({
           <div className="copy-row">
             <input className="input" readOnly value={room.link} />
             <button className="btn" onClick={() => copy(room.link, 'link')}>
-              {copied === 'link' ? <Check size={14} /> : <Copy size={14} />} {copied === 'link' ? 'Copied' : 'Copy'}
+              {copied === 'link' ? <Check size={16} /> : <Copy size={16} />} {copied === 'link' ? 'Copied' : 'Copy'}
             </button>
           </div>
         </div>

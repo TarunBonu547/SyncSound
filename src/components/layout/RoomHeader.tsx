@@ -72,11 +72,11 @@ export default function RoomHeader({
             {members.length > 5 && <span className="room-avatar is-more">+{members.length - 5}</span>}
           </div>
           <button className="btn" onClick={onCopyInvite} title="Copy the invite link">
-            {linkCopied ? <Check size={15} /> : <Copy size={15} />}
+            {linkCopied ? <Check size={16} /> : <Copy size={16} />}
             {linkCopied ? 'Link copied' : 'Invite'}
           </button>
           <button className="btn primary" onClick={onVideoCall} title="Start a video call">
-            <Video size={15} aria-hidden="true" />
+            <Video size={16} aria-hidden="true" />
             <span>Video Call</span>
           </button>
         </div>

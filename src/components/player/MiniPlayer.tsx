@@ -67,7 +67,7 @@ export default function MiniPlayer({
           title="Previous track"
           aria-label="Play the previous track"
         >
-          <SkipBack size={15} />
+          <SkipBack size={16} />
         </button>
         <button
           className="btn icon mini-player-play"
@@ -76,7 +76,7 @@ export default function MiniPlayer({
           aria-label={playing ? 'Pause' : 'Play'}
           title={playing ? 'Pause' : 'Play'}
         >
-          {playing ? <Pause size={16} /> : <Play size={16} />}
+          {playing ? <Pause size={18} /> : <Play size={18} />}
         </button>
         <button
           className="btn icon sm"
@@ -85,7 +85,7 @@ export default function MiniPlayer({
           title="Next track"
           aria-label="Play the next track"
         >
-          <SkipForward size={15} />
+          <SkipForward size={16} />
         </button>
       </div>
 
@@ -108,7 +108,7 @@ export default function MiniPlayer({
       </div>
 
       <button className="mini-player-open" onClick={onOpenPlayer} title="Open the player" aria-label="Open the player">
-        <Maximize2 size={14} aria-hidden="true" />
+        <Maximize2 size={16} aria-hidden="true" />
         <span>Open player</span>
       </button>
     </div>

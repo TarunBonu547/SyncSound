@@ -104,13 +104,13 @@ export default function ChatPanel({
               live={inRoom}
             />
             <span className="room-member-count">
-              <Users size={13} aria-hidden="true" />
+              <Users size={14} aria-hidden="true" />
               {count} {count === 1 ? 'listener' : 'listeners'}
             </span>
           </div>
         </div>
         {onClose && (
-          <button className="btn icon sm chat-drawer-close" onClick={onClose} title="Close the chat" aria-label="Close the chat">
+          <button className="btn icon chat-drawer-close" onClick={onClose} title="Close the chat" aria-label="Close the chat">
             <span aria-hidden="true">×</span>
           </button>
         )}
@@ -188,7 +188,7 @@ export default function ChatPanel({
                       aria-label={`Reply to ${m.userName}`}
                       aria-controls={`msg-${m.id}`}
                     >
-                      <Reply size={14} aria-hidden="true" />
+                      <Reply size={16} aria-hidden="true" />
                       <span className="sr-only">Reply</span>
                     </button>
                   </div>
@@ -230,7 +230,7 @@ export default function ChatPanel({
             title="Cancel reply"
             aria-label="Cancel reply"
           >
-            <X size={15} aria-hidden="true" />
+            <X size={18} aria-hidden="true" />
             <span className="sr-only">Cancel reply</span>
           </button>
           <div className="chat-reply-info">
@@ -274,7 +274,7 @@ export default function ChatPanel({
           title="Send message"
           aria-label="Send message"
         >
-          <Send size={15} />
+          <Send size={18} />
         </button>
       </form>
     </section>

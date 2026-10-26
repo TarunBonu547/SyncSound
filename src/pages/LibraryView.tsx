@@ -143,7 +143,7 @@ export default function LibraryView({
                       title="Remove from liked songs"
                       aria-label={`Remove ${track.title} from liked songs`}
                     >
-                      <Heart size={14} fill="currentColor" />
+                      <Heart size={16} fill="currentColor" />
                     </button>
                   )}
                   <button
@@ -153,7 +153,7 @@ export default function LibraryView({
                     title={inRoom ? 'Play in the room' : 'Join a room first'}
                     aria-label={`Play ${track.title}`}
                   >
-                    <Play size={14} />
+                    <Play size={16} />
                   </button>
                 </div>
               </li>
@@ -169,7 +169,7 @@ export default function LibraryView({
 
         {section !== 'playlists' && !inRoom && (
           <p className="hint library-hint">
-            <Sparkles size={13} /> Join a room to play these tracks for everybody.
+            <Sparkles size={14} /> Join a room to play these tracks for everybody.
           </p>
         )}
       </div>

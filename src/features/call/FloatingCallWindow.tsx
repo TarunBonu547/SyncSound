@@ -397,10 +397,10 @@ export default function FloatingCallWindow({
           <span className="banner-dot" aria-hidden="true" />
           <span>Incoming {incoming.media === 'audio' ? 'audio' : 'video'} call.</span>
           <button className="btn" onClick={declineCall}>
-            <PhoneOff size={15} aria-hidden="true" /> Decline
+            <PhoneOff size={18} aria-hidden="true" /> Decline
           </button>
           <button className="btn primary" onClick={acceptCall}>
-            <Phone size={15} aria-hidden="true" /> Accept
+            <Phone size={18} aria-hidden="true" /> Accept
           </button>
         </div>
       );
@@ -439,10 +439,10 @@ export default function FloatingCallWindow({
           role="presentation"
         >
           <span className="floating-call-grip" aria-hidden="true">
-            <GripHorizontal size={14} />
+            <GripHorizontal size={16} />
           </span>
           <span className="floating-call-mark" aria-hidden="true">
-            <Video size={15} />
+            <Video size={18} />
           </span>
           <div className="floating-call-head-text">
             <p className="floating-call-title">Video Call</p>
@@ -451,15 +451,15 @@ export default function FloatingCallWindow({
         </div>
         <div className="floating-call-buttons">
           <button
-            className="btn icon sm"
+            className="btn icon"
             onClick={() => setMinimized((m) => !m)}
             title={minimized ? 'Restore the window' : 'Minimize the window'}
             aria-label={minimized ? 'Restore the window' : 'Minimize the window'}
           >
-            {minimized ? <Maximize size={14} aria-hidden="true" /> : <Minimize size={14} aria-hidden="true" />}
+            {minimized ? <Maximize size={16} aria-hidden="true" /> : <Minimize size={16} aria-hidden="true" />}
           </button>
-          <button className="btn icon sm" onClick={close} title="Close the window" aria-label="Close the window">
-            <X size={14} aria-hidden="true" />
+          <button className="btn icon" onClick={close} title="Close the window" aria-label="Close the window">
+            <X size={18} aria-hidden="true" />
           </button>
         </div>
       </div>
@@ -481,7 +481,7 @@ export default function FloatingCallWindow({
               keeps playing while you talk.
             </p>
             <button className="btn primary" onClick={startCall} disabled={!roomCode}>
-              <Phone size={15} aria-hidden="true" /> Start call
+              <Phone size={18} aria-hidden="true" /> Start call
             </button>
           </div>
         )}
@@ -498,7 +498,7 @@ export default function FloatingCallWindow({
             <Loader2 size={22} className="call-spinner" />
             <p className="call-hint">Waiting for the other person to pick up.</p>
             <button className="btn" onClick={endCall}>
-              <PhoneOff size={16} aria-hidden="true" /> Cancel
+              <PhoneOff size={18} aria-hidden="true" /> Cancel
             </button>
           </div>
         )}
@@ -511,10 +511,10 @@ export default function FloatingCallWindow({
             <p className="call-hint">Incoming {incoming?.media === 'audio' ? 'audio' : 'video'} call.</p>
             <div className="call-action-row">
               <button className="btn" onClick={declineCall}>
-                <PhoneOff size={16} aria-hidden="true" /> Decline
+                <PhoneOff size={18} aria-hidden="true" /> Decline
               </button>
               <button className="btn primary" onClick={acceptCall}>
-                <Phone size={16} aria-hidden="true" /> Accept
+                <Phone size={18} aria-hidden="true" /> Accept
               </button>
             </div>
           </div>
@@ -539,7 +539,7 @@ export default function FloatingCallWindow({
               )}
               {!remoteMicEnabled && (
                 <span className="call-remote-muted" title="The microphone is muted">
-                  <MicOff size={14} aria-hidden="true" />
+                  <MicOff size={16} aria-hidden="true" />
                 </span>
               )}
               {localStream && (
@@ -556,7 +556,7 @@ export default function FloatingCallWindow({
 
             {remoteAudioBlocked && (
               <button className="call-audio-nudge" onClick={resumeAudio}>
-                <Volume2 size={15} aria-hidden="true" /> Tap to hear the other person
+                <Volume2 size={18} aria-hidden="true" /> Tap to hear the other person
               </button>
             )}
 
@@ -568,7 +568,7 @@ export default function FloatingCallWindow({
                 aria-label={micEnabled ? 'Mute the microphone' : 'Unmute the microphone'}
                 aria-pressed={!micEnabled}
               >
-                {micEnabled ? <Mic size={17} aria-hidden="true" /> : <MicOff size={17} aria-hidden="true" />}
+                {micEnabled ? <Mic size={20} aria-hidden="true" /> : <MicOff size={20} aria-hidden="true" />}
               </button>
               <button
                 className={`btn icon call-control ${cameraEnabled ? '' : 'is-off'}`}
@@ -577,7 +577,7 @@ export default function FloatingCallWindow({
                 aria-label={cameraEnabled ? 'Turn the camera off' : 'Turn the camera on'}
                 aria-pressed={!cameraEnabled}
               >
-                {cameraEnabled ? <Video size={17} aria-hidden="true" /> : <VideoOff size={17} aria-hidden="true" />}
+                {cameraEnabled ? <Video size={20} aria-hidden="true" /> : <VideoOff size={20} aria-hidden="true" />}
               </button>
               <button
                 className="btn icon call-control is-hangup"
@@ -585,7 +585,7 @@ export default function FloatingCallWindow({
                 title="End the call"
                 aria-label="End the call"
               >
-                <PhoneOff size={17} aria-hidden="true" />
+                <PhoneOff size={20} aria-hidden="true" />
               </button>
             </div>
           </div>
@@ -599,7 +599,7 @@ export default function FloatingCallWindow({
             <div className="call-action-row">
               {status === 'failed' && (
                 <button className="btn primary" onClick={startCall} disabled={busy}>
-                  <Phone size={16} aria-hidden="true" /> Try again
+                  <Phone size={18} aria-hidden="true" /> Try again
                 </button>
               )}
               <button className="btn" onClick={close}>
