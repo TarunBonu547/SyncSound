@@ -17,7 +17,7 @@ export default function ReactionPicker({ onReaction, sending }: ReactionPickerPr
   const handleReaction = useCallback(
     (emoji: string) => {
       setPressed(emoji);
-      setTimeout(() => setPressed(null), 400);
+      setTimeout(() => setPressed(null), 300);
       onReaction(emoji);
     },
     [onReaction],

@@ -254,6 +254,11 @@ export default function MainPlayer({
         />
       )}
 
+      <ReactionPicker
+        onReaction={onSendReaction}
+        sending={reactionSending}
+      />
+
       <div className="scrubber">
         <input
           type="range"
@@ -284,11 +289,6 @@ export default function MainPlayer({
         isLiked={isLiked}
         hasPrevious={hasPrevious}
         hasNext={hasNext}
-      />
-
-      <ReactionPicker
-        onReaction={onSendReaction}
-        sending={reactionSending}
       />
 
       <div className="quick-actions">

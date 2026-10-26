@@ -2770,6 +2770,9 @@
 
 /* --- Live song reactions -------------------------------------------------- */
 
+/* Overlay layer that floats reactions directly over the YouTube player.
+   It sits above the artwork/video but below the seek bar and controls so it
+   never intercepts playback interaction. */
 .reaction-stage {
   position: absolute;
   inset: 0;
@@ -2778,78 +2781,81 @@
   flex-direction: column;
   align-items: center;
   justify-content: flex-start;
-  padding-top: 60px;
-  gap: 10px;
+  padding-top: 70px;
   overflow: hidden;
+  z-index: 3;
 }
 
-.reaction-emoji-group {
+/* One floating reaction instance: large emoji that drifts up and fades out. */
+.reaction-float {
+  position: absolute;
   display: flex;
   align-items: center;
-  gap: 6px;
-  animation: reaction-float var(--t-base) var(--ease-out);
+  justify-content: center;
+  animation: reaction-rise var(--t-base) var(--ease-out) both;
+  will-change: transform, opacity;
 }
 
-.reaction-emoji-count {
-  font-size: 20px;
+.reaction-float-emoji {
+  font-size: 40px;
   line-height: 1;
+  display: block;
+  filter: drop-shadow(0 2px 4px rgba(48, 43, 66, 0.25));
 }
 
-.reaction-bubble {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 6px 10px;
-  border-radius: var(--r-pill);
-  background: var(--surface-strong);
-  border: 1px solid var(--border);
-  color: var(--text);
-  box-shadow: var(--shadow-md);
-  animation: reaction-pop var(--t-fast) var(--ease-out), reaction-fade var(--t-base) var(--ease-soft) 3s forwards;
+/* Self reactions are slightly brighter. */
+.reaction-float-self .reaction-float-emoji {
+  filter: drop-shadow(0 2px 6px rgba(245, 138, 99, 0.45));
 }
 
-.reaction-bubble.emoji { animation: none; }
-
-.reaction-bubble-emoji {
-  font-size: 18px;
-  line-height: 1;
+/* Rockets drift diagonally. */
+.reaction-float-rocket {
+  animation-name: reaction-rise-diagonal;
 }
 
-.reaction-bubble-name {
-  font-size: 11px;
-  font-weight: 600;
-  color: var(--text-muted);
+/* Rise straight up with slight horizontal drift, then fade out. */
+@keyframes reaction-rise {
+  0% {
+    transform: translateY(0) translateX(var(--drift-x, 0)) scale(0.5);
+    opacity: 0;
+  }
+  15% {
+    transform: translateY(0) translateX(var(--drift-x, 0)) scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-130px) translateX(calc(var(--drift-x, 0) + var(--drift-extra, 0))) scale(1);
+    opacity: 0;
+  }
 }
 
-.reaction-bubble-self .reaction-bubble-name {
-  color: var(--accent-strong);
+/* Rockets rise diagonally. */
+@keyframes reaction-rise-diagonal {
+  0% {
+    transform: translateY(0) translateX(var(--drift-x, 0)) scale(0.5);
+    opacity: 0;
+  }
+  15% {
+    transform: translateY(0) translateX(var(--drift-x, 0)) scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-130px) translateX(calc(var(--drift-x, 0) + var(--drift-extra, 0) * 2)) scale(1);
+    opacity: 0;
+  }
 }
 
-.reaction-bubble-self {
-  border-color: var(--accent);
-  background: var(--peach-wash);
+@media (prefers-reduced-motion: reduce) {
+  .reaction-float { animation: none; }
 }
 
-@keyframes reaction-pop {
-  0% { transform: scale(0.6); opacity: 0; }
-  100% { transform: scale(1); opacity: 1; }
-}
-
-@keyframes reaction-float {
-  0% { transform: translateY(8px); opacity: 0; }
-  100% { transform: translateY(0); opacity: 1; }
-}
-
-@keyframes reaction-fade {
-  to { transform: translateY(-20px); opacity: 0; }
-}
-
+/* Reaction picker placed below the song info, above the scrubber. */
 .reaction-picker {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 6px;
-  margin-top: 10px;
+  gap: 8px;
+  margin: 10px 0 4px 0;
 }
 
 .reaction-picker-label {
@@ -2861,48 +2867,76 @@
 
 .reaction-picker-grid {
   display: flex;
-  gap: 6px;
+  gap: 10px;
 }
 
 .reaction-btn {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 36px;
-  height: 36px;
+  width: 54px;
+  height: 54px;
+  min-width: 54px;
+  min-height: 54px;
   border-radius: 50%;
   border: 1px solid var(--border-soft);
-  background: var(--surface);
+  background: var(--surface-strong);
   color: var(--text);
   cursor: pointer;
-  font-size: 18px;
-  transition: transform var(--t-fast) var(--ease-out), border-color var(--t-fast) var(--ease-out);
+  font-size: 26px;
+  line-height: 1;
+  transition:
+    transform var(--t-fast) var(--ease-out),
+    border-color var(--t-fast) var(--ease-out),
+    background-color var(--t-fast) var(--ease-out),
+    box-shadow var(--t-fast) var(--ease-out);
+  box-shadow: var(--shadow-xs);
 }
 
 .reaction-btn:hover:not(:disabled) {
   border-color: var(--accent);
-  transform: scale(1.1);
+  background: #fff;
+  transform: translateY(-2px) scale(1.05);
+  box-shadow: var(--shadow-sm);
+}
+
+.reaction-btn:focus-visible {
+  outline: 2px solid var(--accent-strong);
+  outline-offset: 2px;
 }
 
 .reaction-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
 }
 
 .reaction-btn.is-pressed {
   border-color: var(--accent-strong);
   background: var(--peach-wash);
-  transform: scale(0.95);
+  transform: scale(0.92);
+  box-shadow: var(--shadow-xs);
 }
 
 .reaction-emoji {
-  font-size: 18px;
+  font-size: 26px;
   line-height: 1;
+  display: block;
+}
+
+@media (max-width: 720px) {
+  .reaction-btn {
+    width: 50px;
+    height: 50px;
+    min-width: 50px;
+    min-height: 50px;
+    font-size: 24px;
+  }
+  .reaction-emoji { font-size: 24px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .reaction-bubble { animation: none; }
-  .reaction-emoji-group { animation: none; }
   .reaction-btn { transition: none; }
   .reaction-btn:hover:not(:disabled) { transform: none; }
 }
