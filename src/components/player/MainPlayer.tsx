@@ -8,6 +8,8 @@ import PlaybackControls from './PlaybackControls';
 import QueuePanel from '../queue/QueuePanel';
 import AddToQueueForm from '../queue/AddToQueueForm';
 import DedicationCard from './DedicationCard';
+import ReactionPicker from './ReactionPicker';
+import ReactionBubble from './ReactionBubble';
 import type { SongDedication } from '../../types/music';
 
 export type QueueSearchState = {
@@ -71,6 +73,14 @@ type MainPlayerProps = {
   onInvite: () => void;
   onVideoCall: () => void;
   onFocusQueueInput: () => void;
+  /** Sends an emoji reaction to the room. */
+  onSendReaction: (emoji: string) => void;
+  /** True while a reaction is being sent. */
+  reactionSending: boolean;
+  /** Reactions to the current song, keyed by emoji. */
+  reactions: Record<string, { clientId: string; clientName: string; timestamp: number }[]>;
+  /** The id of this client, used to mark self reactions. */
+  reactionClientId: string;
 };
 
 function formatTime(seconds: number) {
@@ -128,6 +138,10 @@ export default function MainPlayer({
   onInvite,
   onVideoCall,
   onFocusQueueInput,
+  onSendReaction,
+  reactionSending,
+  reactions,
+  reactionClientId,
 }: MainPlayerProps) {
   const hasTrack = !!current;
   const localPlaying = yt.state === YT_STATE.playing;
@@ -153,6 +167,23 @@ export default function MainPlayer({
   return (
     <section className="card player-card" aria-label="Now playing">
       <div className="stage-wrap">
+        <div className="reaction-stage" aria-hidden="true">
+          {hasTrack &&
+            Object.entries(reactions).map(([emoji, list]) => (
+              <div key={emoji} className="reaction-emoji-group" aria-label={`${emoji} reactions`}>
+                <span className="reaction-emoji-count" aria-hidden="true">
+                  {emoji} {list.length}
+                </span>
+                {list.map((r) => (
+                  <ReactionBubble
+                    key={r.timestamp + r.clientId}
+                    reaction={{ emoji, clientId: r.clientId, clientName: r.clientName, timestamp: r.timestamp }}
+                    isSelf={r.clientId === reactionClientId}
+                  />
+                ))}
+              </div>
+            ))}
+        </div>
         <div className="stage-glow" aria-hidden="true">
           {hasTrack && <img src={current.thumbnail} alt="" />}
         </div>
@@ -253,6 +284,11 @@ export default function MainPlayer({
         isLiked={isLiked}
         hasPrevious={hasPrevious}
         hasNext={hasNext}
+      />
+
+      <ReactionPicker
+        onReaction={onSendReaction}
+        sending={reactionSending}
       />
 
       <div className="quick-actions">

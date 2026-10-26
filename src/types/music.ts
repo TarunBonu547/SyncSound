@@ -20,6 +20,18 @@ export interface SongDedication {
   createdAt: number;
 }
 
+/** A quick emoji reaction to the song that plays. */
+export interface SongReaction {
+  /** The emoji that was sent. */
+  emoji: string;
+  /** The client id of the listener who sent it. */
+  clientId: string;
+  /** The display name of the sender, shown beside the bubble. */
+  clientName: string;
+  /** When the reaction was sent, epoch milliseconds. */
+  timestamp: number;
+}
+
 /** A track of the shared queue: a YouTube video with its metadata. */
 export interface Track {
   id: string;

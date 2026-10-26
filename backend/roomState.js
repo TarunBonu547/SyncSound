@@ -8,6 +8,10 @@ const MAX_CHAT_MESSAGES = 200;
 const MAX_CHAT_LENGTH = 500;
 /** A dedication on a queued song may not be longer than this. */
 const MAX_DEDICATION_LENGTH = 200;
+/** A single reaction may not repeat from the same client within this many ms. */
+const REACTION_COOLDOWN_MS = 1000;
+/** Reactions older than this are dropped when a snapshot is taken. */
+const REACTION_TTL_MS = 10 * 1000;
 
 /**
  * The artwork of a queue item may only come from the image hosts of YouTube.
@@ -54,6 +58,8 @@ class RoomState {
     this.guestCounter = 0;
     /** The chat of this room, oldest first. */
     this.chat = [];
+    /** Reactions to the current song: emoji -> [{ clientId, clientName, timestamp }]. */
+    this.reactions = new Map();
     this.queue = [];
     this.currentQueueItemId = null;
     this.currentVideoId = null;
@@ -146,6 +152,46 @@ class RoomState {
       this.chat.splice(0, this.chat.length - MAX_CHAT_MESSAGES);
     }
     return message;
+  }
+
+  /**
+   * Records a reaction to the current song.
+   *
+   * Rate limited per client: a client may not send the same emoji again within
+   * REACTION_COOLDOWN_MS. Returns null when the reaction is rate limited.
+   */
+  addReaction(clientId, clientName, emoji) {
+    const now = Date.now();
+    const byEmoji = this.reactions.get(emoji) || [];
+    const lastIdx = byEmoji.findIndex((r) => r.clientId === clientId);
+    if (lastIdx !== -1 && now - byEmoji[lastIdx].timestamp < REACTION_COOLDOWN_MS) {
+      return null;
+    }
+    const entry = { clientId, clientName, timestamp: now };
+    if (lastIdx !== -1) {
+      byEmoji[lastIdx] = entry;
+    } else {
+      byEmoji.push(entry);
+    }
+    this.reactions.set(emoji, byEmoji);
+    return entry;
+  }
+
+  /** Returns a copy of the reactions, dropping any that have expired. */
+  getReactions() {
+    const now = Date.now();
+    const out = {};
+    for (const [emoji, list] of this.reactions.entries()) {
+      const fresh = list.filter((r) => now - r.timestamp < REACTION_TTL_MS);
+      if (fresh.length) out[emoji] = fresh;
+      else this.reactions.delete(emoji);
+    }
+    return out;
+  }
+
+  /** Drops all reactions (called when the track changes). */
+  clearReactions() {
+    this.reactions.clear();
   }
 
   /** The chat of the room, oldest first. */
@@ -295,6 +341,8 @@ class RoomState {
     this.playbackStatus = 'playing';
     this.transitionId = randomUUID();
     this.bump();
+    // A new song starts: reactions from the previous track do not carry over.
+    this.clearReactions();
     return { ok: true, changed: true };
   }
 
@@ -350,8 +398,9 @@ class RoomState {
     this.positionSeconds = end;
     this.playbackStatus = 'ended';
     this.bump();
+    this.clearReactions();
     return { ok: true, advanced: false, ended: true };
   }
 }
 
-module.exports = { RoomState, MAX_CHAT_LENGTH, MAX_CHAT_MESSAGES, MAX_DEDICATION_LENGTH };
+module.exports = { RoomState, MAX_CHAT_LENGTH, MAX_CHAT_MESSAGES, MAX_DEDICATION_LENGTH, REACTION_COOLDOWN_MS, REACTION_TTL_MS };

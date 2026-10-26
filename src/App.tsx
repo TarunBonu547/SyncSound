@@ -110,6 +110,8 @@ export default function App() {
     dedication: SongDedication;
     itemId: string;
   } | null>(null);
+  /** True while a reaction is being sent. */
+  const [reactionSending, setReactionSending] = useState(false);
 
   const library = useLibrary();
   /** On narrow screens the chat lives in a drawer instead of a side column. */
@@ -154,7 +156,7 @@ export default function App() {
     onPlayback: (p) => applyRemoteRef.current(p),
     onError: (message) => pushToast(message, 'error'),
   });
-  const { editDedication } = room;
+  const { editDedication, sendReaction } = room;
 
   /** The two person call. It only uses the socket, never the music protocol. */
   const call = useVideoCall({ socket, roomCode: room.roomCode, clientId });
@@ -827,6 +829,16 @@ export default function App() {
     else setShowDedication(null);
   };
 
+  const handleSendReaction = async (emoji: string) => {
+    setReactionSending(true);
+    try {
+      const message = await sendReaction(emoji);
+      if (message) pushToast(message, 'error');
+    } finally {
+      setReactionSending(false);
+    }
+  };
+
   const activeNav: NavTarget =
     view === 'room'
       ? 'room'
@@ -974,6 +986,10 @@ export default function App() {
             onDismissDedication={dismissDedication}
             onSaveDedication={saveDedication}
             onRemoveDedication={removeDedication}
+            onSendReaction={handleSendReaction}
+            reactionSending={reactionSending}
+            reactions={room.reactions}
+            reactionClientId={clientId}
             onInvite={() => setInviteOpen(true)}
             onVideoCall={() => setCallOpen(true)}
             onFocusQueueInput={focusQueueInput}

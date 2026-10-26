@@ -370,6 +370,38 @@ io.on('connection', (socket) => {
     if (cb) cb({ ok: true, id: message.id, timestamp: message.timestamp });
   });
 
+  /**
+   * A quick emoji reaction to the song that plays. Only a member of the room
+   * may send one, rate limited per client so a single person cannot spam the
+   * room with bubbles. The server stores it briefly and broadcasts it to
+   * everyone in the room so the animations appear in sync.
+   */
+  socket.on('SONG_REACTION', ({ code, emoji } = {}, cb) => {
+    const wanted = normalizeCode(code);
+    const room = wanted ? getRoom(wanted) : null;
+    if (!room || !room.participants.has(socket.id)) {
+      syncLog('reaction rejected', { reason: 'not in room', socketId: socket.id });
+      if (cb) cb({ ok: false, error: 'Not in room' });
+      return;
+    }
+    if (typeof emoji !== 'string' || !emoji || emoji.length > 10) {
+      if (cb) cb({ ok: false, error: 'Invalid reaction' });
+      return;
+    }
+    const member = room.getMember(socket.id);
+    if (!member) {
+      if (cb) cb({ ok: false, error: 'Not in room' });
+      return;
+    }
+    const entry = room.addReaction(member.clientId, member.name, emoji);
+    if (!entry) {
+      if (cb) cb({ ok: false, error: 'Reaction rate limited' });
+      return;
+    }
+    io.to(room.code).emit('song:reaction', { ...entry, emoji });
+    if (cb) cb({ ok: true });
+  });
+
   socket.on('QUEUE_ADD', async ({ code, item }, cb) => {
     const room = requireRoom(code, socket, cb, (r) => r);
     if (!room) return;

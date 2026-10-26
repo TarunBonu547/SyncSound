@@ -46,6 +46,8 @@ export function useRoom({ socket, clientId, displayName, onPlayback, onError }: 
   const [participantCount, setParticipantCount] = useState(1);
   const [queue, setQueue] = useState<QueueEntry[]>([]);
   const [messages, setMessages] = useState<ChatEntry[]>([]);
+  /** Reactions to the song that plays: emoji -> [{ clientId, clientName, timestamp }]. */
+  const [reactions, setReactions] = useState<Record<string, { clientId: string; clientName: string; timestamp: number }[]>>({});
   const [draft, setDraft] = useState('');
   const [chatError, setChatError] = useState<string | null>(null);
   const [chatSending, setChatSending] = useState(false);
@@ -66,6 +68,8 @@ export function useRoom({ socket, clientId, displayName, onPlayback, onError }: 
   const errorRef = useRef(onError);
   /** The newest display name, readable from the socket listeners. */
   const displayNameRef = useRef(displayName);
+  /** The video id of the song that plays, used to clear reactions on track change. */
+  const videoIdRef = useRef<string | null>(null);
 
   useEffect(() => {
     playbackRef.current = onPlayback;
@@ -178,7 +182,11 @@ export function useRoom({ socket, clientId, displayName, onPlayback, onError }: 
           // The queue comes first: it already knows the title of the track the
           // room is playing, so the stage never shows a placeholder.
           applyQueue(answer.queue);
-          if (answer.playback) playbackRef.current(answer.playback as PlaybackState);
+          if (answer.playback) {
+            const pb = answer.playback as PlaybackState;
+            playbackRef.current(pb);
+            videoIdRef.current = pb.videoId || null;
+          }
           applyPresence(answer);
           // The server owns the chat: on every join the history replaces what
           // is on screen, so a reconnect never shows a message twice.
@@ -188,6 +196,8 @@ export function useRoom({ socket, clientId, displayName, onPlayback, onError }: 
               .filter((entry): entry is ChatEntry => entry !== null);
             setMessages(history);
           }
+          // Reactions are transient: they never survive a (re)join.
+          setReactions({});
         },
       );
     };
@@ -198,7 +208,13 @@ export function useRoom({ socket, clientId, displayName, onPlayback, onError }: 
     socket.on('connect', join);
 
     const onPlaybackUpdate = (payload: unknown) => {
-      playbackRef.current(payload as PlaybackState);
+      const state = payload as PlaybackState;
+      playbackRef.current(state);
+      // A new video means a new song: drop old reactions.
+      if (state.videoId && videoIdRef.current !== null && state.videoId !== videoIdRef.current) {
+        setReactions({});
+      }
+      videoIdRef.current = state.videoId || null;
     };
     const onQueueUpdate = (payload: unknown) => {
       const raw = (payload ?? {}) as Record<string, unknown>;
@@ -215,10 +231,33 @@ export function useRoom({ socket, clientId, displayName, onPlayback, onError }: 
       setMessages((prev) => (prev.some((x) => x.id === entry.id) ? prev : [...prev, entry]));
     };
 
+    /** A reaction to the current song. The server already rate limits, so the
+       client only stores and renders it. Reactions expire after TTL. */
+    const onReaction = (payload: unknown) => {
+      if (!payload || typeof payload !== 'object') return;
+      const raw = payload as Record<string, unknown>;
+      const emoji = typeof raw.emoji === 'string' ? raw.emoji : '';
+      const clientId = typeof raw.clientId === 'string' ? raw.clientId : '';
+      const clientName = typeof raw.clientName === 'string' ? raw.clientName : '';
+      const timestamp = Number.isFinite(raw.timestamp) ? Number(raw.timestamp) : Date.now();
+      if (!emoji || !clientId) return;
+      setReactions((prev) => {
+        const next = { ...prev };
+        const list = [...(next[emoji] || [])];
+        // Replace an existing reaction from the same client (update in place).
+        const idx = list.findIndex((r) => r.clientId === clientId);
+        if (idx !== -1) list[idx] = { clientId, clientName, timestamp };
+        else list.push({ clientId, clientName, timestamp });
+        next[emoji] = list;
+        return next;
+      });
+    };
+
     socket.on('playback-update', onPlaybackUpdate);
     socket.on('queue-update', onQueueUpdate);
     socket.on('room-update', onRoomUpdate);
     socket.on('chat:message', onChatMessage);
+    socket.on('song:reaction', onReaction);
 
     return () => {
       socket.off('connect', join);
@@ -226,6 +265,7 @@ export function useRoom({ socket, clientId, displayName, onPlayback, onError }: 
       socket.off('queue-update', onQueueUpdate);
       socket.off('room-update', onRoomUpdate);
       socket.off('chat:message', onChatMessage);
+      socket.off('song:reaction', onReaction);
     };
   }, [socket, roomCode, clientId, applyQueue, applyPresence, toChatEntry]);
 
@@ -254,6 +294,7 @@ export function useRoom({ socket, clientId, displayName, onPlayback, onError }: 
     setReplyTo(null);
     setQueue([]);
     queueRef.current = [];
+    setReactions({});
   }, [socket, roomCode]);
 
   /**
@@ -433,6 +474,27 @@ export function useRoom({ socket, clientId, displayName, onPlayback, onError }: 
     [socket, roomCode],
   );
 
+  /**
+   * Sends a quick emoji reaction to the song that plays. The server rate
+   * limits per client, so a rapid tap does not spam the room.
+   */
+  const sendReaction = useCallback(
+    (emoji: string): Promise<string | null> => {
+      if (!socket || !roomCode) return Promise.resolve('Join a room first');
+      return new Promise((resolve) => {
+        socket.emit('SONG_REACTION', { code: roomCode, emoji }, (res: unknown) => {
+          const answer = (res ?? {}) as Record<string, unknown>;
+          if (!answer.ok) {
+            resolve(String(answer.error || 'The reaction could not be sent'));
+            return;
+          }
+          resolve(null);
+        });
+      });
+    },
+    [socket, roomCode],
+  );
+
   return {
     roomCode,
     roomName,
@@ -441,6 +503,7 @@ export function useRoom({ socket, clientId, displayName, onPlayback, onError }: 
     queue,
     queueRef,
     messages,
+    reactions,
     draft,
     setDraft,
     chatError,
@@ -457,6 +520,7 @@ export function useRoom({ socket, clientId, displayName, onPlayback, onError }: 
     moveQueueItem,
     removeQueueItem,
     editDedication,
+    sendReaction,
   };
 }
 
