@@ -46,8 +46,8 @@ export function useRoom({ socket, clientId, displayName, onPlayback, onError }: 
   const [participantCount, setParticipantCount] = useState(1);
   const [queue, setQueue] = useState<QueueEntry[]>([]);
   const [messages, setMessages] = useState<ChatEntry[]>([]);
-  /** Reactions to the song that plays: emoji -> [{ clientId, clientName, timestamp }]. */
-  const [reactions, setReactions] = useState<Record<string, { clientId: string; clientName: string; timestamp: number }[]>>({});
+  /** Reactions to the song that plays: emoji -> [{ id, clientId, clientName, timestamp }]. */
+  const [reactions, setReactions] = useState<Record<string, { id: string; clientId: string; clientName: string; timestamp: number }[]>>({});
   const [draft, setDraft] = useState('');
   const [chatError, setChatError] = useState<string | null>(null);
   const [chatSending, setChatSending] = useState(false);
@@ -70,6 +70,8 @@ export function useRoom({ socket, clientId, displayName, onPlayback, onError }: 
   const displayNameRef = useRef(displayName);
   /** The video id of the song that plays, used to clear reactions on track change. */
   const videoIdRef = useRef<string | null>(null);
+  /** Monotonic counter for unique reaction instance ids. */
+  const reactionIdCounter = useRef(0);
 
   useEffect(() => {
     playbackRef.current = onPlayback;
@@ -232,7 +234,9 @@ export function useRoom({ socket, clientId, displayName, onPlayback, onError }: 
     };
 
     /** A reaction to the current song. The server already rate limits, so the
-       client only stores and renders it. Reactions expire after TTL. */
+       client only stores and renders it. Each accepted reaction gets a unique
+       instance id so repeated emojis from the same client coexist instead of
+       overwriting one another. */
     const onReaction = (payload: unknown) => {
       if (!payload || typeof payload !== 'object') return;
       const raw = payload as Record<string, unknown>;
@@ -241,13 +245,11 @@ export function useRoom({ socket, clientId, displayName, onPlayback, onError }: 
       const clientName = typeof raw.clientName === 'string' ? raw.clientName : '';
       const timestamp = Number.isFinite(raw.timestamp) ? Number(raw.timestamp) : Date.now();
       if (!emoji || !clientId) return;
+      const id = `${clientId}-${timestamp}-${reactionIdCounter.current++}`;
       setReactions((prev) => {
         const next = { ...prev };
         const list = [...(next[emoji] || [])];
-        // Replace an existing reaction from the same client (update in place).
-        const idx = list.findIndex((r) => r.clientId === clientId);
-        if (idx !== -1) list[idx] = { clientId, clientName, timestamp };
-        else list.push({ clientId, clientName, timestamp });
+        list.push({ id, clientId, clientName, timestamp });
         next[emoji] = list;
         return next;
       });

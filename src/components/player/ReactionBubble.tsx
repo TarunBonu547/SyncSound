@@ -2,11 +2,11 @@ import { useEffect, useMemo, useState } from 'react';
 import type { SongReaction } from '../../types/music';
 
 /** How long a floating reaction stays visible before fading out. */
-const REACTION_TTL_MS = 3000;
+const REACTION_TTL_MS = 8000;
 
 type ReactionBubbleProps = {
   /** The reaction to show. */
-  reaction: SongReaction;
+  reaction: SongReaction & { id: string };
   /** True when this reaction was sent by the local client. */
   isSelf: boolean;
 };

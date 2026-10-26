@@ -167,12 +167,8 @@ class RoomState {
     if (lastIdx !== -1 && now - byEmoji[lastIdx].timestamp < REACTION_COOLDOWN_MS) {
       return null;
     }
-    const entry = { clientId, clientName, timestamp: now };
-    if (lastIdx !== -1) {
-      byEmoji[lastIdx] = entry;
-    } else {
-      byEmoji.push(entry);
-    }
+    const entry = { id: `${clientId}-${now}-${Math.random().toString(36).slice(2, 7)}`, clientId, clientName, timestamp: now };
+    byEmoji.push(entry);
     this.reactions.set(emoji, byEmoji);
     return entry;
   }

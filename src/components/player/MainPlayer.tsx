@@ -78,7 +78,7 @@ type MainPlayerProps = {
   /** True while a reaction is being sent. */
   reactionSending: boolean;
   /** Reactions to the current song, keyed by emoji. */
-  reactions: Record<string, { clientId: string; clientName: string; timestamp: number }[]>;
+  reactions: Record<string, { id: string; clientId: string; clientName: string; timestamp: number }[]>;
   /** The id of this client, used to mark self reactions. */
   reactionClientId: string;
 };
@@ -176,8 +176,8 @@ export default function MainPlayer({
                 </span>
                 {list.map((r) => (
                   <ReactionBubble
-                    key={r.timestamp + r.clientId}
-                    reaction={{ emoji, clientId: r.clientId, clientName: r.clientName, timestamp: r.timestamp }}
+                    key={r.id}
+                    reaction={{ ...r, emoji, id: r.id }}
                     isSelf={r.clientId === reactionClientId}
                   />
                 ))}
