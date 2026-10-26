@@ -14,11 +14,12 @@ type ReactionBubbleProps = {
 /** A floating emoji reaction that drifts up over the player area. */
 export default function ReactionBubble({ reaction, isSelf }: ReactionBubbleProps) {
   const [visible, setVisible] = useState(true);
-  /** Random offset generated once per instance so the path is stable. */
+  /** Random starting position and drift generated once per instance. */
   const drift = useMemo(() => ({
-    x: (Math.random() - 0.5) * 90,
-    extraX: (Math.random() - 0.5) * 50,
-    delay: Math.random() * 250,
+    left: 10 + Math.random() * 80,   // 10% .. 90% of the video width
+    x: (Math.random() - 0.5) * 40,   // slight horizontal drift during the animation
+    extraX: (Math.random() - 0.5) * 30,
+    delay: Math.random() * 200,
   }), []);
 
   useEffect(() => {
@@ -32,7 +33,7 @@ export default function ReactionBubble({ reaction, isSelf }: ReactionBubbleProps
   const isRocket = reaction.emoji === '🚀';
 
   const style: React.CSSProperties & { ['--drift-x']?: string; ['--drift-extra']?: string } = {
-    left: `calc(50% + ${drift.x}px)`,
+    left: `${drift.left}%`,
     top: '88%',
     animationDelay: `${drift.delay}ms`,
     '--drift-x': `${drift.x}px`,
