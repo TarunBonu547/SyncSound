@@ -46,6 +46,15 @@
   --lavender-wash: rgba(217, 202, 255, 0.24);
   --plum-wash: rgba(48, 43, 66, 0.08);
 
+  /* --- Reply to message palette (cream, rose, lavender, plum) ----------- */
+  --reply-cream: #F6EDE7;
+  --reply-rose: #D99AA7;
+  --reply-lavender: #B8ACDE;
+  --reply-plum: #755568;
+  --reply-dark: #332C3B;
+  --reply-rose-wash: rgba(217, 154, 167, 0.14);
+  --reply-lavender-wash: rgba(184, 172, 222, 0.14);
+
   /* --- Typography ------------------------------------------------------- */
   --font-sans: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
 

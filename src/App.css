@@ -1402,6 +1402,228 @@
   flex: none;
 }
 
+/* A message that somebody has replied to keeps a subtle marker. */
+.chat-msg.is-replied-to {
+  position: relative;
+}
+
+.chat-msg.is-replied-to::after {
+  content: '';
+  position: absolute;
+  top: 6px;
+  right: -7px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--reply-rose);
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.9);
+}
+
+/* The brief highlight that follows a reply-to click. */
+.chat-msg--highlighted {
+  outline: 2px solid var(--reply-rose);
+  outline-offset: 2px;
+  border-radius: var(--r-xs);
+  box-shadow: 0 0 0 4px var(--reply-rose-wash);
+}
+
+/* --- Message actions (reply button) ------------------------------------- */
+
+.chat-actions {
+  position: absolute;
+  top: 7px;
+  right: 7px;
+  opacity: 0;
+  pointer-events: none;
+  display: flex;
+  gap: 4px;
+  transition:
+    opacity var(--t-fast) var(--ease-out),
+    transform var(--t-fast) var(--ease-out);
+}
+
+.chat-msg {
+  position: relative;
+}
+
+.chat-msg:hover .chat-actions,
+.chat-msg:focus-within .chat-actions {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.chat-reply-btn {
+  width: 26px;
+  height: 26px;
+  min-width: 26px;
+  min-height: 26px;
+  padding: 0;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.85);
+  color: var(--text-muted);
+  box-shadow: var(--shadow-xs);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition:
+    background-color var(--t-fast) var(--ease-out),
+    color var(--t-fast) var(--ease-out),
+    border-color var(--t-fast) var(--ease-out);
+}
+
+.chat-reply-btn:hover:not(:disabled) {
+  background: #fff;
+  border-color: var(--reply-rose);
+  color: var(--reply-plum);
+}
+
+.chat-reply-btn:focus-visible {
+  outline: 2px solid var(--reply-lavender);
+  outline-offset: 2px;
+}
+
+.chat-reply-btn svg {
+  width: 14px;
+  height: 14px;
+  flex: none;
+}
+
+/* --- Quoted message inside a bubble ------------------------------------- */
+
+.chat-quote {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 6px 9px;
+  margin: 0 0 7px;
+  border-radius: var(--r-sm);
+  border: 1px solid var(--border-soft);
+  border-left: 3px solid var(--reply-lavender);
+  background: var(--reply-cream);
+  cursor: pointer;
+  transition:
+    background-color var(--t-base) var(--ease-out),
+    border-color var(--t-base) var(--ease-out);
+}
+
+.chat-quote:hover {
+  background: rgba(246, 237, 231, 0.7);
+  border-color: var(--reply-lavender);
+}
+
+.chat-quote:focus-visible {
+  outline: 2px solid var(--reply-lavender);
+  outline-offset: 2px;
+  border-radius: var(--r-xs);
+}
+
+.chat-quote-sender {
+  margin: 0;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--reply-plum);
+}
+
+.chat-quote-text {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--text);
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
+/* --- Reply preview above the input -------------------------------------- */
+
+.chat-reply-preview {
+  display: flex;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: var(--r-sm);
+  border: 1px solid var(--border-soft);
+  background: var(--reply-cream);
+  box-shadow: var(--shadow-xs);
+  flex: none;
+  animation: fadeIn 0.2s var(--ease-out) both;
+}
+
+.chat-reply-cancel {
+  flex: none;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  line-height: 1;
+}
+
+.chat-reply-cancel:hover:not(:disabled) {
+  color: var(--reply-dark);
+  background: var(--plum-wash);
+  border-radius: 6px;
+}
+
+.chat-reply-cancel:focus-visible {
+  outline: 2px solid var(--reply-lavender);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+.chat-reply-cancel svg {
+  width: 16px;
+  height: 16px;
+  flex: none;
+}
+
+.chat-reply-info {
+  min-width: 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.chat-reply-label {
+  margin: 0;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--reply-plum);
+}
+
+.chat-reply-text {
+  margin: 0;
+  font-size: 12.5px;
+  line-height: 1.4;
+  color: var(--text);
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
+/* --- Visually hidden labels --------------------------------------------- */
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  border: 0;
+  white-space: nowrap;
+  word-wrap: normal;
+}
+
+
 .chat-form {
   display: flex;
   align-items: center;
@@ -2389,3 +2611,9 @@
     transition-duration: 1ms;
   }
 }
+
+.side-section { display: flex; flex-direction: column; gap: 2px; }
+.side-section-title { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--text-muted); padding: 6px 12px 2px; }
+.side-divider { height: 1px; background: var(--border-soft); margin: 8px 0; }
+.side-room-badge { margin-left: auto; font-size: 10px; padding: 2px 6px; border-radius: 999px; background: var(--lavender-wash); }
+.side-link.is-room-active { color: var(--text); }

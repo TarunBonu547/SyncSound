@@ -91,6 +91,28 @@ const OUTSIDER_ID = 'chat-outsider-0003';
       receiver: message.id,
     });
 
+    // --- replying to a message ---------------------------------------------------
+    const repliedTo = await ask(guest, 'chat:send', {
+      code,
+      text: 'This song hits different ❤️',
+      replyTo: { messageId: message.id, senderId: HOST_ID, senderName: 'Host', text: message.text },
+    });
+    check('a reply is accepted', repliedTo.ok === true && !!repliedTo.id, repliedTo);
+    await sleep(200);
+    check('the sender receives the reply once', hostMessages.length === 2, hostMessages);
+    check('the other member receives the reply once', guestMessages.length === 2, guestMessages);
+    const reply = guestMessages[1];
+    check('the reply carries the original target', reply && reply.replyTo && reply.replyTo.messageId === message.id, reply);
+    check('the reply names the original sender', reply && reply.replyTo && reply.replyTo.senderName === 'Host', reply);
+    check('the reply quotes the original text', reply && reply.replyTo && reply.replyTo.text === 'hello room', reply);
+
+    const badReply = await ask(guest, 'chat:send', { code, text: 'x', replyTo: { messageId: '', senderId: HOST_ID, senderName: 'Host', text: 'hello room' } });
+    check('a reply without a message id is refused', badReply.ok === false, badReply);
+    const partialReply = await ask(guest, 'chat:send', { code, text: 'x', replyTo: { messageId: message.id, senderId: HOST_ID } });
+    check('an incomplete reply target is refused', partialReply.ok === false, partialReply);
+    await sleep(200);
+    check('the refused replies were not delivered', guestMessages.length === 2, guestMessages.length);
+
     // --- the rules of the server ------------------------------------------------------
     const empty = await ask(host, 'chat:send', { code, text: '' });
     check('an empty message is refused', empty.ok === false, empty);
@@ -103,7 +125,7 @@ const OUTSIDER_ID = 'chat-outsider-0003';
     const justFits = await ask(host, 'chat:send', { code, text: 'x'.repeat(MAX_CHAT_LENGTH) });
     check('a message of the maximum length is accepted', justFits.ok === true, justFits);
     await sleep(200);
-    check('the refused messages were not delivered', guestMessages.length === 2, guestMessages.length);
+    check('the refused messages were not delivered', guestMessages.every((m) => m.text !== '' && m.text !== '    \n\t  ' && m.text.length <= MAX_CHAT_LENGTH), guestMessages);
 
     // --- a message of a member of another room -------------------------------------------
     const otherRoom = await ask(outsider, 'create-room', { name: 'Other', clientId: OUTSIDER_ID });
@@ -118,13 +140,14 @@ const OUTSIDER_ID = 'chat-outsider-0003';
     // --- the history of the room ----------------------------------------------------------
     const late = await connect();
     const lateJoin = await ask(late, 'join-room', { code, clientId: 'chat-late-0004' });
-    check('a late joiner gets the history', Array.isArray(lateJoin.messages) && lateJoin.messages.length === 2, lateJoin.messages && lateJoin.messages.length);
+    check('a late joiner gets the history', Array.isArray(lateJoin.messages) && lateJoin.messages.length === 3, lateJoin.messages && lateJoin.messages.length);
     check('the history has the first message', lateJoin.messages[0].text === 'hello room', lateJoin.messages[0]);
     check('the history has the sender', lateJoin.messages[0].userName === 'Host', lateJoin.messages[0]);
+    check('the history keeps the reply metadata', lateJoin.messages[1] && lateJoin.messages[1].replyTo && lateJoin.messages[1].replyTo.messageId === message.id, lateJoin.messages[1]);
 
     // --- a reconnect gets the history again, without duplicates ---------------------------------
     const rejoin = await ask(guest, 'join-room', { code, clientId: GUEST_ID });
-    check('a rejoin gets the history', Array.isArray(rejoin.messages) && rejoin.messages.length === 2, rejoin.messages && rejoin.messages.length);
+    check('a rejoin gets the history', Array.isArray(rejoin.messages) && rejoin.messages.length === 3, rejoin.messages && rejoin.messages.length);
     const ids = rejoin.messages.map((m) => m.id);
     check('the history has no duplicate ids', new Set(ids).size === ids.length, ids);
     check('the history keeps the order', rejoin.messages[0].text === 'hello room', rejoin.messages[0].text);

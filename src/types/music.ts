@@ -47,6 +47,15 @@ export interface PlaybackState {
   serverNow?: number;
 }
 
+/** The message a chat entry replies to, when it is a reply. */
+export interface ChatReply {
+  /** The id of the original message, never an array index. */
+  messageId: string;
+  senderId: string;
+  senderName: string;
+  text: string;
+}
+
 /** A chat message as stored by the server. */
 export interface ChatEntry {
   id: string;
@@ -59,6 +68,9 @@ export interface ChatEntry {
   text: string;
   timestamp: number;
   isSelf: boolean;
+  /** Optional metadata of the message this entry replies to. Legacy messages
+     do not have it, so it stays optional and absent entries render as before. */
+  replyTo?: ChatReply;
 }
 
 /** A member of a room, exactly as the server reports it. */

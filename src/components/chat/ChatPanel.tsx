@@ -1,5 +1,5 @@
-import { useEffect, useRef } from 'react';
-import { Send, Users, MessageCircle } from 'lucide-react';
+import { useCallback, useEffect, useRef } from 'react';
+import { Send, Reply, Users, MessageCircle, X } from 'lucide-react';
 import type { ChatEntry, RoomMember } from '../../types/music';
 import { avatarFor, formatTime } from '../../utils/avatar';
 import { MAX_CHAT_LENGTH } from '../../hooks/useRoom';
@@ -16,19 +16,29 @@ type ChatPanelProps = {
   chatError: string | null;
   /** True while a message is on its way to the server. */
   chatSending: boolean;
+  /** The message this client is composing a reply to, if any. */
+  replyTo: { messageId: string; senderId: string; senderName: string; text: string } | null;
   onDraftChange: (value: string) => void;
   onSend: () => void;
+  /** Selects the message the next sent message replies to. */
+  onSelectReply: (message: { messageId: string; senderId: string; senderName: string; text: string }) => void;
+  /** Cancels the reply that is being composed. */
+  onCancelReply: () => void;
   /** Shown when the panel is used outside of the room, e.g. in a drawer. */
   onClose?: () => void;
 };
 
-/**
- * The chat of the room.
- *
- * The server owns the chat: a message only shows up when the server accepted
- * it, and the history of the room arrives with the room. The list scrolls on
- * its own, so a long conversation never moves the player or the queue.
- */
+/** The longest snippet shown inside a quoted reply preview. */
+const QUOTE_PREVIEW_LENGTH = 110;
+
+/** Shortens a quoted message, keeping whole words where possible. */
+function previewOf(text: string): string {
+  const clean = (text || '').replace(/\s+/g, ' ').trim();
+  if (!clean) return '';
+  if (clean.length <= QUOTE_PREVIEW_LENGTH) return clean;
+  return clean.slice(0, QUOTE_PREVIEW_LENGTH).trimEnd() + '…';
+}
+
 export default function ChatPanel({
   roomCode,
   roomName,
@@ -39,11 +49,15 @@ export default function ChatPanel({
   draft,
   chatError,
   chatSending,
+  replyTo,
   onDraftChange,
   onSend,
+  onSelectReply,
+  onCancelReply,
   onClose,
 }: ChatPanelProps) {
   const scrollRef = useRef<HTMLDivElement | null>(null);
+  const highlightTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastId = messages.length ? messages[messages.length - 1].id : null;
 
   // The newest message is always in sight.
@@ -52,6 +66,25 @@ export default function ChatPanel({
     if (!el) return;
     el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' });
   }, [lastId]);
+
+  /** Scrolls to the original message of a reply and briefly highlights it. */
+  const scrollToMessage = useCallback(
+    (messageId: string) => {
+      if (highlightTimer.current) {
+        clearTimeout(highlightTimer.current);
+        highlightTimer.current = null;
+      }
+      const el = document.getElementById(`msg-${messageId}`);
+      if (!el) return;
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      el.classList.add('chat-msg--highlighted');
+      highlightTimer.current = setTimeout(() => {
+        el.classList.remove('chat-msg--highlighted');
+        highlightTimer.current = null;
+      }, 1500);
+    },
+    [],
+  );
 
   const count = Math.max(1, members.length);
   const inRoom = !!roomCode;
@@ -112,27 +145,100 @@ export default function ChatPanel({
             <p className="chat-empty-hint">Say hello to the people in the room.</p>
           </div>
         ) : (
-          messages.map((m) => (
-            <div
-              key={m.id}
-              className={`chat-msg ${m.isSelf ? 'is-self' : ''}`}
-              style={{ alignSelf: m.isSelf ? 'flex-end' : 'flex-start' }}
-            >
-              {!m.isSelf && (
-                <span className="chat-avatar" style={{ background: m.color }} aria-hidden="true">
-                  {m.initials}
-                </span>
-              )}
-              <div className={`chat-bubble ${m.isSelf ? 'is-self' : ''}`}>
-                <p className="chat-author">
-                  {m.userName} · {formatTime(m.timestamp)}
-                </p>
-                <p>{m.text}</p>
+          messages.map((m) => {
+            const quote = m.replyTo;
+            const isReplyingToMe = Boolean(replyTo && replyTo.messageId === m.id);
+            return (
+              <div
+                id={`msg-${m.id}`}
+                key={m.id}
+                className={`chat-msg ${m.isSelf ? 'is-self' : ''} ${isReplyingToMe ? 'is-replied-to' : ''}`}
+                style={{ alignSelf: m.isSelf ? 'flex-end' : 'flex-start' }}
+              >
+                {!m.isSelf && (
+                  <span className="chat-avatar" style={{ background: m.color }} aria-hidden="true">
+                    {m.initials}
+                  </span>
+                )}
+                <div className={`chat-bubble ${m.isSelf ? 'is-self' : ''}`}>
+                  <div className="chat-actions">
+                    <button
+                      type="button"
+                      className="chat-reply-btn"
+                      onClick={() =>
+                        onSelectReply({
+                          messageId: m.id,
+                          senderId: m.userId,
+                          senderName: m.userName,
+                          text: m.text,
+                        })
+                      }
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault();
+                          onSelectReply({
+                            messageId: m.id,
+                            senderId: m.userId,
+                            senderName: m.userName,
+                            text: m.text,
+                          });
+                        }
+                      }}
+                      title="Reply to this message"
+                      aria-label={`Reply to ${m.userName}`}
+                      aria-controls={`msg-${m.id}`}
+                    >
+                      <Reply size={14} aria-hidden="true" />
+                      <span className="sr-only">Reply</span>
+                    </button>
+                  </div>
+                  <p className="chat-author">
+                    {m.userName} · {formatTime(m.timestamp)}
+                  </p>
+                  {quote && (
+                    <div
+                      className="chat-quote"
+                      onClick={() => scrollToMessage(quote.messageId)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault();
+                          scrollToMessage(quote.messageId);
+                        }
+                      }}
+                      role="button"
+                      tabIndex={0}
+                      aria-label={`Reply to ${quote.senderName}`}
+                    >
+                      <span className="chat-quote-sender">{quote.senderName}</span>
+                      <p className="chat-quote-text">{previewOf(quote.text)}</p>
+                    </div>
+                  )}
+                  <p>{m.text}</p>
+                </div>
               </div>
-            </div>
-          ))
+            );
+          })
         )}
       </div>
+
+      {replyTo && (
+        <div className="chat-reply-preview" role="status" aria-live="polite">
+          <button
+            type="button"
+            className="chat-reply-cancel"
+            onClick={onCancelReply}
+            title="Cancel reply"
+            aria-label="Cancel reply"
+          >
+            <X size={15} aria-hidden="true" />
+            <span className="sr-only">Cancel reply</span>
+          </button>
+          <div className="chat-reply-info">
+            <span className="chat-reply-label">Replying to {replyTo.senderName}</span>
+            <p className="chat-reply-text">{previewOf(replyTo.text)}</p>
+          </div>
+        </div>
+      )}
 
       {chatError && (
         <p className="error-text chat-error" role="alert">

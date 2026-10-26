@@ -903,8 +903,11 @@ export default function App() {
               draft={room.draft}
               chatError={room.chatError}
               chatSending={room.chatSending}
+              replyTo={room.replyTo}
               onDraftChange={room.setDraft}
               onSend={room.sendMessage}
+              onSelectReply={room.selectReply}
+              onCancelReply={room.cancelReply}
             />
           )}
         </aside>
@@ -1075,8 +1078,11 @@ export default function App() {
             draft={room.draft}
             chatError={room.chatError}
             chatSending={room.chatSending}
+            replyTo={room.replyTo}
             onDraftChange={room.setDraft}
             onSend={room.sendMessage}
+            onSelectReply={room.selectReply}
+            onCancelReply={room.cancelReply}
             onClose={() => setChatOpen(false)}
           />
         )}
@@ -1095,7 +1101,7 @@ export default function App() {
               <button className="btn" onClick={() => setSettingsOpen(false)}>
                 Close
               </button>
-              <button className="btn danger" onClick={leaveRoom}>
+              <button className="btn danger" onClick={() => { if (window.confirm("Leave this room?")) leaveRoom(); }}>
                 <LogOut size={15} aria-hidden="true" /> Leave room
               </button>
             </div>
@@ -1161,36 +1167,56 @@ export default function App() {
                 <X size={15} aria-hidden="true" />
               </button>
             </div>
-            {(
-              [
+            <div className="side-section">
+              {[
                 { id: 'home', label: 'Home' },
-                { id: 'search', label: 'Search music' },
-                { id: 'liked-songs', label: 'Liked songs' },
+                { id: 'search', label: 'Search Music' },
+                { id: 'liked-songs', label: 'Liked Songs' },
                 { id: 'playlists', label: 'Your Library' },
-                { id: 'recently-played', label: 'Recently played' },
-                { id: 'room', label: 'Your room' },
-                { id: 'create-room', label: 'Create room' },
-                { id: 'join-room', label: 'Join room' },
-                { id: 'settings', label: 'Settings' },
-              ] as { id: NavTarget; label: string }[]
-            ).map((item) => (
+              ].map((item) => (
+                <button
+                  key={item.id}
+                  className={`side-link ${activeNav === item.id ? 'is-active' : ''}`}
+                  onClick={() => {
+                    if (item.id === 'liked-songs') goLibrary('liked');
+                    else if (item.id === 'playlists') goLibrary('playlists');
+                    else navigate(item.id as NavTarget);
+                  }}
+                >
+                  {item.label}
+                </button>
+              ))}
+            </div>
+            <div className="side-divider" />
+            <div className="side-section">
+              <span className="side-section-title">Listen Together</span>
+              {[
+                { id: 'room', label: 'Your Room' },
+                { id: 'create-room', label: 'Create Room' },
+                { id: 'join-room', label: 'Join Room' },
+              ].map((item) => (
+                <button
+                  key={item.id}
+                  className={`side-link ${activeNav === item.id ? 'is-active' : ''} ${item.id === 'room' && room.roomCode ? 'is-room-active' : ''}`}
+                  onClick={() => navigate(item.id as NavTarget)}
+                >
+                  {item.label}
+                  {item.id === 'room' && room.roomCode && <span className="side-room-badge">Active</span>}
+                </button>
+              ))}
+            </div>
+            <div className="side-divider" />
+            <div className="side-section side-section-bottom">
               <button
-                key={item.id}
-                className={`side-link ${activeNav === item.id ? 'is-active' : ''}`}
+                className="side-link"
                 onClick={() => {
-                  if (item.id === 'liked-songs') goLibrary('liked');
-                  else if (item.id === 'playlists') goLibrary('playlists');
-                  else if (item.id === 'recently-played') goLibrary('recent');
-                  else if (item.id === 'settings') {
-                    setMobileNav(false);
-                    setSettingsOpen(true);
-                  }
-                  else navigate(item.id);
+                  setMobileNav(false);
+                  setSettingsOpen(true);
                 }}
               >
-                {item.label}
+                Settings
               </button>
-            ))}
+            </div>
             {room.roomCode && (
               <button className="side-link" onClick={leaveRoom}>
                 <LogOut size={17} aria-hidden="true" /> Leave room

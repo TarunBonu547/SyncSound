@@ -315,7 +315,7 @@ io.on('connection', (socket) => {
    * A chat message. Only a member of the room may send one, the server
    * decides who the sender is and the message only goes to that room.
    */
-  socket.on('chat:send', ({ code, text } = {}, cb) => {
+  socket.on('chat:send', ({ code, text, replyTo } = {}, cb) => {
     const wanted = normalizeCode(code);
     const room = wanted ? getRoom(wanted) : null;
     if (!room || !room.participants.has(socket.id)) {
@@ -332,6 +332,26 @@ io.on('connection', (socket) => {
       if (cb) cb({ ok: false, error: `Message is too long (max ${MAX_CHAT_LENGTH} characters)` });
       return;
     }
+
+    /** Optional reply metadata of the message this message answers. */
+    let replyMetadata = null;
+    if (replyTo && typeof replyTo === 'object') {
+      const raw = replyTo;
+      const messageId = typeof raw.messageId === 'string' ? raw.messageId.trim() : '';
+      const senderId = typeof raw.senderId === 'string' ? raw.senderId.trim() : '';
+      const senderName = readDisplayName(raw.senderName);
+      const replyText = typeof raw.text === 'string' ? raw.text.trim() : '';
+      if (!messageId || !senderId || !senderName || !replyText) {
+        if (cb) cb({ ok: false, error: 'Invalid reply target' });
+        return;
+      }
+      if (replyText.length > MAX_CHAT_LENGTH) {
+        if (cb) cb({ ok: false, error: `Quoted message is too long (max ${MAX_CHAT_LENGTH} characters)` });
+        return;
+      }
+      replyMetadata = { messageId, senderId, senderName, text: replyText };
+    }
+
     const member = room.getMember(socket.id);
     if (!member) {
       if (cb) cb({ ok: false, error: 'Not in room' });
@@ -343,6 +363,7 @@ io.on('connection', (socket) => {
       userName: member.name,
       text: body,
       timestamp: Date.now(),
+      ...(replyMetadata && { replyTo: replyMetadata }),
     };
     room.addChatMessage(message);
     io.to(room.code).emit('chat:message', message);

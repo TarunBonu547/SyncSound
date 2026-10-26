@@ -47,6 +47,8 @@ export function useRoom({ socket, clientId, displayName, onPlayback, onError }: 
   const [draft, setDraft] = useState('');
   const [chatError, setChatError] = useState<string | null>(null);
   const [chatSending, setChatSending] = useState(false);
+  /** The message this client is composing a reply to, if any. */
+  const [replyTo, setReplyTo] = useState<{ messageId: string; senderId: string; senderName: string; text: string } | null>(null);
 
   /**
    * The queue, readable right now.
@@ -102,6 +104,23 @@ export function useRoom({ socket, clientId, displayName, onPlayback, onError }: 
       const userName = typeof raw.userName === 'string' ? raw.userName : 'Listener';
       const timestamp = Number.isFinite(raw.timestamp) ? Number(raw.timestamp) : Date.now();
       const { initials, color } = avatarFor(userName, userId);
+      const rawReply = raw.replyTo;
+      let replyTo: ChatEntry['replyTo'] | undefined;
+      if (
+        rawReply &&
+        typeof rawReply === 'object' &&
+        typeof (rawReply as Record<string, unknown>).messageId === 'string' &&
+        typeof (rawReply as Record<string, unknown>).senderId === 'string' &&
+        typeof (rawReply as Record<string, unknown>).senderName === 'string' &&
+        typeof (rawReply as Record<string, unknown>).text === 'string'
+      ) {
+        replyTo = {
+          messageId: (rawReply as Record<string, unknown>).messageId as string,
+          senderId: (rawReply as Record<string, unknown>).senderId as string,
+          senderName: (rawReply as Record<string, unknown>).senderName as string,
+          text: (rawReply as Record<string, unknown>).text as string,
+        };
+      }
       return {
         id: raw.id,
         userId,
@@ -111,6 +130,7 @@ export function useRoom({ socket, clientId, displayName, onPlayback, onError }: 
         text: typeof raw.text === 'string' ? raw.text : '',
         timestamp,
         isSelf: userId !== '' && userId === clientId,
+        ...(replyTo && { replyTo }),
       };
     },
     [clientId],
@@ -199,6 +219,8 @@ export function useRoom({ socket, clientId, displayName, onPlayback, onError }: 
   const enterRoom = useCallback((code: string, name?: string | null) => {
     const wanted = code.trim().toUpperCase();
     if (!wanted) return;
+    // A new room never keeps the reply target of the previous one.
+    setReplyTo(null);
     setRoomCode(wanted);
     setRoomName(name ? name : null);
   }, []);
@@ -214,9 +236,24 @@ export function useRoom({ socket, clientId, displayName, onPlayback, onError }: 
     setChatError(null);
     setChatSending(false);
     setDraft('');
+    setReplyTo(null);
     setQueue([]);
     queueRef.current = [];
   }, [socket, roomCode]);
+
+  /**
+   * Selects the message this client is replying to. The caller passes the full
+   * message data, so a reply target is captured exactly once and cannot drift
+   * while messages arrive or the list re-renders.
+   */
+  const selectReply = useCallback((message: { messageId: string; senderId: string; senderName: string; text: string }) => {
+    setReplyTo(message);
+  }, []);
+
+  /** Cancels the reply that is being composed, without touching the draft. */
+  const cancelReply = useCallback(() => {
+    setReplyTo(null);
+  }, []);
 
   /**
    * Sends a chat message. The server owns the chat, so the message is only
@@ -238,18 +275,28 @@ export function useRoom({ socket, clientId, displayName, onPlayback, onError }: 
     }
     setChatError(null);
     setChatSending(true);
-    socket.emit('chat:send', { code: roomCode, text }, (res: unknown) => {
-      setChatSending(false);
-      const answer = (res ?? {}) as Record<string, unknown>;
-      if (!answer.ok) {
-        setChatError(String(answer.error || 'The message could not be sent'));
-        return;
+    socket.emit(
+      'chat:send',
+      {
+        code: roomCode,
+        text,
+        ...(replyTo && { replyTo: { messageId: replyTo.messageId, senderId: replyTo.senderId, senderName: replyTo.senderName, text: replyTo.text } }),
+      },
+      (res: unknown) => {
+        setChatSending(false);
+        const answer = (res ?? {}) as Record<string, unknown>;
+        if (!answer.ok) {
+          // The selection is kept on failure, so the user can retry the reply.
+          setChatError(String(answer.error || 'The message could not be sent'));
+          return;
+        }
+        // The draft and the reply target are cleared only when the server took
+        // the message, so a failed send keeps both and can be retried.
+        setDraft('');
+        setReplyTo(null);
       }
-      // The message is cleared only when the server took it, so a failed
-      // send keeps the text and can be retried.
-      setDraft('');
-    });
-  }, [socket, roomCode, draft]);
+    );
+  }, [socket, roomCode, draft, replyTo]);
 
   /** The item that enters the queue. */
   const queueItemOf = useCallback(
@@ -357,6 +404,9 @@ export function useRoom({ socket, clientId, displayName, onPlayback, onError }: 
     setDraft,
     chatError,
     chatSending,
+    replyTo,
+    selectReply,
+    cancelReply,
     enterRoom,
     leaveRoom,
     sendMessage,
