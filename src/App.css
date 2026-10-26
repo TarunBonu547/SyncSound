@@ -2617,3 +2617,153 @@
 .side-divider { height: 1px; background: var(--border-soft); margin: 8px 0; }
 .side-room-badge { margin-left: auto; font-size: 10px; padding: 2px 6px; border-radius: 999px; background: var(--lavender-wash); }
 .side-link.is-room-active { color: var(--text); }
+
+/* --- Song dedication ------------------------------------------------------- */
+
+.queue-dedication {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: 6px;
+  color: var(--plum);
+  font-size: 11px;
+}
+
+.queue-dedication-editor {
+  margin-top: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.queue-dedication-editor-actions {
+  display: flex;
+  gap: 6px;
+  justify-content: flex-end;
+}
+
+.dedication-textarea {
+  width: 100%;
+  resize: vertical;
+  font: inherit;
+  border: 1px solid var(--border-soft);
+  border-radius: 8px;
+  padding: 6px 8px;
+  color: var(--text);
+  background: var(--surface);
+}
+
+.dedication-textarea:focus {
+  outline: none;
+  border-color: var(--plum);
+  box-shadow: 0 0 0 3px rgba(168, 85, 132, 0.15);
+}
+
+.dedication-counter {
+  font-size: 10px;
+  color: var(--text-muted);
+  text-align: right;
+}
+
+.dedication-input-group {
+  margin-top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.dedication-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--plum);
+  font-size: 12px;
+  padding: 0;
+}
+
+.dedication-toggle:hover {
+  color: var(--plum-dark);
+}
+
+.dedication-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+/* Dedication card shown when a dedicated song starts playing. */
+.dedication-card {
+  border: 1px solid var(--border-soft);
+  border-radius: 14px;
+  background: var(--surface);
+  color: var(--text);
+  padding: 16px;
+  margin: 12px 0;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.12);
+}
+
+.dedication-card-body {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.dedication-card-icon {
+  flex: none;
+  color: var(--plum);
+}
+
+.dedication-card-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.dedication-card-title {
+  margin: 0 0 6px 0;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.dedication-card-text {
+  margin: 0 0 8px 0;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--text);
+  white-space: pre-wrap;
+}
+
+.dedication-card-author {
+  margin: 0;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.dedication-card-edit {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.dedication-card-actions {
+  display: flex;
+  gap: 6px;
+  justify-content: flex-end;
+  margin-top: 4px;
+}
+
+.dedication-card-controls {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border-soft);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dedication-card { animation: none; }
+}

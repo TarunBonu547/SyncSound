@@ -27,7 +27,13 @@ import CreateRoom from './pages/CreateRoom';
 import JoinRoom from './pages/JoinRoom';
 import SearchView from './pages/SearchView';
 import LibraryView, { type LibrarySection } from './pages/LibraryView';
-import type { PlaybackState, ToastMessage, ToastTone, Track } from './types/music';
+import type {
+  PlaybackState,
+  SongDedication,
+  ToastMessage,
+  ToastTone,
+  Track,
+} from './types/music';
 import './App.css';
 
 /** Ignore a drift below this many seconds. */
@@ -99,6 +105,11 @@ export default function App() {
   const [chatOpen, setChatOpen] = useState(false);
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
   const [callOpen, setCallOpen] = useState(false);
+  /** The dedication card shown when a dedicated song starts playing. */
+  const [showDedication, setShowDedication] = useState<{
+    dedication: SongDedication;
+    itemId: string;
+  } | null>(null);
 
   const library = useLibrary();
   /** On narrow screens the chat lives in a drawer instead of a side column. */
@@ -143,6 +154,7 @@ export default function App() {
     onPlayback: (p) => applyRemoteRef.current(p),
     onError: (message) => pushToast(message, 'error'),
   });
+  const { editDedication } = room;
 
   /** The two person call. It only uses the socket, never the music protocol. */
   const call = useVideoCall({ socket, roomCode: room.roomCode, clientId });
@@ -198,7 +210,13 @@ export default function App() {
       // right away instead of a placeholder.
       const known = room.queueRef.current.find((q) => q.id === p.currentQueueItemId);
       const track: Track = known
-        ? { id: videoId, title: known.title, channel: known.channel, thumbnail: known.thumbnail }
+        ? {
+            id: videoId,
+            title: known.title,
+            channel: known.channel,
+            thumbnail: known.thumbnail,
+            ...(known.dedication && { dedication: known.dedication }),
+          }
         : { id: videoId, title: 'Loading…', channel: '', thumbnail: `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg` };
       setCurrent(track);
       library.rememberTrack(track);
@@ -269,6 +287,15 @@ export default function App() {
     roomPbRef.current = roomPb;
     applyRemoteRef.current = applyRemote;
   });
+
+  /** Show the dedication card when a track that carries one starts playing. */
+  useEffect(() => {
+    if (!current?.dedication) {
+      setShowDedication(null);
+      return;
+    }
+    setShowDedication({ dedication: current.dedication, itemId: currentItemId || '' });
+  }, [current, currentItemId]);
 
   /**
    * An explicit user action becomes a command: the server updates the room
@@ -486,7 +513,7 @@ export default function App() {
   };
 
   /** Add a video to the shared queue and start it for the whole room. */
-  const loadVideo = async (id: string) => {
+  const loadVideo = async (id: string, dedication?: string) => {
     if (!socket || !room.roomCode) {
       setYtError('Join a room first');
       return;
@@ -499,6 +526,14 @@ export default function App() {
       channel: meta.channel,
       thumbnail: meta.thumbnail,
       durationSeconds: meta.duration || null,
+      ...(dedication && {
+        dedication: {
+          text: dedication,
+          authorId: clientId,
+          authorName: displayName || 'You',
+          createdAt: Date.now(),
+        },
+      }),
     });
     if (message) setYtError(message);
   };
@@ -531,6 +566,38 @@ export default function App() {
     }
     setSearchTerm('');
   };
+
+  /** Adds a searched track, attaching a dedication when one was written. */
+  const onAddToQueue = useCallback(
+    (track: SearchResult, dedicationText?: string) => {
+      const dedication = dedicationText
+        ? {
+            text: dedicationText,
+            authorId: clientId,
+            authorName: displayName,
+            createdAt: Date.now(),
+          }
+        : undefined;
+      return room.addTrackToQueue(track, dedication);
+    },
+    [room, clientId, displayName],
+  );
+
+  /** Plays a searched track now, attaching a dedication when one was written. */
+  const onPlayNow = useCallback(
+    (track: SearchResult, dedicationText?: string) => {
+      const dedication = dedicationText
+        ? {
+            text: dedicationText,
+            authorId: clientId,
+            authorName: displayName,
+            createdAt: Date.now(),
+          }
+        : undefined;
+      return room.playTrack(track, dedication);
+    },
+    [room, clientId, displayName],
+  );
 
   /** Looks the metadata of a video up and plays it in the room. */
   const playNowById = async (id: string): Promise<string | null> => {
@@ -744,6 +811,22 @@ export default function App() {
     if (current) library.toggleLike(current);
   };
 
+  const dismissDedication = () => setShowDedication(null);
+
+  const saveDedication = async (text: string) => {
+    if (!showDedication) return;
+    const message = await editDedication(showDedication.itemId, text);
+    if (message) pushToast(message, 'error');
+    else setShowDedication(null);
+  };
+
+  const removeDedication = async () => {
+    if (!showDedication) return;
+    const message = await editDedication(showDedication.itemId, null);
+    if (message) pushToast(message, 'error');
+    else setShowDedication(null);
+  };
+
   const activeNav: NavTarget =
     view === 'room'
       ? 'room'
@@ -876,8 +959,8 @@ export default function App() {
               setNotice: setYtNotice,
               run: runQueueSearch,
             }}
-            onAddToQueue={room.addTrackToQueue}
-            onPlayNow={room.playTrack}
+            onAddToQueue={onAddToQueue}
+            onPlayNow={onPlayNow}
             inRoom={!!room.roomCode}
             queue={room.queue}
             activeQueueItemId={activeQueueItemId}
@@ -885,6 +968,12 @@ export default function App() {
             onMoveUp={(id) => room.moveQueueItem(id, -1)}
             onMoveDown={(id) => room.moveQueueItem(id, 1)}
             onRemove={room.removeQueueItem}
+            editDedication={editDedication}
+            clientId={clientId}
+            showDedication={showDedication}
+            onDismissDedication={dismissDedication}
+            onSaveDedication={saveDedication}
+            onRemoveDedication={removeDedication}
             onInvite={() => setInviteOpen(true)}
             onVideoCall={() => setCallOpen(true)}
             onFocusQueueInput={focusQueueInput}

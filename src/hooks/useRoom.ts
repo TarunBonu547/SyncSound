@@ -1,10 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { Socket } from 'socket.io-client';
-import type { ChatEntry, PlaybackState, QueueEntry, RoomMember, Track } from '../types/music';
+import type { ChatEntry, PlaybackState, QueueEntry, RoomMember, SongDedication, Track } from '../types/music';
 import { avatarFor } from '../utils/avatar';
 
 /** A chat message may not be longer than this (the server enforces it too). */
 export const MAX_CHAT_LENGTH = 500;
+/** A dedication on a queued song may not be longer than this. */
+export const MAX_DEDICATION_LENGTH = 200;
 
 export type UseRoomOptions = {
   /** The one socket of the tab. The room never opens a second one. */
@@ -81,6 +83,18 @@ export function useRoom({ socket, clientId, displayName, onPlayback, onError }: 
     if (!Array.isArray(list)) return;
     const mapped: QueueEntry[] = list.map((raw) => {
       const item = (raw ?? {}) as Record<string, unknown>;
+      let dedication: QueueEntry['dedication'] | undefined;
+      if (item.dedication && typeof item.dedication === 'object') {
+        const d = item.dedication as Record<string, unknown>;
+        if (
+          typeof d.text === 'string' &&
+          typeof d.authorId === 'string' &&
+          typeof d.authorName === 'string' &&
+          typeof d.createdAt === 'number'
+        ) {
+          dedication = { text: d.text, authorId: d.authorId, authorName: d.authorName, createdAt: d.createdAt };
+        }
+      }
       return {
         id: String(item.id ?? ''),
         title: String(item.title ?? ''),
@@ -88,6 +102,7 @@ export function useRoom({ socket, clientId, displayName, onPlayback, onError }: 
         thumbnail: String(item.thumbnailUrl ?? item.thumbnail ?? ''),
         durationSeconds:
           typeof item.durationSeconds === 'number' ? item.durationSeconds : null,
+        ...(dedication && { dedication }),
       };
     });
     queueRef.current = mapped;
@@ -298,14 +313,15 @@ export function useRoom({ socket, clientId, displayName, onPlayback, onError }: 
     );
   }, [socket, roomCode, draft, replyTo]);
 
-  /** The item that enters the queue. */
+  /** The item that enters the queue, with an optional dedication attached. */
   const queueItemOf = useCallback(
-    (track: Track) => ({
+    (track: Track, dedication?: SongDedication) => ({
       videoId: track.id,
       title: track.title,
       channel: track.channel,
       thumbnail: track.thumbnail,
       duration: track.durationSeconds ?? undefined,
+      ...(dedication && { dedication }),
     }),
     [],
   );
@@ -316,10 +332,10 @@ export function useRoom({ socket, clientId, displayName, onPlayback, onError }: 
    * can show what went wrong.
    */
   const addTrackToQueue = useCallback(
-    (track: Track): Promise<string | null> => {
+    (track: Track, dedication?: SongDedication): Promise<string | null> => {
       if (!socket || !roomCode) return Promise.resolve('Join a room first');
       return new Promise((resolve) => {
-        socket.emit('QUEUE_ADD', { code: roomCode, item: queueItemOf(track) }, (res: unknown) => {
+        socket.emit('QUEUE_ADD', { code: roomCode, item: queueItemOf(track, dedication) }, (res: unknown) => {
           const answer = (res ?? {}) as Record<string, unknown>;
           if (!answer.ok) {
             resolve(String(answer.error || 'The track could not be added'));
@@ -334,10 +350,10 @@ export function useRoom({ socket, clientId, displayName, onPlayback, onError }: 
 
   /** Adds a track and starts it for everybody in the room. */
   const playTrack = useCallback(
-    (track: Track): Promise<string | null> => {
+    (track: Track, dedication?: SongDedication): Promise<string | null> => {
       if (!socket || !roomCode) return Promise.resolve('Join a room first');
       return new Promise((resolve) => {
-        socket.emit('QUEUE_ADD', { code: roomCode, item: queueItemOf(track) }, (res: unknown) => {
+        socket.emit('QUEUE_ADD', { code: roomCode, item: queueItemOf(track, dedication) }, (res: unknown) => {
           const answer = (res ?? {}) as Record<string, unknown>;
           if (!answer.ok) {
             resolve(String(answer.error || 'The track could not be added'));
@@ -392,6 +408,31 @@ export function useRoom({ socket, clientId, displayName, onPlayback, onError }: 
     [socket, roomCode],
   );
 
+  /**
+   * Edits or removes the dedication on a queued song. Pass an empty string or
+   * null to remove the dedication. Only the author may edit it.
+   */
+  const editDedication = useCallback(
+    (itemId: string, text: string | null): Promise<string | null> => {
+      if (!socket || !roomCode) return Promise.resolve('Join a room first');
+      return new Promise((resolve) => {
+        socket.emit(
+          'QUEUE_EDIT_DEDICATION',
+          { code: roomCode, itemId, dedication: text },
+          (res: unknown) => {
+            const answer = (res ?? {}) as Record<string, unknown>;
+            if (!answer.ok) {
+              resolve(String(answer.error || 'The dedication could not be saved'));
+              return;
+            }
+            resolve(null);
+          }
+        );
+      });
+    },
+    [socket, roomCode],
+  );
+
   return {
     roomCode,
     roomName,
@@ -415,6 +456,7 @@ export function useRoom({ socket, clientId, displayName, onPlayback, onError }: 
     playQueueItem,
     moveQueueItem,
     removeQueueItem,
+    editDedication,
   };
 }
 

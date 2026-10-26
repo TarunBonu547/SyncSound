@@ -6,6 +6,8 @@ const MAX_POSITION_SECONDS = 24 * 60 * 60;
 const MAX_CHAT_MESSAGES = 200;
 /** A single chat message may not be longer than this. */
 const MAX_CHAT_LENGTH = 500;
+/** A dedication on a queued song may not be longer than this. */
+const MAX_DEDICATION_LENGTH = 200;
 
 /**
  * The artwork of a queue item may only come from the image hosts of YouTube.
@@ -202,16 +204,47 @@ class RoomState {
       : Number.isFinite(item.durationSeconds)
         ? item.durationSeconds
         : null;
-    return { videoId, title, channel, thumbnailUrl, durationSeconds };
+    let dedication = null;
+    if (item.dedication && typeof item.dedication === 'object') {
+      const text = typeof item.dedication.text === 'string' ? item.dedication.text.replace(/\s+/g, ' ').trim() : '';
+      if (text) {
+        if (text.length > MAX_DEDICATION_LENGTH) return null;
+        dedication = { text, createdAt: Date.now() };
+      }
+    }
+    return { videoId, title, channel, thumbnailUrl, durationSeconds, ...(dedication && { dedication }) };
   }
 
-  queueAdd(item) {
+  queueAdd(item, clientId = null, clientName = null) {
     const v = this.validateItem(item);
     if (!v) return { ok: false, error: 'Invalid item' };
     const qi = { id: randomUUID(), ...v };
+    if (qi.dedication && clientId && clientName) {
+      qi.dedication.authorId = clientId;
+      qi.dedication.authorName = clientName;
+    }
     this.queue.push(qi);
     this.queueRevision += 1;
     return { ok: true, item: qi };
+  }
+
+  queueEditDedication(itemId, dedicationText, clientId) {
+    const idx = this.queue.findIndex((q) => q.id === itemId);
+    if (idx === -1) return { ok: false, error: 'Item not found' };
+    const item = this.queue[idx];
+    if (!item.dedication || item.dedication.authorId !== clientId) {
+      return { ok: false, error: 'Not the author of this dedication' };
+    }
+    const text = typeof dedicationText === 'string' ? dedicationText.replace(/\s+/g, ' ').trim() : '';
+    if (!text) {
+      delete item.dedication;
+    } else {
+      if (text.length > MAX_DEDICATION_LENGTH) return { ok: false, error: 'Dedication is too long' };
+      item.dedication.text = text;
+      item.dedication.createdAt = Date.now();
+    }
+    this.queueRevision += 1;
+    return { ok: true, item };
   }
 
   queueRemove(itemId) {
@@ -321,4 +354,4 @@ class RoomState {
   }
 }
 
-module.exports = { RoomState, MAX_CHAT_LENGTH, MAX_CHAT_MESSAGES };
+module.exports = { RoomState, MAX_CHAT_LENGTH, MAX_CHAT_MESSAGES, MAX_DEDICATION_LENGTH };

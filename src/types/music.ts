@@ -8,6 +8,18 @@ export interface Song {
   liked?: boolean;
 }
 
+/** A personal note attached to one queued song. */
+export interface SongDedication {
+  /** The dedication text, never empty after validation. */
+  text: string;
+  /** The client id of the listener who wrote it. */
+  authorId: string;
+  /** The display name of the author, shown beside the note. */
+  authorName: string;
+  /** When the note was written, epoch milliseconds. */
+  createdAt: number;
+}
+
 /** A track of the shared queue: a YouTube video with its metadata. */
 export interface Track {
   id: string;
@@ -16,6 +28,8 @@ export interface Track {
   thumbnail: string;
   /** The length of the video, when it is known. */
   durationSeconds?: number | null;
+  /** Optional dedication attached to this queued occurrence of the video. */
+  dedication?: SongDedication;
 }
 
 /** An entry of the shared room queue. */
@@ -25,6 +39,8 @@ export interface QueueEntry {
   channel: string;
   thumbnail: string;
   durationSeconds?: number | null;
+  /** Optional dedication attached to this queue item. */
+  dedication?: SongDedication;
 }
 
 /**

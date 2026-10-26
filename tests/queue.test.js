@@ -105,6 +105,44 @@ const VIDEO_C = 'bbbbbbbbbbb';
       queue.map((item) => item.videoId),
     );
 
+    // --- a dedication on a queued track ----------------------------------------
+    const dedicated = await ask(host, 'QUEUE_ADD', {
+      code,
+      item: { videoId: VIDEO_B, title: 'Second again', channel: 'Two', duration: 120, dedication: { text: 'This one is for you' } },
+    });
+    check('a dedicated track enters the queue', dedicated.ok === true, dedicated);
+    await sleep(200);
+    const withDedication = queueUpdates[queueUpdates.length - 1].queue;
+    const dedicatedItem = withDedication.find((item) => item.id === dedicated.item.id);
+    check('the dedication is stored on the queue item', dedicatedItem && dedicatedItem.dedication && dedicatedItem.dedication.text === 'This one is for you', dedicatedItem);
+    check('the dedication names the author', dedicatedItem && dedicatedItem.dedication && dedicatedItem.dedication.authorId === HOST_ID, dedicatedItem);
+
+    // the author edits the dedication
+    const edited = await ask(host, 'QUEUE_EDIT_DEDICATION', { code, itemId: dedicated.item.id, dedication: 'Still for you' });
+    check('the author can edit the dedication', edited.ok === true, edited);
+    await sleep(200);
+    const afterEdit = queueUpdates[queueUpdates.length - 1].queue;
+    const editedItem = afterEdit.find((item) => item.id === dedicated.item.id);
+    check('the dedication shows the new text', editedItem && editedItem.dedication && editedItem.dedication.text === 'Still for you', editedItem);
+
+    // a stranger is not the author, so the edit is refused
+    const dedicationStranger = await connect();
+    const refusedEdit = await ask(dedicationStranger, 'QUEUE_EDIT_DEDICATION', { code, itemId: dedicated.item.id, dedication: 'not yours' });
+    check('a stranger cannot edit the dedication', refusedEdit.ok === false, refusedEdit);
+    dedicationStranger.close();
+
+    // the author removes the dedication by sending an empty text
+    const dedicationRemoved = await ask(host, 'QUEUE_EDIT_DEDICATION', { code, itemId: dedicated.item.id, dedication: '' });
+    check('the author can remove the dedication', dedicationRemoved.ok === true, dedicationRemoved);
+    await sleep(200);
+    const afterRemove = queueUpdates[queueUpdates.length - 1].queue;
+    const finalItem = afterRemove.find((item) => item.id === dedicated.item.id);
+    check('the dedication is gone', !finalItem || !finalItem.dedication, finalItem);
+
+    // restore the queue to the three tracks the rest of the test expects
+    await ask(host, 'QUEUE_REMOVE', { code, itemId: dedicated.item.id });
+    await sleep(200);
+
     // --- a track moves one place up ---------------------------------------------
     host.emit('QUEUE_REORDER', { code, itemId: third.item.id, toIndex: 1 });
     await sleep(250);

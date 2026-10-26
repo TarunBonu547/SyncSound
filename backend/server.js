@@ -377,7 +377,8 @@ io.on('connection', (socket) => {
     // YouTube itself when it can. The answer of the client is only used when
     // the server can not get one.
     const trusted = await resolveQueueItem(item);
-    const result = room.queueAdd(trusted);
+    const member = room.getMember(socket.id);
+    const result = room.queueAdd(trusted, member ? member.clientId : null, member ? member.name : null);
     if (!result.ok) {
       if (cb) cb({ ok: false, error: result.error });
       return;
@@ -408,6 +409,21 @@ io.on('connection', (socket) => {
       }
       broadcastQueue(room);
       if (cb) cb({ ok: true });
+    })
+  );
+
+  /** Edits or removes the dedication on a queued song. Only the author may touch it. */
+  socket.on('QUEUE_EDIT_DEDICATION', ({ code, itemId, dedication }, cb) =>
+    requireRoom(code, socket, cb, (room) => {
+      const member = room.getMember(socket.id);
+      const text = typeof dedication === 'string' ? dedication : null;
+      const result = room.queueEditDedication(itemId, text, member ? member.clientId : null);
+      if (!result.ok) {
+        if (cb) cb({ ok: false, error: result.error });
+        return;
+      }
+      broadcastQueue(room);
+      if (cb) cb({ ok: true, item: result.item });
     })
   );
 

@@ -1,8 +1,11 @@
 import { useCallback, useState } from 'react';
-import { Play, Plus, Search, Loader2, Link2 } from 'lucide-react';
+import { Play, Plus, Search, Loader2, Link2, Heart } from 'lucide-react';
 import { extractVideoId } from '../../hooks/useYouTubePlayer';
 import { formatDuration } from '../../utils/youtubeSearch';
 import type { SearchResult } from '../../utils/youtubeSearch';
+
+/** The longest dedication note a listener may attach to a song. */
+const MAX_DEDICATION_LENGTH = 200;
 
 type AddToQueueFormProps = {
   term: string;
@@ -13,9 +16,9 @@ type AddToQueueFormProps = {
   nextPageToken: string | null;
   adding: boolean;
   addQueue: () => void;
-  loadVideo: (id: string) => void;
-  onAddToQueue: (track: SearchResult) => Promise<string | null>;
-  onPlayNow: (track: SearchResult) => Promise<string | null>;
+  loadVideo: (id: string, dedication?: string) => void;
+  onAddToQueue: (track: SearchResult, dedication?: string) => Promise<string | null>;
+  onPlayNow: (track: SearchResult, dedication?: string) => Promise<string | null>;
   inRoom: boolean;
   error: string | null;
   notice: string | null;
@@ -28,7 +31,8 @@ type AddToQueueFormProps = {
  *
  * The search runs on the backend, which holds the key of the YouTube API, so
  * the browser never sees a key. A pasted link is looked up as well, so the
- * old way of adding a track keeps working.
+ * old way of adding a track keeps working. Each track may carry an optional
+ * personal dedication that shows up when the song starts playing.
  */
 export default function AddToQueueForm({
   term,
@@ -49,19 +53,24 @@ export default function AddToQueueForm({
   setNotice,
 }: AddToQueueFormProps) {
   const [busy, setBusy] = useState(false);
+  /** Dedication drafts for search results, keyed by video id. */
+  const [dedicationDrafts, setDedicationDrafts] = useState<Record<string, string>>({});
+  /** Dedication draft for a pasted YouTube link. */
+  const [pastedDedication, setPastedDedication] = useState('');
 
   /** Sends the track to the room and reports what the server said. */
   const send = useCallback(
     async (
-      action: (track: SearchResult) => Promise<string | null>,
+      action: (track: SearchResult, dedication?: string) => Promise<string | null>,
       track: SearchResult,
       label: string,
+      dedication?: string,
     ) => {
       setBusy(true);
       setNotice(null);
       setError(null);
       try {
-        const message = await action(track);
+        const message = await action(track, dedication);
         if (message) setError(message);
         else setNotice(`${label}: ${track.title}`);
       } finally {
@@ -73,6 +82,11 @@ export default function AddToQueueForm({
 
   const pastedId = extractVideoId(term);
   const duration = (track: SearchResult) => formatDuration(track.durationSeconds);
+
+  const dedicationFor = (track: SearchResult) => dedicationDrafts[track.id] || '';
+  const setDedicationFor = (track: SearchResult, value: string) => {
+    setDedicationDrafts((prev) => ({ ...prev, [track.id]: value }));
+  };
 
   return (
     <section className="panel add-queue" aria-labelledby="add-queue-title">
@@ -116,7 +130,7 @@ export default function AddToQueueForm({
               return;
             }
             setError(null);
-            loadVideo(pastedId);
+            loadVideo(pastedId, pastedDedication || undefined);
           }}
           disabled={!pastedId || !inRoom}
           title={inRoom ? 'Play the pasted link for everybody' : 'Join a room first'}
@@ -126,6 +140,36 @@ export default function AddToQueueForm({
         <button className="btn primary" onClick={addQueue} disabled={adding || !inRoom}>
           {adding ? 'Adding…' : 'Add to Queue'}
         </button>
+
+        {pastedId && (
+          <div className="dedication-input-group">
+            <button
+              type="button"
+              className="dedication-toggle"
+              onClick={() => setPastedDedication((d) => (d ? '' : ''))}
+              aria-expanded={Boolean(pastedDedication)}
+            >
+              <Heart size={14} aria-hidden="true" />
+              <span>{pastedDedication ? 'Edit note' : 'Add a note ❤️'}</span>
+            </button>
+            {pastedDedication && (
+              <div className="dedication-editor">
+                <textarea
+                  className="input dedication-textarea"
+                  value={pastedDedication}
+                  onChange={(e) => setPastedDedication(e.target.value)}
+                  placeholder="This song reminds me of you…"
+                  maxLength={MAX_DEDICATION_LENGTH}
+                  rows={2}
+                  aria-label="Dedication"
+                />
+                <span className="dedication-counter">
+                  {pastedDedication.length} / {MAX_DEDICATION_LENGTH}
+                </span>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {error && (
@@ -141,38 +185,74 @@ export default function AddToQueueForm({
 
       {results.length > 0 && (
         <ul className="queue-list" style={{ marginTop: 12 }}>
-          {results.map((track) => (
-            <li className="queue-row" key={track.id}>
-              <img className="queue-thumb" src={track.thumbnail} alt="" />
-              <div className="queue-text">
-                <p className="queue-title">{track.title}</p>
-                <p className="queue-channel">
-                  {track.channel}
-                  {duration(track) ? ` · ${duration(track)}` : ''}
-                </p>
-              </div>
-              <div className="queue-actions">
-                <button
-                  className="music-icon-btn"
-                  onClick={() => send(onAddToQueue, track, 'Added to the queue')}
-                  disabled={!inRoom || busy}
-                  title={inRoom ? 'Add to queue' : 'Join a room first'}
-                  aria-label={`Add ${track.title} to the queue`}
-                >
-                  <Plus size={20} />
-                </button>
-                <button
-                  className="music-icon-btn primary"
-                  onClick={() => send(onPlayNow, track, 'Playing now')}
-                  disabled={!inRoom || busy}
-                  title={inRoom ? 'Play now' : 'Join a room first'}
-                  aria-label={`Play ${track.title} now`}
-                >
-                  <Play size={20} />
-                </button>
-              </div>
-            </li>
-          ))}
+          {results.map((track) => {
+            const hasDraft = Boolean(dedicationDrafts[track.id]);
+            return (
+              <li className="queue-row" key={track.id}>
+                <img className="queue-thumb" src={track.thumbnail} alt="" />
+                <div className="queue-text">
+                  <p className="queue-title">{track.title}</p>
+                  <p className="queue-channel">
+                    {track.channel}
+                    {duration(track) ? ` · ${duration(track)}` : ''}
+                  </p>
+                </div>
+                <div className="queue-actions">
+                  <button
+                    type="button"
+                    className="dedication-toggle"
+                    onClick={() =>
+                      setDedicationFor(track, hasDraft ? '' : dedicationDrafts[track.id] || '')
+                    }
+                    aria-expanded={hasDraft}
+                    title={hasDraft ? 'Remove note' : 'Add a note'}
+                    aria-label={`Add a note to ${track.title}`}
+                  >
+                    <Heart size={14} aria-hidden="true" />
+                    <span>{hasDraft ? 'Note added' : 'Add a note ❤️'}</span>
+                  </button>
+                  {hasDraft && (
+                    <div className="dedication-editor">
+                      <textarea
+                        className="input dedication-textarea"
+                        value={dedicationFor(track)}
+                        onChange={(e) => setDedicationFor(track, e.target.value)}
+                        placeholder="This song reminds me of you…"
+                        maxLength={MAX_DEDICATION_LENGTH}
+                        rows={2}
+                        aria-label={`Dedication for ${track.title}`}
+                      />
+                      <span className="dedication-counter">
+                        {dedicationFor(track).length} / {MAX_DEDICATION_LENGTH}
+                      </span>
+                    </div>
+                  )}
+                  <button
+                    className="music-icon-btn"
+                    onClick={() =>
+                      send(onAddToQueue, track, 'Added to the queue', dedicationFor(track) || undefined)
+                    }
+                    disabled={!inRoom || busy}
+                    title={inRoom ? 'Add to queue' : 'Join a room first'}
+                    aria-label={`Add ${track.title} to the queue`}
+                  >
+                    <Plus size={20} />
+                  </button>
+                  <button
+                    className="music-icon-btn primary"
+                    onClick={() =>
+                      send(onPlayNow, track, 'Playing now', dedicationFor(track) || undefined)
+                    }
+                    disabled={!inRoom || busy}
+                    title={inRoom ? 'Play now' : 'Join a room first'}
+                    aria-label={`Play ${track.title} now`}
+                  >
+                    <Play size={20} />
+                  </button>
+                </div>
+              </li>
+            );
+          })}
         </ul>
       )}
 

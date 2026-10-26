@@ -7,6 +7,8 @@ import TrackInfo from './TrackInfo';
 import PlaybackControls from './PlaybackControls';
 import QueuePanel from '../queue/QueuePanel';
 import AddToQueueForm from '../queue/AddToQueueForm';
+import DedicationCard from './DedicationCard';
+import type { SongDedication } from '../../types/music';
 
 export type QueueSearchState = {
   term: string;
@@ -46,10 +48,10 @@ type MainPlayerProps = {
   /** True while a track is on its way into the queue. */
   adding: boolean;
   onAddQueue: () => void;
-  onLoadVideo: (id: string) => void;
+  onLoadVideo: (id: string, dedication?: string) => void;
   search: QueueSearchState;
-  onAddToQueue: (track: SearchResult) => Promise<string | null>;
-  onPlayNow: (track: SearchResult) => Promise<string | null>;
+  onAddToQueue: (track: SearchResult, dedication?: string) => Promise<string | null>;
+  onPlayNow: (track: SearchResult, dedication?: string) => Promise<string | null>;
   inRoom: boolean;
   queue: QueueEntry[];
   activeQueueItemId: string | null;
@@ -57,6 +59,15 @@ type MainPlayerProps = {
   onMoveUp: (itemId: string) => void;
   onMoveDown: (itemId: string) => void;
   onRemove: (itemId: string) => void;
+  /** Edits or removes the dedication on a queued item. */
+  editDedication: (itemId: string, text: string | null) => Promise<string | null>;
+  /** The id of this client, used to decide who may edit a dedication. */
+  clientId: string;
+  /** The dedication card to show, if any. */
+  showDedication: { dedication: SongDedication; itemId: string } | null;
+  onDismissDedication: () => void;
+  onSaveDedication: (text: string) => void;
+  onRemoveDedication: () => void;
   onInvite: () => void;
   onVideoCall: () => void;
   onFocusQueueInput: () => void;
@@ -108,6 +119,12 @@ export default function MainPlayer({
   onMoveUp,
   onMoveDown,
   onRemove,
+  editDedication,
+  clientId,
+  showDedication,
+  onDismissDedication,
+  onSaveDedication,
+  onRemoveDedication,
   onInvite,
   onVideoCall,
   onFocusQueueInput,
@@ -196,6 +213,16 @@ export default function MainPlayer({
         onToggleLike={onToggleLike}
       />
 
+      {showDedication && (
+        <DedicationCard
+          dedication={showDedication.dedication}
+          isAuthor={showDedication.dedication.authorId === clientId}
+          onDismiss={onDismissDedication}
+          onSave={onSaveDedication}
+          onRemove={onRemoveDedication}
+        />
+      )}
+
       <div className="scrubber">
         <input
           type="range"
@@ -275,6 +302,8 @@ export default function MainPlayer({
         onMoveUp={onMoveUp}
         onMoveDown={onMoveDown}
         onRemove={onRemove}
+        clientId={clientId}
+        editDedication={editDedication}
       />
     </section>
   );

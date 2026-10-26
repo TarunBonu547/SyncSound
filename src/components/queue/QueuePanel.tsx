@@ -9,6 +9,10 @@ type QueuePanelProps = {
   onMoveUp: (itemId: string) => void;
   onMoveDown: (itemId: string) => void;
   onRemove: (itemId: string) => void;
+  /** The id of this client, used to decide who may edit a dedication. */
+  clientId: string;
+  /** Edits or removes the dedication on a queued item. */
+  editDedication: (itemId: string, text: string | null) => Promise<string | null>;
 };
 
 /** The shared queue of the room: everybody hears the same order. */
@@ -19,6 +23,8 @@ export default function QueuePanel({
   onMoveUp,
   onMoveDown,
   onRemove,
+  clientId,
+  editDedication,
 }: QueuePanelProps) {
   return (
     <section className="card queue-card" aria-labelledby="queue-title">
@@ -53,10 +59,12 @@ export default function QueuePanel({
                 key={item.id}
                 item={item}
                 isCurrent={isCurrent}
+                isAuthor={Boolean(item.dedication && item.dedication.authorId === clientId)}
                 onPlay={() => onPlay(item.id)}
                 onMoveUp={() => onMoveUp(item.id)}
                 onMoveDown={() => onMoveDown(item.id)}
                 onRemove={() => onRemove(item.id)}
+                editDedication={editDedication}
               />
             );
           })}
