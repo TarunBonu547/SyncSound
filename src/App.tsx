@@ -23,6 +23,7 @@ import ChatPanel from './components/chat/ChatPanel';
 import Toast from './components/common/Toast';
 import FloatingCallWindow from './features/call/FloatingCallWindow';
 import { useVideoCall } from './features/call/useVideoCall';
+import DrawingOverlay from './components/drawing/DrawingOverlay';
 import CreateRoom from './pages/CreateRoom';
 import JoinRoom from './pages/JoinRoom';
 import SearchView from './pages/SearchView';
@@ -1258,6 +1259,8 @@ export default function App() {
           <Toast key={toast.id} id={toast.id} message={toast.text} tone={toast.tone} onDismiss={() => dismissToast(toast.id)} />
         ))}
       </div>
+
+      <DrawingOverlay />
 
       {/* ------------------------------ Mobile menu -------------------------- */}
       {mobileNav && (
