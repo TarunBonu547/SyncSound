@@ -3,7 +3,7 @@
   inset: 0;
   z-index: 1200;
   pointer-events: none;
-  touch-action: none;
+  touch-action: auto;
   opacity: 0;
 }
 
@@ -14,6 +14,7 @@
 .drawing-canvas.is-active {
   pointer-events: auto;
   cursor: crosshair;
+  touch-action: none; /* prevent page scroll while drawing */
 }
 
 .drawing-ui {
@@ -71,6 +72,30 @@
   display: flex;
   flex-direction: column;
   gap: 10px;
+}
+
+.drawing-presence {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.drawing-presence-dot {
+  font-size: 10px;
+  padding: 2px 6px;
+  border-radius: 999px;
+  background: var(--lavender-wash, rgba(217, 202, 255, 0.5));
+  color: var(--ink, #2a2340);
+  border: 1px solid var(--border-soft, rgba(47,111,134,0.14));
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.drawing-presence-dot.is-mine {
+  background: var(--sky-wash, rgba(168, 221, 247, 0.45));
+  font-weight: 600;
 }
 
 .drawing-tools {
@@ -184,10 +209,12 @@
   .drawing-ui {
     right: 12px;
     top: auto;
-    bottom: 110px;
+    bottom: calc(var(--mini-player-height, 72px) + env(safe-area-inset-bottom, 0px) + 12px);
     transform: none;
   }
   .drawing-toolbar {
-    width: 210px;
+    width: min(220px, calc(100vw - 24px));
+    max-height: 60vh;
+    overflow-y: auto;
   }
 }

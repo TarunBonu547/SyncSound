@@ -306,6 +306,7 @@ io.on('connection', (socket) => {
         queueRevision: room.queueRevision,
         ...roomPresence(room),
         messages: room.getChatHistory(),
+        drawings: room.getDrawings(),
         clientId: member.clientId,
         isHost: member.isHost,
         serverNow: Date.now(),
@@ -557,6 +558,85 @@ io.on('connection', (socket) => {
     }
     room.stopTyping(socket.id);
     socket.to(room.code).emit('TYPING_STOP', { clientId });
+    if (cb) cb({ ok: true });
+  });
+
+  // --- Shared freehand drawing (room-scoped) ---------------------------------
+  function validNorm(n) {
+    return typeof n === 'number' && Number.isFinite(n) && n >= -0.1 && n <= 1.1;
+  }
+  function clampNorm(n) {
+    return Math.max(0, Math.min(1, n));
+  }
+
+  socket.on('DRAW_STROKE_START', ({ code, stroke } = {}, cb) => {
+    const room = requireRoomMember(code, socket);
+    if (!room) { if (cb) cb({ ok: false, error: 'Not in room' }); return; }
+    const member = room.getMember(socket.id);
+    if (!member || !stroke || typeof stroke !== 'object') { if (cb) cb({ ok: false, error: 'Invalid stroke' }); return; }
+    const id = typeof stroke.id === 'string' ? stroke.id.slice(0, 80) : null;
+    if (!id) { if (cb) cb({ ok: false, error: 'Invalid stroke' }); return; }
+    const payload = {
+      id,
+      tool: stroke.tool === 'eraser' ? 'eraser' : 'pencil',
+      color: typeof stroke.color === 'string' ? stroke.color.slice(0, 20) : '#2f6f86',
+      size: typeof stroke.size === 'number' && Number.isFinite(stroke.size) ? Math.max(0.001, Math.min(0.1, stroke.size)) : 0.005,
+      points: Array.isArray(stroke.points) ? stroke.points.slice(0, 500).filter(p => p && validNorm(p.x) && validNorm(p.y)).map(p => ({ x: clampNorm(p.x), y: clampNorm(p.y) })) : [],
+      clientId: member.clientId,
+      clientName: member.name,
+    };
+    socket.to(room.code).emit('DRAW_STROKE_START', payload);
+    if (cb) cb({ ok: true });
+  });
+
+  socket.on('DRAW_STROKE_MOVE', ({ code, id, points } = {}, cb) => {
+    const room = requireRoomMember(code, socket);
+    if (!room) { if (cb) cb({ ok: false, error: 'Not in room' }); return; }
+    const member = room.getMember(socket.id);
+    if (!member || typeof id !== 'string') { if (cb) cb({ ok: false, error: 'Invalid' }); return; }
+    const pts = Array.isArray(points) ? points.slice(0, 200).filter(p => p && validNorm(p.x) && validNorm(p.y)).map(p => ({ x: clampNorm(p.x), y: clampNorm(p.y) })) : [];
+    if (pts.length) socket.to(room.code).emit('DRAW_STROKE_MOVE', { id, points: pts, clientId: member.clientId });
+    if (cb) cb({ ok: true });
+  });
+
+  socket.on('DRAW_STROKE_END', ({ code, stroke } = {}, cb) => {
+    const room = requireRoomMember(code, socket);
+    if (!room) { if (cb) cb({ ok: false, error: 'Not in room' }); return; }
+    const member = room.getMember(socket.id);
+    if (!member || !stroke || typeof stroke !== 'object') { if (cb) cb({ ok: false, error: 'Invalid stroke' }); return; }
+    const id = typeof stroke.id === 'string' ? stroke.id.slice(0, 80) : null;
+    if (!id) { if (cb) cb({ ok: false, error: 'Invalid stroke' }); return; }
+    const payload = {
+      id,
+      tool: stroke.tool === 'eraser' ? 'eraser' : 'pencil',
+      color: typeof stroke.color === 'string' ? stroke.color.slice(0, 20) : '#2f6f86',
+      size: typeof stroke.size === 'number' && Number.isFinite(stroke.size) ? Math.max(0.001, Math.min(0.1, stroke.size)) : 0.005,
+      points: Array.isArray(stroke.points) ? stroke.points.slice(0, 4000).filter(p => p && validNorm(p.x) && validNorm(p.y)).map(p => ({ x: clampNorm(p.x), y: clampNorm(p.y) })) : [],
+      clientId: member.clientId,
+      clientName: member.name,
+    };
+    room.addDrawingStroke(payload);
+    socket.to(room.code).emit('DRAW_STROKE_END', payload);
+    if (cb) cb({ ok: true });
+  });
+
+  socket.on('DRAW_UNDO', ({ code } = {}, cb) => {
+    const room = requireRoomMember(code, socket);
+    if (!room) { if (cb) cb({ ok: false, error: 'Not in room' }); return; }
+    const member = room.getMember(socket.id);
+    if (!member) { if (cb) cb({ ok: false, error: 'Not in room' }); return; }
+    const removed = room.undoDrawingStroke(member.clientId);
+    if (removed) io.to(room.code).emit('DRAW_UNDO', { strokeId: removed.id, clientId: member.clientId });
+    if (cb) cb({ ok: true, removedId: removed ? removed.id : null });
+  });
+
+  socket.on('DRAW_CLEAR', ({ code } = {}, cb) => {
+    const room = requireRoomMember(code, socket);
+    if (!room) { if (cb) cb({ ok: false, error: 'Not in room' }); return; }
+    const member = room.getMember(socket.id);
+    if (!member) { if (cb) cb({ ok: false, error: 'Not in room' }); return; }
+    room.clearDrawings();
+    io.to(room.code).emit('DRAW_CLEAR', { clientId: member.clientId, clientName: member.name });
     if (cb) cb({ ok: true });
   });
 

@@ -36,6 +36,18 @@ export type UseRoomOptions = {
   onError: (message: string) => void;
 };
 
+export type SharedDrawingStroke = {
+  id: string;
+  tool: 'pencil' | 'eraser';
+  color: string;
+  /** Stroke width normalized to viewport width (0..0.1). */
+  size: number;
+  /** Points normalized to viewport (0..1). */
+  points: { x: number; y: number }[];
+  clientId: string;
+  clientName: string;
+};
+
 /**
  * The room of this client.
  *
@@ -65,6 +77,8 @@ export function useRoom({ socket, clientId, displayName, onPlayback, onError }: 
   const [typing, setTyping] = useState<Record<string, TypingEntry>>({});
   /** Debounce timers that clear remote typing indicators when the stop event is lost. */
   const typingTimersRef = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
+  /** Shared freehand drawing strokes of the current room. */
+  const [drawings, setDrawings] = useState<SharedDrawingStroke[]>([]);
 
   /**
    * The queue, readable right now.
@@ -210,6 +224,11 @@ export function useRoom({ socket, clientId, displayName, onPlayback, onError }: 
               .filter((entry): entry is ChatEntry => entry !== null);
             setMessages(history);
           }
+          if (Array.isArray(answer.drawings)) {
+            setDrawings(answer.drawings as SharedDrawingStroke[]);
+          } else {
+            setDrawings([]);
+          }
         },
       );
     };
@@ -300,6 +319,21 @@ export function useRoom({ socket, clientId, displayName, onPlayback, onError }: 
       });
     };
 
+    const onDrawStrokeEnd = (payload: unknown) => {
+      const stroke = payload as SharedDrawingStroke;
+      if (!stroke || typeof stroke.id !== 'string') return;
+      setDrawings((prev) => (prev.some((s) => s.id === stroke.id) ? prev : [...prev, stroke]));
+    };
+    const onDrawUndo = (payload: unknown) => {
+      const raw = (payload ?? {}) as Record<string, unknown>;
+      const strokeId = typeof raw.strokeId === 'string' ? raw.strokeId : '';
+      if (!strokeId) return;
+      setDrawings((prev) => prev.filter((s) => s.id !== strokeId));
+    };
+    const onDrawClear = () => {
+      setDrawings([]);
+    };
+
     socket.on('playback-update', onPlaybackUpdate);
     socket.on('queue-update', onQueueUpdate);
     socket.on('room-update', onRoomUpdate);
@@ -307,6 +341,9 @@ export function useRoom({ socket, clientId, displayName, onPlayback, onError }: 
     socket.on('song:reaction', onReaction);
     socket.on('TYPING_START', onTypingStart);
     socket.on('TYPING_STOP', onTypingStop);
+    socket.on('DRAW_STROKE_END', onDrawStrokeEnd);
+    socket.on('DRAW_UNDO', onDrawUndo);
+    socket.on('DRAW_CLEAR', onDrawClear);
 
     return () => {
       socket.off('connect', join);
@@ -317,6 +354,9 @@ export function useRoom({ socket, clientId, displayName, onPlayback, onError }: 
       socket.off('song:reaction', onReaction);
       socket.off('TYPING_START', onTypingStart);
       socket.off('TYPING_STOP', onTypingStop);
+      socket.off('DRAW_STROKE_END', onDrawStrokeEnd);
+      socket.off('DRAW_UNDO', onDrawUndo);
+      socket.off('DRAW_CLEAR', onDrawClear);
       // Clear any pending typing fallbacks when the socket or room goes away.
       for (const timer of Object.values(typingTimersRef.current)) {
         if (timer) clearTimeout(timer);
@@ -351,6 +391,7 @@ export function useRoom({ socket, clientId, displayName, onPlayback, onError }: 
     queueRef.current = [];
     setReactions({});
     setTyping({});
+    setDrawings([]);
   }, [socket, roomCode]);
 
   /**
@@ -574,6 +615,7 @@ export function useRoom({ socket, clientId, displayName, onPlayback, onError }: 
     reactions,
     typing,
     sendTyping,
+    drawings,
     draft,
     setDraft,
     chatError,

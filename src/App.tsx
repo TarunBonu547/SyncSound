@@ -1260,7 +1260,13 @@ export default function App() {
         ))}
       </div>
 
-      <DrawingOverlay />
+      <DrawingOverlay
+        socket={socket}
+        roomCode={room.roomCode}
+        clientId={clientId}
+        clientName={displayName || 'You'}
+        initialStrokes={room.drawings}
+      />
 
       {/* ------------------------------ Mobile menu -------------------------- */}
       {mobileNav && (

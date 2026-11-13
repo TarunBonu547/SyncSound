@@ -517,6 +517,9 @@
   letter-spacing: -0.025em;
   color: var(--ink);
   overflow-wrap: anywhere;
+  word-break: break-word;
+  white-space: normal;
+  min-width: 0;
 }
 
 .track-channel {
@@ -524,6 +527,8 @@
   font-size: 13.5px;
   color: var(--text-muted);
   overflow-wrap: anywhere;
+  word-break: break-word;
+  min-width: 0;
 }
 
 .like-btn.is-liked {
@@ -2803,7 +2808,7 @@
 
   .main {
     overflow: visible;
-    padding-bottom: calc(var(--mini-player-height) + 32px);
+    padding-bottom: calc(var(--mini-player-height) + env(safe-area-inset-bottom, 0px) + 32px);
   }
 
   .right {
@@ -2815,6 +2820,18 @@
     position: sticky;
     top: 0;
     z-index: 40;
+    flex-wrap: wrap;
+    height: auto;
+    min-height: 60px;
+    gap: 8px;
+  }
+
+  .navbar-nav {
+    order: 3;
+    width: 100%;
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    -webkit-overflow-scrolling: touch;
   }
 
   .chat-toggle {
@@ -2822,7 +2839,9 @@
   }
 
   .mini-player {
-    padding: 8px 14px;
+    padding: 8px 14px calc(8px + env(safe-area-inset-bottom, 0px));
+    height: auto;
+    min-height: var(--mini-player-height);
     gap: 10px;
   }
 
@@ -2833,14 +2852,15 @@
 
   .mini-player-info {
     width: 150px;
+    min-width: 0;
   }
 }
 
 @media (max-width: 720px) {
   .navbar {
-    padding: 10px 14px;
+    padding: 10px 12px;
     height: auto;
-    min-height: 60px;
+    min-height: 56px;
   }
 
   .navbar-nav {
@@ -2849,22 +2869,27 @@
     overflow-x: auto;
     flex-wrap: nowrap;
     padding-bottom: 2px;
+    scrollbar-width: none;
   }
+  .navbar-nav::-webkit-scrollbar { display: none; }
 
   .nav-link {
     white-space: nowrap;
+    font-size: 12.5px;
+    padding: 6px 10px;
   }
 
   .main {
-    padding: 16px 14px calc(var(--mini-player-height) + 24px);
+    padding: 12px 12px calc(var(--mini-player-height) + env(safe-area-inset-bottom, 0px) + 24px);
   }
 
   .home {
-    padding: 118px 16px calc(var(--mini-player-height) + 32px);
+    padding: 110px 12px calc(var(--mini-player-height) + env(safe-area-inset-bottom, 0px) + 32px);
   }
 
   .home-top {
-    padding: 14px 16px;
+    padding: 12px 12px;
+    gap: 8px;
   }
 
   .home-cards {
@@ -2880,12 +2905,22 @@
     display: none;
   }
 
+  .queue-form .btn.primary {
+    width: 100%;
+  }
+
   .room-header {
-    padding: 16px;
+    padding: 14px 12px;
   }
 
   .room-header-main {
     align-items: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .room-header-meta {
+    width: 100%;
+    flex-wrap: wrap;
   }
 
   .mini-player-info {
@@ -2903,6 +2938,47 @@
   .mini-player-open {
     padding: 8px 10px;
   }
+
+  .queue-row {
+    flex-wrap: wrap;
+    align-items: flex-start;
+  }
+
+  .queue-thumb {
+    width: 48px;
+    height: 48px;
+  }
+
+  .queue-text {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+
+  .queue-actions {
+    width: 100%;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+  }
+
+  .track-row {
+    align-items: flex-start;
+  }
+
+  .quick-actions {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 430px) {
+  .app { overflow-x: hidden; }
+  .main, .home, .player-card, .queue-card, .room-header { min-width: 0; max-width: 100%; }
+  .home-title { font-size: clamp(30px, 9vw, 40px); }
+  .track-title { font-size: 18px; }
+  .quick-actions { grid-template-columns: 1fr; }
+  .reaction-picker-grid { gap: 6px; flex-wrap: wrap; justify-content: center; }
+  .reaction-btn { width: 44px; height: 44px; min-width: 44px; min-height: 44px; font-size: 22px; }
+  .transport { gap: 8px; }
+  .play-btn { width: 52px; height: 52px; }
 }
 
 @media (prefers-reduced-motion: reduce) {

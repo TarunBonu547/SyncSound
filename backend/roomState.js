@@ -64,6 +64,8 @@ class RoomState {
     this.reactions = new Map();
     /** Who is typing right now: client id -> { name, socketId, timer }. */
     this.typing = new Map();
+    /** Shared freehand drawing strokes of this room. */
+    this.drawings = [];
     this.queue = [];
     this.currentQueueItemId = null;
     this.currentVideoId = null;
@@ -235,6 +237,37 @@ class RoomState {
       clientId,
       name: entry.name,
     }));
+  }
+
+  /** The shared drawing strokes of this room, oldest first. */
+  getDrawings() {
+    return this.drawings.map((s) => ({
+      ...s,
+      points: Array.isArray(s.points) ? s.points.map((p) => ({ x: p.x, y: p.y })) : [],
+    }));
+  }
+
+  /** Stores a completed drawing stroke. */
+  addDrawingStroke(stroke) {
+    if (!stroke || typeof stroke !== 'object') return null;
+    this.drawings.push(stroke);
+    return stroke;
+  }
+
+  /** Removes the most recent stroke authored by a client. */
+  undoDrawingStroke(clientId) {
+    for (let i = this.drawings.length - 1; i >= 0; i--) {
+      if (this.drawings[i].clientId === clientId) {
+        const [removed] = this.drawings.splice(i, 1);
+        return removed || null;
+      }
+    }
+    return null;
+  }
+
+  /** Clears all shared drawing strokes. */
+  clearDrawings() {
+    this.drawings = [];
   }
 
   /** Bump the playback revision and re-anchor the timeline to now. */
