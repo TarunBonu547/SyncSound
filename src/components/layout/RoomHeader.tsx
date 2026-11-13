@@ -2,7 +2,6 @@ import { Copy, Check, Video, Users } from 'lucide-react';
 import type { RoomMember } from '../../types/music';
 import { avatarFor } from '../../utils/avatar';
 import StatusIndicator from '../common/StatusIndicator';
-import WaveBackground from '../common/WaveBackground';
 
 type RoomHeaderProps = {
   roomCode: string | null;
@@ -13,8 +12,6 @@ type RoomHeaderProps = {
   linkCopied: boolean;
   onCopyInvite: () => void;
   onVideoCall: () => void;
-  /** Whether music is playing - drives the background wave animation. */
-  playing?: boolean;
 };
 
 /**
@@ -32,13 +29,11 @@ export default function RoomHeader({
   linkCopied,
   onCopyInvite,
   onVideoCall,
-  playing = false,
 }: RoomHeaderProps) {
   const count = Math.max(1, members.length);
 
   return (
     <header className="room-header card">
-      <WaveBackground playing={playing} variant="card" />
       <div className="room-header-main">
         <div className="room-header-text">
           <p className="eyebrow">Now playing together</p>
