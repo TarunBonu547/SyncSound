@@ -1,6 +1,14 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { Socket } from 'socket.io-client';
-import type { ChatEntry, PlaybackState, QueueEntry, RoomMember, SongDedication, Track } from '../types/music';
+import type {
+  ChatEntry,
+  PlaybackState,
+  QueueEntry,
+  RoomMember,
+  SongDedication,
+  Track,
+  TypingEntry,
+} from '../types/music';
 import { avatarFor } from '../utils/avatar';
 
 /** A chat message may not be longer than this (the server enforces it too). */
@@ -53,6 +61,10 @@ export function useRoom({ socket, clientId, displayName, onPlayback, onError }: 
   const [chatSending, setChatSending] = useState(false);
   /** The message this client is composing a reply to, if any. */
   const [replyTo, setReplyTo] = useState<{ messageId: string; senderId: string; senderName: string; text: string } | null>(null);
+  /** Remote participants who are currently typing: client id -> { name }. */
+  const [typing, setTyping] = useState<Record<string, TypingEntry>>({});
+  /** Debounce timers that clear remote typing indicators when the stop event is lost. */
+  const typingTimersRef = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
 
   /**
    * The queue, readable right now.
@@ -198,8 +210,6 @@ export function useRoom({ socket, clientId, displayName, onPlayback, onError }: 
               .filter((entry): entry is ChatEntry => entry !== null);
             setMessages(history);
           }
-          // Reactions are transient: they never survive a (re)join.
-          setReactions({});
         },
       );
     };
@@ -255,11 +265,48 @@ export function useRoom({ socket, clientId, displayName, onPlayback, onError }: 
       });
     };
 
+    /** A remote participant started typing. The local user never sees themselves. */
+    const onTypingStart = (payload: unknown) => {
+      const raw = (payload ?? {}) as Record<string, unknown>;
+      const fromClientId = typeof raw.clientId === 'string' ? raw.clientId : '';
+      const clientName = typeof raw.clientName === 'string' ? raw.clientName : 'Listener';
+      if (!fromClientId || fromClientId === clientId) return;
+      const existing = typingTimersRef.current[fromClientId];
+      if (existing) clearTimeout(existing);
+      setTyping((prev) => ({ ...prev, [fromClientId]: { clientId: fromClientId, name: clientName } }));
+      // Fallback: clear the indicator if the stop event never arrives.
+      typingTimersRef.current[fromClientId] = setTimeout(() => {
+        setTyping((prev) => {
+          const next = { ...prev };
+          delete next[fromClientId];
+          return next;
+        });
+        delete typingTimersRef.current[fromClientId];
+      }, 3500);
+    };
+
+    /** A remote participant stopped typing. */
+    const onTypingStop = (payload: unknown) => {
+      const raw = (payload ?? {}) as Record<string, unknown>;
+      const fromClientId = typeof raw.clientId === 'string' ? raw.clientId : '';
+      if (!fromClientId) return;
+      const existing = typingTimersRef.current[fromClientId];
+      if (existing) clearTimeout(existing);
+      delete typingTimersRef.current[fromClientId];
+      setTyping((prev) => {
+        const next = { ...prev };
+        delete next[fromClientId];
+        return next;
+      });
+    };
+
     socket.on('playback-update', onPlaybackUpdate);
     socket.on('queue-update', onQueueUpdate);
     socket.on('room-update', onRoomUpdate);
     socket.on('chat:message', onChatMessage);
     socket.on('song:reaction', onReaction);
+    socket.on('TYPING_START', onTypingStart);
+    socket.on('TYPING_STOP', onTypingStop);
 
     return () => {
       socket.off('connect', join);
@@ -268,6 +315,12 @@ export function useRoom({ socket, clientId, displayName, onPlayback, onError }: 
       socket.off('room-update', onRoomUpdate);
       socket.off('chat:message', onChatMessage);
       socket.off('song:reaction', onReaction);
+      socket.off('TYPING_START', onTypingStart);
+      socket.off('TYPING_STOP', onTypingStop);
+      // Clear any pending typing fallbacks when the socket or room goes away.
+      for (const timer of Object.values(typingTimersRef.current)) {
+        if (timer) clearTimeout(timer);
+      }
     };
   }, [socket, roomCode, clientId, applyQueue, applyPresence, toChatEntry]);
 
@@ -297,6 +350,7 @@ export function useRoom({ socket, clientId, displayName, onPlayback, onError }: 
     setQueue([]);
     queueRef.current = [];
     setReactions({});
+    setTyping({});
   }, [socket, roomCode]);
 
   /**
@@ -497,6 +551,18 @@ export function useRoom({ socket, clientId, displayName, onPlayback, onError }: 
     [socket, roomCode],
   );
 
+  /**
+   * Signals that the local participant started or stopped typing. Emitted only
+   * on state transitions, not on every keystroke.
+   */
+  const sendTyping = useCallback(
+    (start: boolean) => {
+      if (!socket || !roomCode) return;
+      socket.emit(start ? 'TYPING_START' : 'TYPING_STOP', { code: roomCode, clientId });
+    },
+    [socket, roomCode, clientId],
+  );
+
   return {
     roomCode,
     roomName,
@@ -506,6 +572,8 @@ export function useRoom({ socket, clientId, displayName, onPlayback, onError }: 
     queueRef,
     messages,
     reactions,
+    typing,
+    sendTyping,
     draft,
     setDraft,
     chatError,

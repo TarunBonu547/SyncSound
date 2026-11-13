@@ -1005,12 +1005,14 @@ export default function App() {
               clientId={clientId}
               connected={connected}
               messages={room.messages}
+              typing={room.typing}
               draft={room.draft}
               chatError={room.chatError}
               chatSending={room.chatSending}
               replyTo={room.replyTo}
               onDraftChange={room.setDraft}
               onSend={room.sendMessage}
+              sendTyping={room.sendTyping}
               onSelectReply={room.selectReply}
               onCancelReply={room.cancelReply}
             />
@@ -1180,12 +1182,14 @@ export default function App() {
             clientId={clientId}
             connected={connected}
             messages={room.messages}
+            typing={room.typing}
             draft={room.draft}
             chatError={room.chatError}
             chatSending={room.chatSending}
             replyTo={room.replyTo}
             onDraftChange={room.setDraft}
             onSend={room.sendMessage}
+            sendTyping={room.sendTyping}
             onSelectReply={room.selectReply}
             onCancelReply={room.cancelReply}
             onClose={() => setChatOpen(false)}

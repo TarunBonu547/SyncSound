@@ -12,6 +12,8 @@ const MAX_DEDICATION_LENGTH = 200;
 const REACTION_COOLDOWN_MS = 1000;
 /** Reactions older than this are dropped when a snapshot is taken. */
 const REACTION_TTL_MS = 10 * 1000;
+/** A typing indicator expires this long after the last keystroke. */
+const TYPING_TTL_MS = 3000;
 
 /**
  * The artwork of a queue item may only come from the image hosts of YouTube.
@@ -60,6 +62,8 @@ class RoomState {
     this.chat = [];
     /** Reactions to the current song: emoji -> [{ clientId, clientName, timestamp }]. */
     this.reactions = new Map();
+    /** Who is typing right now: client id -> { name, socketId, timer }. */
+    this.typing = new Map();
     this.queue = [];
     this.currentQueueItemId = null;
     this.currentVideoId = null;
@@ -193,6 +197,44 @@ class RoomState {
   /** The chat of the room, oldest first. */
   getChatHistory() {
     return this.chat.map((m) => ({ ...m }));
+  }
+
+  /** Marks a client as typing, resetting the expiry timer on each keystroke. */
+  startTyping(socketId, clientId, name) {
+    const existing = this.typing.get(clientId);
+    if (existing) clearTimeout(existing.timer);
+    const timer = setTimeout(() => {
+      this.stopTypingByClientId(clientId);
+    }, TYPING_TTL_MS);
+    if (typeof timer.unref === 'function') timer.unref();
+    this.typing.set(clientId, { name, socketId, timer });
+  }
+
+  /** Stops a typing indicator identified by socket id. */
+  stopTyping(socketId) {
+    for (const [clientId, entry] of this.typing.entries()) {
+      if (entry.socketId === socketId) {
+        this.stopTypingByClientId(clientId);
+        break;
+      }
+    }
+  }
+
+  /** Stops a typing indicator identified by client id. */
+  stopTypingByClientId(clientId) {
+    const entry = this.typing.get(clientId);
+    if (entry) {
+      clearTimeout(entry.timer);
+      this.typing.delete(clientId);
+    }
+  }
+
+  /** The members who are typing right now: [{ clientId, name }]. */
+  getTyping() {
+    return [...this.typing.entries()].map(([clientId, entry]) => ({
+      clientId,
+      name: entry.name,
+    }));
   }
 
   /** Bump the playback revision and re-anchor the timeline to now. */

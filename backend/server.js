@@ -157,12 +157,21 @@ function leaveCurrentRoom(socket) {
   socket.leave(previous);
   delete socket.data.roomCode;
   if (!room) return;
+  room.stopTyping(socket.id);
   room.removeMember(socket.id);
   io.to(previous).emit('room-update', {
     count: room.participants.size,
     participants: room.getParticipants(),
   });
   if (room.participants.size === 0) scheduleExpiry(previous);
+}
+
+/** Checks that a socket is a member of a room and returns the room. */
+function requireRoomMember(code, socket) {
+  const wanted = normalizeCode(code);
+  const room = wanted ? getRoom(wanted) : null;
+  if (!room || !room.participants.has(socket.id)) return null;
+  return room;
 }
 
 /** The room state every member of a room needs. */
@@ -515,6 +524,41 @@ io.on('connection', (socket) => {
       if (cb) cb({ ok: true, advanced: result.advanced, ended: result.ended });
     })
   );
+
+  socket.on('TYPING_START', ({ code, clientId } = {}, cb) => {
+    const room = requireRoomMember(code, socket);
+    if (!room) {
+      if (cb) cb({ ok: false, error: 'Not in room' });
+      return;
+    }
+    const member = room.getMember(socket.id);
+    if (!member || member.clientId !== clientId) {
+      if (cb) cb({ ok: false, error: 'Not in room' });
+      return;
+    }
+    room.startTyping(socket.id, member.clientId, member.name);
+    socket.to(room.code).emit('TYPING_START', {
+      clientId: member.clientId,
+      clientName: member.name,
+    });
+    if (cb) cb({ ok: true });
+  });
+
+  socket.on('TYPING_STOP', ({ code, clientId } = {}, cb) => {
+    const room = requireRoomMember(code, socket);
+    if (!room) {
+      if (cb) cb({ ok: false, error: 'Not in room' });
+      return;
+    }
+    const member = room.getMember(socket.id);
+    if (!member || member.clientId !== clientId) {
+      if (cb) cb({ ok: false, error: 'Not in room' });
+      return;
+    }
+    room.stopTyping(socket.id);
+    socket.to(room.code).emit('TYPING_STOP', { clientId });
+    if (cb) cb({ ok: true });
+  });
 
   socket.on('disconnect', () => {
     syncLog('disconnect', { socketId: socket.id });

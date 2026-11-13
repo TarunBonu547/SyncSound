@@ -589,16 +589,12 @@ img {
   animation: artSwap 0.7s var(--ease-out) both;
 }
 
-.chat-msg {
-  animation: slideIn 0.3s var(--ease-out) both;
+.modal {
+  animation: modalIn 0.28s var(--ease-out) both;
 }
 
 .queue-item {
   animation: fadeInUp 0.3s var(--ease-out) both;
-}
-
-.modal {
-  animation: modalIn 0.28s var(--ease-out) both;
 }
 
 .spin {
@@ -672,6 +668,11 @@ img {
   .stagger-4,
   .art-swap,
   .chat-msg,
+  .chat-msg--fade-in,
+  .chat-msg--scale-in,
+  .chat-msg--emoji-in,
+  .chat-typing,
+  .chat-typing-dot,
   .queue-item,
   .modal,
   .spin {

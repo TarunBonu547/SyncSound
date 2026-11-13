@@ -109,6 +109,14 @@ export interface RoomMember {
   isHost: boolean;
 }
 
+/** A remote participant who is currently typing in the room chat. */
+export interface TypingEntry {
+  /** The client id of the person who is typing. */
+  clientId: string;
+  /** The display name to show in the typing indicator. */
+  name: string;
+}
+
 export interface Participant {
   id: string;
   name: string;

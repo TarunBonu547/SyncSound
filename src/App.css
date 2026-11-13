@@ -1209,15 +1209,15 @@
   display: flex;
   flex-direction: column;
   min-height: 0;
-  padding: 20px 18px 16px;
-  gap: 12px;
+  padding: 12px 12px 10px;
+  gap: 8px;
 }
 
 .chat-head {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 12px;
+  gap: 10px;
   flex: none;
 }
 
@@ -1230,13 +1230,13 @@
   align-items: center;
   gap: 8px;
   flex-wrap: wrap;
-  margin-top: 8px;
+  margin-top: 6px;
 }
 
 .chat-members {
   list-style: none;
   margin: 0;
-  padding: 0 0 10px;
+  padding: 0 0 8px;
   display: flex;
   flex-direction: column;
   gap: 6px;
@@ -1307,7 +1307,7 @@
   overflow-y: auto;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 6px;
   padding-right: 4px;
 }
 
@@ -1348,8 +1348,9 @@
 .chat-msg {
   display: flex;
   gap: 8px;
-  max-width: 88%;
-  animation: slideIn 0.3s var(--ease-out) both;
+  align-items: flex-start;
+  max-width: 90%;
+  position: relative;
 }
 
 .chat-avatar {
@@ -1365,37 +1366,53 @@
 }
 
 .chat-bubble {
-  padding: 9px 13px;
-  border-radius: 16px;
-  background: rgba(255, 255, 255, 0.84);
+  padding: 7px 12px;
+  border-radius: 12px;
   border: 1px solid var(--border-soft);
   box-shadow: var(--shadow-xs);
   font-size: 13px;
-  line-height: 1.45;
+  line-height: 1.5;
+  color: var(--ink);
   overflow-wrap: anywhere;
+  background: #fff;
 }
 
 .chat-bubble p {
   margin: 0;
 }
 
-.chat-bubble.is-self {
-  background: linear-gradient(135deg, #f7d3a8 0%, var(--peach) 62%, #ffa27f 100%);
-  border-color: transparent;
-  color: var(--ink);
-  box-shadow: var(--shadow-accent);
+/* Sender name and time, shown once per run of messages from the same person. */
+.chat-bubble-head {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  margin-bottom: 4px;
 }
 
-.chat-bubble p.chat-author {
-  margin: 0 0 3px;
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.04em;
+.chat-author {
+  margin: 0;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.chat-time {
+  margin: 0;
+  font-size: 10px;
   color: var(--text-faint);
 }
 
-.chat-bubble.is-self p.chat-author {
-  color: rgba(48, 43, 66, 0.66);
+/* Received: white with a faint light-blue wash. */
+.chat-bubble:not(.is-self) {
+  background: rgba(168, 221, 247, 0.10);
+}
+
+/* Sent: very soft blue, flat and friendly. */
+.chat-bubble.is-self {
+  background: var(--sky-wash);
+  border-color: transparent;
+  color: var(--ink);
+  box-shadow: var(--shadow-xs);
 }
 
 .chat-error {
@@ -1440,10 +1457,6 @@
   transition:
     opacity var(--t-fast) var(--ease-out),
     transform var(--t-fast) var(--ease-out);
-}
-
-.chat-msg {
-  position: relative;
 }
 
 .chat-msg:hover .chat-actions,
@@ -1627,8 +1640,274 @@
 .chat-form {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
   flex: none;
+}
+
+.chat-smiley {
+  flex: none;
+  width: 34px;
+  height: 34px;
+  min-width: 34px;
+  min-height: 34px;
+  padding: 0;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: var(--surface-strong);
+  color: var(--text);
+  font-size: 16px;
+  line-height: 1;
+  box-shadow: var(--shadow-xs);
+  cursor: pointer;
+  transition:
+    background-color var(--t-fast) var(--ease-out),
+    border-color var(--t-fast) var(--ease-out),
+    color var(--t-fast) var(--ease-out);
+}
+
+.chat-smiley:hover:not(:disabled) {
+  background: #fff;
+  border-color: var(--border-soft);
+}
+
+.chat-smiley:focus-visible {
+  outline: 2px solid var(--accent-strong);
+  outline-offset: 2px;
+}
+
+/* --- Floating emoji picker panel ------------------------------------------ */
+/* Desktop: glassmorphism popup that floats above the chat input, portaled to
+   the body so it can escape the overflow-hidden sidebar. */
+.chat-emoji-panel {
+  position: fixed;
+  z-index: 80;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px;
+  border-radius: var(--r-lg);
+  border: 1px solid var(--border-light);
+  background: rgba(255, 250, 243, 0.92);
+  backdrop-filter: blur(20px) saturate(1.1);
+  -webkit-backdrop-filter: blur(20px) saturate(1.1);
+  box-shadow: var(--shadow-lg);
+  animation: fadeIn 0.22s var(--ease-out) both;
+  outline: none;
+}
+
+/* Mobile: compact bottom-sheet picker pinned to the bottom. */
+@media (max-width: 720px) {
+  .chat-emoji-panel {
+    position: fixed;
+    inset: auto 0 0 0;
+    width: 100vw;
+    max-width: 100vw;
+    border-radius: 0;
+    border-left: 0;
+    border-right: 0;
+    border-top: 1px solid var(--border-light);
+    padding: 10px 6px;
+    box-shadow: 0 -14px 34px rgba(48, 43, 66, 0.10);
+  }
+}
+
+/* Theme the emoji-picker-react library to the SyncSound romantic palette.
+   The library exposes --epr-* CSS variables on its root (.EmojiPickerReact). */
+.chat-emoji-panel .EmojiPickerReact {
+  --epr-font-family: var(--font-sans);
+  --epr-bg-color: rgba(255, 255, 255, 0.62);
+  --epr-picker-border-color: var(--border-soft);
+  --epr-text-color: var(--ink);
+  --epr-highlight-color: var(--accent-strong);
+  --epr-hover-bg-color: var(--peach-wash);
+  --epr-hover-bg-color-reduced-opacity: var(--peach-wash);
+  --epr-focus-bg-color: var(--peach-wash);
+  --epr-search-input-bg-color: rgba(255, 255, 255, 0.72);
+  --epr-search-input-bg-color-active: #fff;
+  --epr-search-border-color: var(--border-soft);
+  --epr-search-border-color-active: var(--sky-wash);
+  --epr-search-input-text-color: var(--ink);
+  --epr-category-label-bg-color: var(--lavender-wash);
+  --epr-category-label-text-color: var(--ink);
+  --epr-emoji-hover-color: var(--peach-wash);
+  --epr-emoji-variation-indicator-color: var(--accent-strong);
+  --epr-emoji-variation-picker-bg-color: rgba(255, 250, 243, 0.92);
+  --epr-skin-tone-picker-menu-color: rgba(255, 250, 243, 0.92);
+  --epr-skin-tone-outer-border-color: var(--border-soft);
+  --epr-picker-border-radius: var(--r-md);
+}
+
+.chat-emoji-panel .EmojiPickerReact button {
+  font-family: var(--font-sans);
+}
+
+.chat-emoji-panel .EmojiPickerReact [data-epr-part="search-input"] {
+  color: var(--ink);
+}
+
+.chat-emoji-panel .EmojiPickerReact [data-epr-part="category-nav"] button {
+  color: var(--text-muted);
+}
+
+.chat-emoji-panel .EmojiPickerReact [data-epr-part="category-nav"] button[data-epr-active] {
+  color: var(--accent-strong);
+}
+
+/* --- Draggable emoji picker header ------------------------------------------ */
+.chat-emoji-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--border-soft);
+  background: rgba(255, 250, 243, 0.5);
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+}
+
+.chat-emoji-header:active {
+  cursor: grabbing;
+}
+
+.chat-emoji-handle {
+  width: 24px;
+  height: 3px;
+  flex: none;
+  border-radius: 2px;
+  background: var(--text-faint);
+  opacity: 0.55;
+}
+
+.chat-emoji-header-title {
+  flex: 1;
+  min-width: 0;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.chat-emoji-close {
+  flex: none;
+  width: 28px;
+  height: 28px;
+  min-width: 28px;
+  min-height: 28px;
+  padding: 0;
+  border-radius: 50%;
+  border: 1px solid var(--border-soft);
+  background: rgba(255, 255, 255, 0.7);
+  color: var(--text-muted);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition:
+    background-color var(--t-fast) var(--ease-out),
+    color var(--t-fast) var(--ease-out),
+    border-color var(--t-fast) var(--ease-out);
+}
+
+.chat-emoji-close:hover {
+  background: #fff;
+  border-color: var(--border-soft);
+  color: var(--ink);
+}
+
+.chat-emoji-close svg {
+  width: 16px;
+  height: 16px;
+  flex: none;
+}
+
+/* Mobile bottom-sheet header. */
+@media (max-width: 720px) {
+  .chat-emoji-header {
+    border-radius: 0;
+    border-top: 1px solid var(--border-light);
+    border-bottom: 1px solid var(--border-light);
+    background: rgba(255, 250, 243, 0.85);
+  }
+}
+
+/* --- Typing indicator ------------------------------------------------------- */
+.chat-typing {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  margin: 0 0 8px;
+  border-radius: var(--r-md);
+  border: 1px solid var(--border-soft);
+  background: rgba(255, 250, 243, 0.7);
+  color: var(--text-muted);
+  font-size: 12.5px;
+  font-weight: 600;
+  flex: none;
+  animation: fadeIn 0.2s var(--ease-out) both;
+}
+
+.chat-typing-dot {
+  width: 7px;
+  height: 7px;
+  flex: none;
+  border-radius: 50%;
+  background: var(--text-muted);
+  animation: chatTyping 1.4s ease-in-out infinite;
+}
+
+.chat-typing-dot:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.chat-typing-dot:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+.chat-typing-text {
+  margin: 0;
+  flex: none;
+  white-space: nowrap;
+}
+
+/* --- Message entrance animations -------------------------------------------- */
+/* Only newly arrived messages animate; history never replays its entrance. */
+.chat-msg--fade-in {
+  animation: chatFadeInUp 0.45s var(--ease-out) both;
+}
+
+.chat-msg--scale-in {
+  animation: chatScaleIn 0.35s var(--ease-out) both;
+}
+
+.chat-msg--emoji-in {
+  animation: chatEmojiIn 0.35s var(--ease-out) both;
+}
+
+@keyframes chatFadeInUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes chatScaleIn {
+  from { opacity: 0; transform: scale(0.96); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes chatEmojiIn {
+  from { opacity: 0; transform: scale(0.92); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes chatTyping {
+  0%, 100% { transform: translateY(0); opacity: 0.55; }
+  50% { transform: translateY(-4px); opacity: 1; }
 }
 
 /* --- Persistent bottom mini-player ---------------------------------------- */

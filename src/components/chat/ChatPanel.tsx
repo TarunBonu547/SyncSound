@@ -1,9 +1,10 @@
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Send, Reply, Users, MessageCircle, X } from 'lucide-react';
 import type { ChatEntry, RoomMember } from '../../types/music';
 import { avatarFor, formatTime } from '../../utils/avatar';
 import { MAX_CHAT_LENGTH } from '../../hooks/useRoom';
 import StatusIndicator from '../common/StatusIndicator';
+import ChatEmojiPicker from './EmojiPicker';
 
 type ChatPanelProps = {
   roomCode: string | null;
@@ -12,6 +13,8 @@ type ChatPanelProps = {
   clientId: string;
   connected: boolean;
   messages: ChatEntry[];
+  /** Remote participants who are currently typing, keyed by client id. */
+  typing: Record<string, { clientId: string; name: string }>;
   draft: string;
   chatError: string | null;
   /** True while a message is on its way to the server. */
@@ -20,6 +23,8 @@ type ChatPanelProps = {
   replyTo: { messageId: string; senderId: string; senderName: string; text: string } | null;
   onDraftChange: (value: string) => void;
   onSend: () => void;
+  /** Signals that the local participant started or stopped typing. */
+  sendTyping: (start: boolean) => void;
   /** Selects the message the next sent message replies to. */
   onSelectReply: (message: { messageId: string; senderId: string; senderName: string; text: string }) => void;
   /** Cancels the reply that is being composed. */
@@ -28,7 +33,7 @@ type ChatPanelProps = {
   onClose?: () => void;
 };
 
-/** The longest snippet shown inside a quoted reply preview. */
+/** Shortens a quoted message, keeping whole words where possible. */
 const QUOTE_PREVIEW_LENGTH = 110;
 
 /** Shortens a quoted message, keeping whole words where possible. */
@@ -46,12 +51,14 @@ export default function ChatPanel({
   clientId,
   connected,
   messages,
+  typing,
   draft,
   chatError,
   chatSending,
   replyTo,
   onDraftChange,
   onSend,
+  sendTyping,
   onSelectReply,
   onCancelReply,
   onClose,
@@ -66,6 +73,96 @@ export default function ChatPanel({
     if (!el) return;
     el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' });
   }, [lastId]);
+
+  const [showEmoji, setShowEmoji] = useState(false);
+  /** True once the component has mounted; history loaded on mount never animates. */
+  const [mounted, setMounted] = useState(false);
+  /** Last committed emoji picker position, retained while the chat stays open. */
+  const [pickerPosition, setPickerPosition] = useState<{ x: number; y: number } | null>(null);
+  /** Ref to the smiley trigger button, used to anchor the floating picker. */
+  const inputRef = useRef<HTMLInputElement | null>(null);
+  const anchorRef = useRef<HTMLButtonElement | null>(null);
+  /** Cursor position to restore after a controlled draft update from emoji insertion. */
+  const pendingSelection = useRef<{ start: number; end: number } | null>(null);
+  /** Whether the local participant has already emitted TYPING_START (transition tracking). */
+  const isLocallyTypingRef = useRef(false);
+  /** Debounce timer that emits TYPING_STOP after ~2s of inactivity. */
+  const typingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  /** Message ids that have already played their entrance animation. */
+  const animatedRef = useRef<Set<string>>(new Set());
+
+  /** Inserts an emoji at the current caret position, preserving typed text. */
+  const insertEmoji = useCallback(
+    (emoji: string) => {
+      const el = inputRef.current;
+      if (!el) return;
+      const start = el.selectionStart ?? 0;
+      const end = el.selectionEnd ?? 0;
+      const value = el.value;
+      const next = value.slice(0, start) + emoji + value.slice(end);
+      onDraftChange(next);
+      pendingSelection.current = { start: start + emoji.length, end: start + emoji.length };
+      // Keep the picker open so the user can select multiple emojis in a row.
+    },
+    [onDraftChange],
+  );
+
+  /** Wraps onDraftChange so typing transitions emit TYPING_START/TYPING_STOP. */
+  const onDraftChangeWithTyping = useCallback(
+    (value: string) => {
+      onDraftChange(value);
+      const isTyping = value.trim().length > 0;
+      if (isTyping && !isLocallyTypingRef.current) {
+        isLocallyTypingRef.current = true;
+        sendTyping(true);
+      }
+      if (typingTimerRef.current) clearTimeout(typingTimerRef.current);
+      if (isTyping) {
+        typingTimerRef.current = setTimeout(() => {
+          isLocallyTypingRef.current = false;
+          sendTyping(false);
+          typingTimerRef.current = null;
+        }, 2000);
+      } else {
+        isLocallyTypingRef.current = false;
+        sendTyping(false);
+        typingTimerRef.current = null;
+      }
+    },
+    [onDraftChange, sendTyping],
+  );
+
+  // Marks the component as mounted. History that arrives while mounted is
+  // false (during the initial render) never plays its entrance animation.
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // After every render, mark all currently rendered messages as animated so
+  // they never replay their entrance animation on subsequent re-renders.
+  useEffect(() => {
+    messages.forEach((m) => animatedRef.current.add(m.id));
+  }, [messages]);
+
+  // Restores the caret position after the controlled draft re-renders with the
+  // inserted emoji, so typing can continue from the right place.
+  useEffect(() => {
+    if (pendingSelection.current && inputRef.current) {
+      const { start, end } = pendingSelection.current;
+      inputRef.current.setSelectionRange(start, end);
+      pendingSelection.current = null;
+    }
+  }, [draft]);
+
+  // Stops the local typing indicator when the panel unmounts (room left, drawer closed).
+  useEffect(() => {
+    return () => {
+      isLocallyTypingRef.current = false;
+      if (typingTimerRef.current) clearTimeout(typingTimerRef.current);
+      typingTimerRef.current = null;
+      sendTyping(false);
+    };
+  }, [sendTyping]);
 
   /** Scrolls to the original message of a reply and briefly highlights it. */
   const scrollToMessage = useCallback(
@@ -145,14 +242,36 @@ export default function ChatPanel({
             <p className="chat-empty-hint">Say hello to the people in the room.</p>
           </div>
         ) : (
-          messages.map((m) => {
+          messages.map((m, i) => {
             const quote = m.replyTo;
             const isReplyingToMe = Boolean(replyTo && replyTo.messageId === m.id);
+            const prev = messages[i - 1];
+            const prevSender = prev ? (prev.isSelf ? clientId : prev.userId) : null;
+            const thisSender = m.isSelf ? clientId : m.userId;
+            /** Shows the sender name only for the first message of a run
+               from the same person, keeping consecutive messages tight. */
+            const showHeader = prevSender !== thisSender;
+            /** Only newly arrived messages animate; history never replays. */
+            const isNew = mounted && !animatedRef.current.has(m.id);
+            const trimmed = m.text.trim();
+            /** Emoji-only messages get a subtler scale-in; text+emoji messages do not. */
+            const isEmojiOnly =
+              trimmed.length > 0 &&
+              [...trimmed].every(
+                (ch) => /\p{Emoji}/u.test(ch) || '\uFE0F\u200D\u20E3 '.includes(ch),
+              );
+            const animClass = isNew
+              ? isEmojiOnly
+                ? 'chat-msg--emoji-in'
+                : m.isSelf
+                  ? 'chat-msg--scale-in'
+                  : 'chat-msg--fade-in'
+              : '';
             return (
               <div
                 id={`msg-${m.id}`}
                 key={m.id}
-                className={`chat-msg ${m.isSelf ? 'is-self' : ''} ${isReplyingToMe ? 'is-replied-to' : ''}`}
+                className={`chat-msg ${m.isSelf ? 'is-self' : ''} ${isReplyingToMe ? 'is-replied-to' : ''} ${animClass}`}
                 style={{ alignSelf: m.isSelf ? 'flex-end' : 'flex-start' }}
               >
                 {!m.isSelf && (
@@ -192,9 +311,12 @@ export default function ChatPanel({
                       <span className="sr-only">Reply</span>
                     </button>
                   </div>
-                  <p className="chat-author">
-                    {m.userName} · {formatTime(m.timestamp)}
-                  </p>
+                  {showHeader && (
+                    <div className="chat-bubble-head">
+                      <span className="chat-author">{m.userName}</span>
+                      <time className="chat-time">{formatTime(m.timestamp)}</time>
+                    </div>
+                  )}
                   {quote && (
                     <div
                       className="chat-quote"
@@ -220,6 +342,30 @@ export default function ChatPanel({
           })
         )}
       </div>
+
+      {Object.values(typing).length > 0 && (
+        <div className="chat-typing" role="status" aria-live="polite">
+          <span className="chat-typing-dot" aria-hidden="true" />
+          <span className="chat-typing-dot" aria-hidden="true" />
+          <span className="chat-typing-dot" aria-hidden="true" />
+          <span className="chat-typing-text">
+            {Object.values(typing).length === 1
+              ? `${Object.values(typing)[0].name} is typing…`
+              : `${Object.values(typing)
+                  .map((t) => t.name)
+                  .join(' and ')} are typing…`}
+          </span>
+        </div>
+      )}
+
+      <ChatEmojiPicker
+        anchorRef={anchorRef}
+        open={showEmoji}
+        position={pickerPosition}
+        onPositionChange={setPickerPosition}
+        onSelect={insertEmoji}
+        onClose={() => setShowEmoji(false)}
+      />
 
       {replyTo && (
         <div className="chat-reply-preview" role="status" aria-live="polite">
@@ -255,17 +401,33 @@ export default function ChatPanel({
         className="chat-form"
         onSubmit={(e) => {
           e.preventDefault();
+          setShowEmoji(false);
+          isLocallyTypingRef.current = false;
+          if (typingTimerRef.current) clearTimeout(typingTimerRef.current);
+          typingTimerRef.current = null;
+          sendTyping(false);
           onSend();
         }}
       >
+        <button
+          ref={anchorRef}
+          type="button"
+          className="btn icon sm chat-smiley"
+          onClick={() => setShowEmoji((show) => !show)}
+          title="Add a smiley"
+          aria-label="Add a smiley"
+        >
+          😊
+        </button>
         <input
+          ref={inputRef}
           className="input"
           value={draft}
           aria-label="Message"
           maxLength={MAX_CHAT_LENGTH}
           disabled={!inRoom}
           placeholder={inRoom ? 'Message the room…' : 'Join a room to chat'}
-          onChange={(e) => onDraftChange(e.target.value)}
+          onChange={(e) => onDraftChangeWithTyping(e.target.value)}
         />
         <button
           className="btn icon primary"
