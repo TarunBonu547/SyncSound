@@ -927,15 +927,16 @@ export default function App() {
         </header>
 
         <main className="main">
-          <RoomHeader
-            roomCode={room.roomCode}
-            roomName={room.roomName}
-            members={room.members}
-            connected={connected}
-            linkCopied={linkCopied}
-            onCopyInvite={copyLink}
-            onVideoCall={() => setCallOpen(true)}
-          />
+            <RoomHeader
+              roomCode={room.roomCode}
+              roomName={room.roomName}
+              members={room.members}
+              connected={connected}
+              linkCopied={linkCopied}
+              onCopyInvite={copyLink}
+              onVideoCall={() => setCallOpen(true)}
+              playing={roomPlaying}
+            />
 
           <MainPlayer
             stageRef={stageVideoRef}
@@ -1015,6 +1016,7 @@ export default function App() {
               sendTyping={room.sendTyping}
               onSelectReply={room.selectReply}
               onCancelReply={room.cancelReply}
+              playing={roomPlaying}
             />
           )}
         </aside>
@@ -1192,6 +1194,7 @@ export default function App() {
             sendTyping={room.sendTyping}
             onSelectReply={room.selectReply}
             onCancelReply={room.cancelReply}
+            playing={roomPlaying}
             onClose={() => setChatOpen(false)}
           />
         )}

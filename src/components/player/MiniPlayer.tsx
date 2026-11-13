@@ -1,6 +1,7 @@
 import type { CSSProperties } from 'react';
 import { Play, Pause, SkipBack, SkipForward, Maximize2 } from 'lucide-react';
 import type { Track } from '../../types/music';
+import WaveBackground from '../common/WaveBackground';
 
 type MiniPlayerProps = {
   current: Track | null;
@@ -48,6 +49,7 @@ export default function MiniPlayer({
 
   return (
     <div className="mini-player" aria-label="Now playing">
+      <WaveBackground playing={playing} variant="mini" />
       {current ? (
         <img className="mini-player-art" src={current.thumbnail} alt={`Artwork for ${current.title}`} />
       ) : (

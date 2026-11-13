@@ -1,10 +1,11 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+﻿import { useCallback, useEffect, useRef, useState } from 'react';
 import { Send, Reply, Users, MessageCircle, X } from 'lucide-react';
 import type { ChatEntry, RoomMember } from '../../types/music';
 import { avatarFor, formatTime } from '../../utils/avatar';
 import { MAX_CHAT_LENGTH } from '../../hooks/useRoom';
 import StatusIndicator from '../common/StatusIndicator';
 import ChatEmojiPicker from './EmojiPicker';
+import WaveBackground from '../common/WaveBackground';
 
 type ChatPanelProps = {
   roomCode: string | null;
@@ -31,17 +32,52 @@ type ChatPanelProps = {
   onCancelReply: () => void;
   /** Shown when the panel is used outside of the room, e.g. in a drawer. */
   onClose?: () => void;
+  /** Whether music is playing - drives the background wave animation. */
+  playing?: boolean;
 };
 
 /** Shortens a quoted message, keeping whole words where possible. */
 const QUOTE_PREVIEW_LENGTH = 110;
 
-/** Shortens a quoted message, keeping whole words where possible. */
-function previewOf(text: string): string {
-  const clean = (text || '').replace(/\s+/g, ' ').trim();
-  if (!clean) return '';
-  if (clean.length <= QUOTE_PREVIEW_LENGTH) return clean;
-  return clean.slice(0, QUOTE_PREVIEW_LENGTH).trimEnd() + '…';
+/** Trims a quoted message so the preview stays compact. */
+function previewOf(text: string) {
+  if (text.length <= QUOTE_PREVIEW_LENGTH) return text;
+  const slice = text.slice(0, QUOTE_PREVIEW_LENGTH);
+  const space = slice.lastIndexOf(' ');
+  return `${space > 40 ? slice.slice(0, space) : slice}â€¦`;
+}
+
+/** True when a grapheme cluster should be treated as an emoji for sizing. */
+function isEmojiGrapheme(segment: string) {
+  return /(\p{Extended_Pictographic}|\p{Emoji_Presentation}|[\u{1F1E6}-\u{1F1FF}])/u.test(segment);
+}
+
+/**
+ * Renders chat message text. Emoji-only messages become prominent; mixed
+ * messages keep normal text size but enlarge emoji graphemes.
+ */
+function renderChatText(text: string, emojiOnly: boolean) {
+  if (emojiOnly) {
+    return <span className="chat-text chat-text--emoji-only">{text}</span>;
+  }
+  if (typeof Intl !== 'undefined' && 'Segmenter' in Intl) {
+    const segmenter = new Intl.Segmenter(undefined, { granularity: 'grapheme' });
+    const segments = Array.from(segmenter.segment(text), (s) => s.segment);
+    return (
+      <span className="chat-text">
+        {segments.map((seg, i) =>
+          isEmojiGrapheme(seg) ? (
+            <span key={i} className="chat-emoji">
+              {seg}
+            </span>
+          ) : (
+            <span key={i}>{seg}</span>
+          ),
+        )}
+      </span>
+    );
+  }
+  return <span className="chat-text">{text}</span>;
 }
 
 export default function ChatPanel({
@@ -62,6 +98,7 @@ export default function ChatPanel({
   onSelectReply,
   onCancelReply,
   onClose,
+  playing = false,
 }: ChatPanelProps) {
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const highlightTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -187,7 +224,8 @@ export default function ChatPanel({
   const inRoom = !!roomCode;
 
   return (
-    <section className="card chat-card" aria-labelledby="chat-title">
+    <aside className="card chat-card" aria-label="Chat of the room">
+      <WaveBackground playing={playing} variant="chat" />
       <div className="chat-head">
         <div className="chat-head-text">
           <p className="eyebrow">Live chat</p>
@@ -197,7 +235,7 @@ export default function ChatPanel({
           <div className="chat-head-meta">
             <StatusIndicator
               connected={connected}
-              label={connected ? 'Connected' : 'Reconnecting…'}
+              label={connected ? 'Connected' : 'Reconnectingâ€¦'}
               live={inRoom}
             />
             <span className="room-member-count">
@@ -208,7 +246,7 @@ export default function ChatPanel({
         </div>
         {onClose && (
           <button className="btn icon chat-drawer-close" onClick={onClose} title="Close the chat" aria-label="Close the chat">
-            <span aria-hidden="true">×</span>
+            <span aria-hidden="true">Ã—</span>
           </button>
         )}
       </div>
@@ -279,7 +317,7 @@ export default function ChatPanel({
                     {m.initials}
                   </span>
                 )}
-                <div className={`chat-bubble ${m.isSelf ? 'is-self' : ''}`}>
+                <div className={`chat-bubble ${m.isSelf ? 'is-self' : ''} ${isEmojiOnly ? 'is-emoji-only' : ''}`}>
                   <div className="chat-actions">
                     <button
                       type="button"
@@ -335,7 +373,7 @@ export default function ChatPanel({
                       <p className="chat-quote-text">{previewOf(quote.text)}</p>
                     </div>
                   )}
-                  <p>{m.text}</p>
+                  <p>{renderChatText(m.text, isEmojiOnly)}</p>
                 </div>
               </div>
             );
@@ -350,10 +388,10 @@ export default function ChatPanel({
           <span className="chat-typing-dot" aria-hidden="true" />
           <span className="chat-typing-text">
             {Object.values(typing).length === 1
-              ? `${Object.values(typing)[0].name} is typing…`
+              ? `${Object.values(typing)[0].name} is typingâ€¦`
               : `${Object.values(typing)
                   .map((t) => t.name)
-                  .join(' and ')} are typing…`}
+                  .join(' and ')} are typingâ€¦`}
           </span>
         </div>
       )}
@@ -417,7 +455,7 @@ export default function ChatPanel({
           title="Add a smiley"
           aria-label="Add a smiley"
         >
-          😊
+          ðŸ˜Š
         </button>
         <input
           ref={inputRef}
@@ -426,7 +464,7 @@ export default function ChatPanel({
           aria-label="Message"
           maxLength={MAX_CHAT_LENGTH}
           disabled={!inRoom}
-          placeholder={inRoom ? 'Message the room…' : 'Join a room to chat'}
+          placeholder={inRoom ? 'Message the roomâ€¦' : 'Join a room to chat'}
           onChange={(e) => onDraftChangeWithTyping(e.target.value)}
         />
         <button
@@ -439,6 +477,6 @@ export default function ChatPanel({
           <Send size={18} />
         </button>
       </form>
-    </section>
+    </aside>
   );
 }
