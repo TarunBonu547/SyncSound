@@ -3471,35 +3471,41 @@
   filter: drop-shadow(0 6px 6px rgba(48, 43, 66, 0.22)) drop-shadow(0 2px 3px rgba(48, 43, 66, 0.14));
 }
 
-/* Idle: gentle breathing + subtle sway. Whole-image only, since the asset is
-   a single flattened image with no separate facial/limb layers. All transforms
-   are GPU-friendly (translate/scale/rotate) and never stretch or distort. */
+/* Idle: clearly visible but relaxed whole-image motion. The asset is a single
+   flattened image with no separate facial/limb layers, so every transform is
+   applied to the whole element — nothing stretches or distorts. All motion
+   is GPU-friendly (translate/scale/rotate) and uses natural easing. */
 .couple-layer.is-playing {
-  animation: coupleListen 3.6s var(--ease-soft) infinite, coupleGaze 14s var(--ease-soft) infinite;
+  animation: coupleListen 2s var(--ease-soft) infinite, coupleGaze 16s var(--ease-soft) infinite;
 }
 .couple-layer.is-paused {
-  animation: coupleRest 6.4s var(--ease-soft) infinite;
+  animation: coupleRest 5s var(--ease-soft) infinite;
 }
 
-/* Playing: relaxed listening posture — soft breathing, a slight forward lean
-   and a gentle sway that reads as a shared, coordinated moment. The slow
-   coupleGaze cycle adds one subtle shared head-turn every ~14s, giving the
-   couple an occasional coordinated moment without any timers or randomness. */
+/* Playing: a noticeable, premium listening sway — ~5px of breathing lift and
+   a gentle 2.5° left-right rotation that reads as enjoying the music without
+   ever looking robotic or bouncy. */
 @keyframes coupleListen {
-  0%, 100% { transform: translateY(0) rotate(-0.4deg) scale(1); }
-  25% { transform: translateY(-1.6px) rotate(-0.7deg) scale(1.008); }
-  50% { transform: translateY(-3px) rotate(0deg) scale(1.014); }
-  75% { transform: translateY(-1.4px) rotate(0.5deg) scale(1.007); }
-}
-@keyframes coupleGaze {
-  0%, 82%, 100% { transform: translateY(0) rotate(0deg); }
-  90% { transform: translateY(-1px) rotate(0.8deg); }
+  0%   { transform: translateY(0)    rotate(-2.5deg) scale(1); }
+  25%  { transform: translateY(-2px) rotate(-2.8deg) scale(1.01); }
+  50%  { transform: translateY(-5px) rotate( 0deg)   scale(1.02); }
+  75%  { transform: translateY(-2px) rotate( 2.5deg) scale(1.01); }
+  100% { transform: translateY(0)    rotate(-2.5deg) scale(1); }
 }
 
-/* Paused: slower, calmer idle — almost still, with a very soft breath. */
+/* Occasional coordinated moment: one soft shared head-turn every ~16s, so the
+   couple looks at each other once in a while without any timers or randomness. */
+@keyframes coupleGaze {
+  0%, 84%, 100% { transform: translateY(0) rotate(0deg); }
+  90%           { transform: translateY(-1px) rotate(1.2deg); }
+}
+
+/* Paused: a calm, gradual settle — much softer than the playing sway, so the
+   transition from playing to paused never stops mid-animation. */
 @keyframes coupleRest {
-  0%, 100% { transform: translateY(0) rotate(-0.2deg) scale(1); }
-  50% { transform: translateY(-1.2px) rotate(-0.2deg) scale(1.006); }
+  0%   { transform: translateY(0)    rotate(-0.6deg) scale(1); }
+  50%  { transform: translateY(-1.5px) rotate(-0.6deg) scale(1.006); }
+  100% { transform: translateY(0)    rotate(-0.6deg) scale(1); }
 }
 
 /* Kept for backwards-compat with any class that referenced the old name. */
@@ -3515,33 +3521,34 @@
   50% { transform: translateY(-2px) rotate(0.6deg) scale(1.012); }
 }
 
-/* New track entrance: a soft, coordinated pop-in that reads as a shared
-   reaction to the new song. */
+/* New track entrance: a visible, smooth pop-in that reads as a shared reaction
+   to the new song — scale and vertical motion together, no excessive bounce. */
 .couple-layer.is-entrance {
-  animation: coupleEntrance 1.1s var(--ease-out) both;
+  animation: coupleEntrance 1.3s var(--ease-out) both;
 }
 @keyframes coupleEntrance {
-  0% { opacity: 0; transform: translateY(8px) scale(0.9); filter: brightness(0.92); }
-  35% { opacity: 1; }
-  60% { transform: translateY(-2px) scale(1.03); filter: brightness(1.08); }
+  0%   { opacity: 0; transform: translateY(10px) scale(0.85); filter: brightness(0.9); }
+  40%  { opacity: 1; transform: translateY(-3px) scale(1.05); filter: brightness(1.1); }
+  70%  { transform: translateY(0.5px) scale(0.99); filter: brightness(1); }
   100% { opacity: 1; transform: translateY(0) scale(1); filter: brightness(1); }
 }
 
-/* Beat reactions: gentle tilt + brightness, only when a beat is detected. */
+/* Beat reactions: a clear tilt + brightness lift, only when a beat is
+   detected. Scaled up to stay visible against the playing sway. */
 .couple-layer.is-beat {
-  animation: coupleBeat 380ms var(--ease-out) both;
+  animation: coupleBeat 420ms var(--ease-out) both;
 }
 .couple-layer.is-beat-strong {
-  animation: coupleBeatStrong 380ms var(--ease-out) both;
+  animation: coupleBeatStrong 420ms var(--ease-out) both;
 }
 @keyframes coupleBeat {
-  0% { transform: translateY(0) rotate(0deg) scale(1); filter: drop-shadow(0 6px 6px rgba(48, 43, 66, 0.22)) drop-shadow(0 2px 3px rgba(48, 43, 66, 0.14)) brightness(1); }
-  25% { transform: translateY(-3px) rotate(-1.2deg) scale(1.03); filter: drop-shadow(0 8px 8px rgba(48, 43, 66, 0.28)) drop-shadow(0 3px 4px rgba(48, 43, 66, 0.16)) brightness(1.12); }
+  0%   { transform: translateY(0) rotate(0deg) scale(1); filter: drop-shadow(0 6px 6px rgba(48, 43, 66, 0.22)) drop-shadow(0 2px 3px rgba(48, 43, 66, 0.14)) brightness(1); }
+  25%  { transform: translateY(-6px) rotate(-3deg) scale(1.05); filter: drop-shadow(0 10px 10px rgba(48, 43, 66, 0.3)) drop-shadow(0 4px 5px rgba(48, 43, 66, 0.18)) brightness(1.18); }
   100% { transform: translateY(0) rotate(0deg) scale(1); filter: drop-shadow(0 6px 6px rgba(48, 43, 66, 0.22)) drop-shadow(0 2px 3px rgba(48, 43, 66, 0.14)) brightness(1); }
 }
 @keyframes coupleBeatStrong {
-  0% { transform: translateY(0) rotate(0deg) scale(1); filter: drop-shadow(0 6px 6px rgba(48, 43, 66, 0.22)) drop-shadow(0 2px 3px rgba(48, 43, 66, 0.14)) brightness(1); }
-  25% { transform: translateY(-5px) rotate(-2deg) scale(1.06); filter: drop-shadow(0 10px 10px rgba(48, 43, 66, 0.32)) drop-shadow(0 4px 5px rgba(48, 43, 66, 0.18)) brightness(1.22); }
+  0%   { transform: translateY(0) rotate(0deg) scale(1); filter: drop-shadow(0 6px 6px rgba(48, 43, 66, 0.22)) drop-shadow(0 2px 3px rgba(48, 43, 66, 0.14)) brightness(1); }
+  25%  { transform: translateY(-9px) rotate(-4.5deg) scale(1.09); filter: drop-shadow(0 14px 14px rgba(48, 43, 66, 0.34)) drop-shadow(0 5px 6px rgba(48, 43, 66, 0.2)) brightness(1.3); }
   100% { transform: translateY(0) rotate(0deg) scale(1); filter: drop-shadow(0 6px 6px rgba(48, 43, 66, 0.22)) drop-shadow(0 2px 3px rgba(48, 43, 66, 0.14)) brightness(1); }
 }
 
