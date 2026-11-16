@@ -1,5 +1,5 @@
 import type { CSSProperties, RefObject } from 'react';
-import { Video, Plus, UserPlus, Disc3, Loader2, AlertCircle, Play } from 'lucide-react';
+import { Video, Plus, UserPlus, Loader2, AlertCircle, Play } from 'lucide-react';
 import type { QueueEntry, Track } from '../../types/music';
 import type { SearchResult } from '../../utils/youtubeSearch';
 import { YT_STATE, type YouTubePlayer } from '../../hooks/useYouTubePlayer';
@@ -166,7 +166,7 @@ export default function MainPlayer({
 
   return (
     <section className="card player-card" aria-label="Now playing">
-      <div className="stage-wrap">
+      <div className={`stage-wrap ${hasTrack ? 'has-track' : 'is-empty'} ${localPlaying ? 'is-playing' : 'is-paused'}`}>
         <div className="reaction-stage" aria-hidden="true">
           {hasTrack &&
             Object.entries(reactions).map(([emoji, list]) => (
@@ -188,28 +188,38 @@ export default function MainPlayer({
           {hasTrack && <img src={current.thumbnail} alt="" />}
         </div>
         <div className={`stage ${hasTrack ? 'has-video' : ''} ${localPlaying ? 'is-playing' : ''}`}>
+          <div className="stage-rings" aria-hidden="true">
+            <span className="stage-ring r1" />
+            <span className="stage-ring r2" />
+            <span className="stage-ring r3" />
+          </div>
+          <div className="stage-aura" aria-hidden="true" />
           {/* The real video of the room lives here. The IFrame API fills the
               container, so the video is seen instead of the artwork. */}
           <div className="stage-video" ref={stageRef} title="SyncSound player" />
-          {hasTrack && (
-            <img
-              className="stage-poster art-swap"
-              key={current.id}
-              src={current.thumbnail}
-              alt={`Artwork for ${current.title}`}
-            />
-          )}
-          {!hasTrack && (
-            <div className="stage-empty">
-              <span className="stage-empty-icon" aria-hidden="true">
-                <Disc3 size={26} />
-              </span>
-              <p className="stage-empty-title">Nothing playing yet</p>
-              <p className="stage-empty-hint">
-                Add a song below and it starts for everyone in the room.
-              </p>
-            </div>
-          )}
+          <div className="stage-art" aria-hidden={hasTrack ? undefined : true}>
+            {hasTrack ? (
+              <img
+                className="stage-poster art-swap"
+                key={current.id}
+                src={current.thumbnail}
+                alt={`Artwork for ${current.title}`}
+              />
+            ) : (
+              <div className="stage-empty">
+                <span className="stage-empty-visual" aria-hidden="true">
+                  <span className="vinyl-glow" />
+                  <span className="vinyl-disc">
+                    <span className="vinyl-shine" />
+                  </span>
+                </span>
+                <p className="stage-empty-title">Nothing playing yet</p>
+                <p className="stage-empty-hint">
+                  Add a song below and it starts for everyone in the room.
+                </p>
+              </div>
+            )}
+          </div>
           {loading && (
             <div className="stage-overlay" role="status">
               <Loader2 size={20} className="spin" aria-hidden="true" />

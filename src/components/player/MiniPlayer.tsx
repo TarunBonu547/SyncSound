@@ -45,16 +45,17 @@ export default function MiniPlayer({
   onOpenPlayer,
 }: MiniPlayerProps) {
   const progress = duration > 0 ? Math.min(100, (currentTime / duration) * 100) : 0;
+  const infoKey = current?.id || 'none';
 
   return (
-    <div className="mini-player" aria-label="Now playing">
+    <div className={`mini-player ${playing ? 'is-playing' : ''}`} aria-label="Now playing">
       {current ? (
         <img className="mini-player-art" src={current.thumbnail} alt={`Artwork for ${current.title}`} />
       ) : (
         <span className="mini-player-art is-empty" aria-hidden="true" />
       )}
 
-      <div className="mini-player-info">
+      <div className="mini-player-info is-changing" key={infoKey}>
         <p className="mini-player-title">{current?.title || 'Nothing playing'}</p>
         <p className="mini-player-channel">{current?.channel || 'Pick a track in the room'}</p>
       </div>

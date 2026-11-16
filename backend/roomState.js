@@ -64,8 +64,12 @@ class RoomState {
     this.reactions = new Map();
     /** Who is typing right now: client id -> { name, socketId, timer }. */
     this.typing = new Map();
-    /** Shared freehand drawing strokes of this room. */
+    /** Shared freehand drawing operations of this room (authoritative, ordered). */
     this.drawings = [];
+    /** Monotonic drawing operation sequence for this room. */
+    this.drawingSeq = 0;
+    /** Incremented on clear so stale operations can be ignored. */
+    this.drawingEpoch = 0;
     this.queue = [];
     this.currentQueueItemId = null;
     this.currentVideoId = null;
@@ -239,35 +243,48 @@ class RoomState {
     }));
   }
 
-  /** The shared drawing strokes of this room, oldest first. */
+  /** The shared drawing operations of this room, oldest first (authoritative). */
   getDrawings() {
-    return this.drawings.map((s) => ({
-      ...s,
-      points: Array.isArray(s.points) ? s.points.map((p) => ({ x: p.x, y: p.y })) : [],
-    }));
+    return {
+      epoch: this.drawingEpoch,
+      seq: this.drawingSeq,
+      strokes: this.drawings.map((s) => ({
+        ...s,
+        points: Array.isArray(s.points) ? s.points.map((p) => ({ x: p.x, y: p.y })) : [],
+      })),
+    };
   }
 
-  /** Stores a completed drawing stroke. */
+  /** Stores a completed drawing operation if not already known. */
   addDrawingStroke(stroke) {
-    if (!stroke || typeof stroke !== 'object') return null;
-    this.drawings.push(stroke);
-    return stroke;
+    if (!stroke || typeof stroke !== 'object' || typeof stroke.id !== 'string') return null;
+    if (this.drawings.some((s) => s.id === stroke.id)) {
+      return this.drawings.find((s) => s.id === stroke.id) || null;
+    }
+    this.drawingSeq += 1;
+    const stored = { ...stroke, seq: this.drawingSeq, epoch: this.drawingEpoch };
+    this.drawings.push(stored);
+    return stored;
   }
 
-  /** Removes the most recent stroke authored by a client. */
+  /** Removes the most recent operation authored by a client. */
   undoDrawingStroke(clientId) {
     for (let i = this.drawings.length - 1; i >= 0; i--) {
       if (this.drawings[i].clientId === clientId) {
         const [removed] = this.drawings.splice(i, 1);
-        return removed || null;
+        this.drawingSeq += 1;
+        return removed ? { ...removed, undoSeq: this.drawingSeq, epoch: this.drawingEpoch } : null;
       }
     }
     return null;
   }
 
-  /** Clears all shared drawing strokes. */
+  /** Clears all shared drawing operations and advances epoch. */
   clearDrawings() {
     this.drawings = [];
+    this.drawingSeq += 1;
+    this.drawingEpoch += 1;
+    return { epoch: this.drawingEpoch, seq: this.drawingSeq };
   }
 
   /** Bump the playback revision and re-anchor the timeline to now. */

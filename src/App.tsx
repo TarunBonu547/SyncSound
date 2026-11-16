@@ -1265,7 +1265,7 @@ export default function App() {
         roomCode={room.roomCode}
         clientId={clientId}
         clientName={displayName || 'You'}
-        initialStrokes={room.drawings}
+        initialState={room.drawings}
       />
 
       {/* ------------------------------ Mobile menu -------------------------- */}

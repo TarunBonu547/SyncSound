@@ -1,4 +1,5 @@
 import { Copy, Check, Video, Users } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import type { RoomMember } from '../../types/music';
 import { avatarFor } from '../../utils/avatar';
 import StatusIndicator from '../common/StatusIndicator';
@@ -31,6 +32,14 @@ export default function RoomHeader({
   onVideoCall,
 }: RoomHeaderProps) {
   const count = Math.max(1, members.length);
+  const [pulse, setPulse] = useState(false);
+
+  useEffect(() => {
+    if (!linkCopied) return;
+    setPulse(true);
+    const t = window.setTimeout(() => setPulse(false), 700);
+    return () => window.clearTimeout(t);
+  }, [linkCopied]);
 
   return (
     <header className="room-header card">
@@ -39,7 +48,7 @@ export default function RoomHeader({
           <p className="eyebrow">Now playing together</p>
           <h1 className="room-title">{roomName || 'Your room'}</h1>
           <div className="room-header-meta">
-            <span className="room-code-chip" title="The code of the room">
+            <span className={`room-code-chip ${pulse ? 'is-copied' : ''}`} title="The code of the room">
               {roomCode || '—'}
             </span>
             <StatusIndicator
@@ -47,7 +56,7 @@ export default function RoomHeader({
               label={connected ? 'Connected' : 'Reconnecting…'}
               live={!!roomCode}
             />
-            <span className="room-member-count">
+            <span className="room-member-count" key={count}>
               <Users size={14} aria-hidden="true" />
               {count} {count === 1 ? 'listener' : 'listeners'}
             </span>
@@ -71,7 +80,7 @@ export default function RoomHeader({
             })}
             {members.length > 5 && <span className="room-avatar is-more">+{members.length - 5}</span>}
           </div>
-          <button className="btn" onClick={onCopyInvite} title="Copy the invite link">
+          <button className={`btn ${pulse ? 'is-copied' : ''}`} onClick={onCopyInvite} title="Copy the invite link">
             {linkCopied ? <Check size={16} /> : <Copy size={16} />}
             {linkCopied ? 'Link copied' : 'Invite'}
           </button>

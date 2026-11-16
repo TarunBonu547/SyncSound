@@ -23,8 +23,9 @@ export default function TrackInfo({
   playerError,
   onToggleLike,
 }: TrackInfoProps) {
+  const key = current?.id || 'none';
   return (
-    <div className="player-meta">
+    <div className="player-meta" key={key}>
       {(ytError || playerError) && (
         <p className="error-text" role="alert">
           {ytError || playerError}
@@ -33,15 +34,15 @@ export default function TrackInfo({
 
       <div className="track-row">
         {current ? (
-          <img className="track-art" src={current.thumbnail} alt={`Artwork for ${current.title}`} />
+          <img className="track-art track-transition" src={current.thumbnail} alt={`Artwork for ${current.title}`} />
         ) : (
           <span className="track-art is-empty" aria-hidden="true">
             <Disc3 size={20} />
           </span>
         )}
         <div className="track-text">
-          <h1 className="track-title">{current?.title || 'Waiting for the first song'}</h1>
-          <p className="track-channel">{current?.channel || 'No artist yet'}</p>
+          <h1 className="track-title track-transition">{current?.title || 'Waiting for the first song'}</h1>
+          <p className="track-channel track-transition">{current?.channel || 'No artist yet'}</p>
         </div>
         <button
           className={`btn icon like-btn ${isLiked ? 'is-liked' : ''}`}

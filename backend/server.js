@@ -561,83 +561,118 @@ io.on('connection', (socket) => {
     if (cb) cb({ ok: true });
   });
 
-  // --- Shared freehand drawing (room-scoped) ---------------------------------
+  // --- Shared drawing (room-scoped, server-authoritative, ordered) -----------
   function validNorm(n) {
     return typeof n === 'number' && Number.isFinite(n) && n >= -0.1 && n <= 1.1;
   }
   function clampNorm(n) {
     return Math.max(0, Math.min(1, n));
   }
+  function normPoint(p) {
+    if (!p || !validNorm(p.x) || !validNorm(p.y)) return null;
+    return { x: clampNorm(p.x), y: clampNorm(p.y) };
+  }
+  function drawingMode(v) {
+    return v === 'erase' || v === 'eraser' ? 'erase' : 'draw';
+  }
+  function drawingWidth(v) {
+    return typeof v === 'number' && Number.isFinite(v) ? Math.max(0.001, Math.min(0.1, v)) : 0.005;
+  }
+  function drawingColor(v) {
+    return typeof v === 'string' ? v.slice(0, 20) : '#2f6f86';
+  }
 
-  socket.on('DRAW_STROKE_START', ({ code, stroke } = {}, cb) => {
+  socket.on('DRAW_STROKE_START', ({ code, stroke, epoch } = {}, cb) => {
     const room = requireRoomMember(code, socket);
     if (!room) { if (cb) cb({ ok: false, error: 'Not in room' }); return; }
     const member = room.getMember(socket.id);
     if (!member || !stroke || typeof stroke !== 'object') { if (cb) cb({ ok: false, error: 'Invalid stroke' }); return; }
+    if (Number.isFinite(Number(epoch)) && Number(epoch) !== room.drawingEpoch) {
+      if (cb) cb({ ok: false, error: 'Stale drawing epoch', drawings: room.getDrawings() }); return;
+    }
     const id = typeof stroke.id === 'string' ? stroke.id.slice(0, 80) : null;
     if (!id) { if (cb) cb({ ok: false, error: 'Invalid stroke' }); return; }
+    const points = Array.isArray(stroke.points) ? stroke.points.map(normPoint).filter(Boolean).slice(0, 500) : [];
     const payload = {
       id,
-      tool: stroke.tool === 'eraser' ? 'eraser' : 'pencil',
-      color: typeof stroke.color === 'string' ? stroke.color.slice(0, 20) : '#2f6f86',
-      size: typeof stroke.size === 'number' && Number.isFinite(stroke.size) ? Math.max(0.001, Math.min(0.1, stroke.size)) : 0.005,
-      points: Array.isArray(stroke.points) ? stroke.points.slice(0, 500).filter(p => p && validNorm(p.x) && validNorm(p.y)).map(p => ({ x: clampNorm(p.x), y: clampNorm(p.y) })) : [],
+      mode: drawingMode(stroke.mode ?? stroke.tool),
+      color: drawingColor(stroke.color),
+      width: drawingWidth(stroke.width ?? stroke.size),
+      points,
       clientId: member.clientId,
       clientName: member.name,
+      epoch: room.drawingEpoch,
     };
     socket.to(room.code).emit('DRAW_STROKE_START', payload);
-    if (cb) cb({ ok: true });
+    if (cb) cb({ ok: true, epoch: room.drawingEpoch });
   });
 
-  socket.on('DRAW_STROKE_MOVE', ({ code, id, points } = {}, cb) => {
+  socket.on('DRAW_STROKE_MOVE', ({ code, id, points, epoch } = {}, cb) => {
     const room = requireRoomMember(code, socket);
     if (!room) { if (cb) cb({ ok: false, error: 'Not in room' }); return; }
     const member = room.getMember(socket.id);
     if (!member || typeof id !== 'string') { if (cb) cb({ ok: false, error: 'Invalid' }); return; }
-    const pts = Array.isArray(points) ? points.slice(0, 200).filter(p => p && validNorm(p.x) && validNorm(p.y)).map(p => ({ x: clampNorm(p.x), y: clampNorm(p.y) })) : [];
-    if (pts.length) socket.to(room.code).emit('DRAW_STROKE_MOVE', { id, points: pts, clientId: member.clientId });
+    if (Number.isFinite(Number(epoch)) && Number(epoch) !== room.drawingEpoch) {
+      if (cb) cb({ ok: false, error: 'Stale drawing epoch' }); return;
+    }
+    const pts = Array.isArray(points) ? points.map(normPoint).filter(Boolean).slice(0, 256) : [];
+    if (pts.length) {
+      socket.to(room.code).emit('DRAW_STROKE_MOVE', { id, points: pts, clientId: member.clientId, epoch: room.drawingEpoch });
+    }
     if (cb) cb({ ok: true });
   });
 
-  socket.on('DRAW_STROKE_END', ({ code, stroke } = {}, cb) => {
+  socket.on('DRAW_STROKE_END', ({ code, stroke, epoch } = {}, cb) => {
     const room = requireRoomMember(code, socket);
     if (!room) { if (cb) cb({ ok: false, error: 'Not in room' }); return; }
     const member = room.getMember(socket.id);
     if (!member || !stroke || typeof stroke !== 'object') { if (cb) cb({ ok: false, error: 'Invalid stroke' }); return; }
+    if (Number.isFinite(Number(epoch)) && Number(epoch) !== room.drawingEpoch) {
+      if (cb) cb({ ok: false, error: 'Stale drawing epoch', drawings: room.getDrawings() }); return;
+    }
     const id = typeof stroke.id === 'string' ? stroke.id.slice(0, 80) : null;
     if (!id) { if (cb) cb({ ok: false, error: 'Invalid stroke' }); return; }
-    const payload = {
+    const points = Array.isArray(stroke.points) ? stroke.points.map(normPoint).filter(Boolean).slice(0, 4000) : [];
+    if (points.length === 0) { if (cb) cb({ ok: false, error: 'Empty stroke' }); return; }
+    const stored = room.addDrawingStroke({
       id,
-      tool: stroke.tool === 'eraser' ? 'eraser' : 'pencil',
-      color: typeof stroke.color === 'string' ? stroke.color.slice(0, 20) : '#2f6f86',
-      size: typeof stroke.size === 'number' && Number.isFinite(stroke.size) ? Math.max(0.001, Math.min(0.1, stroke.size)) : 0.005,
-      points: Array.isArray(stroke.points) ? stroke.points.slice(0, 4000).filter(p => p && validNorm(p.x) && validNorm(p.y)).map(p => ({ x: clampNorm(p.x), y: clampNorm(p.y) })) : [],
+      mode: drawingMode(stroke.mode ?? stroke.tool),
+      color: drawingColor(stroke.color),
+      width: drawingWidth(stroke.width ?? stroke.size),
+      points,
       clientId: member.clientId,
       clientName: member.name,
-    };
-    room.addDrawingStroke(payload);
-    socket.to(room.code).emit('DRAW_STROKE_END', payload);
-    if (cb) cb({ ok: true });
+      ts: Date.now(),
+    });
+    if (!stored) { if (cb) cb({ ok: false, error: 'Duplicate stroke' }); return; }
+    io.to(room.code).emit('DRAW_STROKE_END', stored);
+    if (cb) cb({ ok: true, seq: stored.seq, epoch: stored.epoch });
   });
 
-  socket.on('DRAW_UNDO', ({ code } = {}, cb) => {
+  socket.on('DRAW_UNDO', ({ code, epoch } = {}, cb) => {
     const room = requireRoomMember(code, socket);
     if (!room) { if (cb) cb({ ok: false, error: 'Not in room' }); return; }
     const member = room.getMember(socket.id);
     if (!member) { if (cb) cb({ ok: false, error: 'Not in room' }); return; }
+    if (Number.isFinite(Number(epoch)) && Number(epoch) !== room.drawingEpoch) {
+      if (cb) cb({ ok: false, error: 'Stale drawing epoch', drawings: room.getDrawings() }); return; }
     const removed = room.undoDrawingStroke(member.clientId);
-    if (removed) io.to(room.code).emit('DRAW_UNDO', { strokeId: removed.id, clientId: member.clientId });
-    if (cb) cb({ ok: true, removedId: removed ? removed.id : null });
+    if (removed) {
+      io.to(room.code).emit('DRAW_UNDO', { id: removed.id, clientId: member.clientId, seq: removed.undoSeq, epoch: removed.epoch });
+    }
+    if (cb) cb({ ok: true, removedId: removed ? removed.id : null, epoch: room.drawingEpoch, seq: room.drawingSeq });
   });
 
-  socket.on('DRAW_CLEAR', ({ code } = {}, cb) => {
+  socket.on('DRAW_CLEAR', ({ code, epoch } = {}, cb) => {
     const room = requireRoomMember(code, socket);
     if (!room) { if (cb) cb({ ok: false, error: 'Not in room' }); return; }
     const member = room.getMember(socket.id);
     if (!member) { if (cb) cb({ ok: false, error: 'Not in room' }); return; }
-    room.clearDrawings();
-    io.to(room.code).emit('DRAW_CLEAR', { clientId: member.clientId, clientName: member.name });
-    if (cb) cb({ ok: true });
+    if (Number.isFinite(Number(epoch)) && Number(epoch) !== room.drawingEpoch) {
+      if (cb) cb({ ok: false, error: 'Stale drawing epoch', drawings: room.getDrawings() }); return; }
+    const state = room.clearDrawings();
+    io.to(room.code).emit('DRAW_CLEAR', { clientId: member.clientId, clientName: member.name, epoch: state.epoch, seq: state.seq });
+    if (cb) cb({ ok: true, ...state });
   });
 
   socket.on('disconnect', () => {

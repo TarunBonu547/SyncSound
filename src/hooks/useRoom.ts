@@ -36,17 +36,28 @@ export type UseRoomOptions = {
   onError: (message: string) => void;
 };
 
+export type SharedDrawingPoint = { x: number; y: number };
+
 export type SharedDrawingStroke = {
   id: string;
-  tool: 'pencil' | 'eraser';
-  color: string;
-  /** Stroke width normalized to viewport width (0..0.1). */
-  size: number;
-  /** Points normalized to viewport (0..1). */
-  points: { x: number; y: number }[];
   clientId: string;
   clientName: string;
+  color: string;
+  width: number;
+  mode: 'draw' | 'erase';
+  points: SharedDrawingPoint[];
+  seq?: number;
+  epoch?: number;
+  ts?: number;
 };
+
+export type SharedDrawingState = {
+  epoch: number;
+  seq: number;
+  strokes: SharedDrawingStroke[];
+};
+
+const EMPTY_DRAWINGS: SharedDrawingState = { epoch: 0, seq: 0, strokes: [] };
 
 /**
  * The room of this client.
@@ -77,8 +88,8 @@ export function useRoom({ socket, clientId, displayName, onPlayback, onError }: 
   const [typing, setTyping] = useState<Record<string, TypingEntry>>({});
   /** Debounce timers that clear remote typing indicators when the stop event is lost. */
   const typingTimersRef = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
-  /** Shared freehand drawing strokes of the current room. */
-  const [drawings, setDrawings] = useState<SharedDrawingStroke[]>([]);
+  /** Shared freehand drawing state of the current room. */
+  const [drawings, setDrawings] = useState<SharedDrawingState>(EMPTY_DRAWINGS);
 
   /**
    * The queue, readable right now.
@@ -224,10 +235,19 @@ export function useRoom({ socket, clientId, displayName, onPlayback, onError }: 
               .filter((entry): entry is ChatEntry => entry !== null);
             setMessages(history);
           }
-          if (Array.isArray(answer.drawings)) {
-            setDrawings(answer.drawings as SharedDrawingStroke[]);
+          if (answer.drawings && typeof answer.drawings === 'object' && !Array.isArray(answer.drawings)) {
+            const d = answer.drawings as Record<string, unknown>;
+            const strokes = Array.isArray(d.strokes) ? (d.strokes as SharedDrawingStroke[]) : [];
+            setDrawings({
+              epoch: Number.isFinite(Number(d.epoch)) ? Number(d.epoch) : 0,
+              seq: Number.isFinite(Number(d.seq)) ? Number(d.seq) : 0,
+              strokes,
+            });
+          } else if (Array.isArray(answer.drawings)) {
+            // Backward-compat: legacy array payload
+            setDrawings({ epoch: 0, seq: 0, strokes: answer.drawings as SharedDrawingStroke[] });
           } else {
-            setDrawings([]);
+            setDrawings(EMPTY_DRAWINGS);
           }
         },
       );
@@ -320,18 +340,40 @@ export function useRoom({ socket, clientId, displayName, onPlayback, onError }: 
     };
 
     const onDrawStrokeEnd = (payload: unknown) => {
-      const stroke = payload as SharedDrawingStroke;
+      const stroke = payload as SharedDrawingStroke & { epoch?: number };
       if (!stroke || typeof stroke.id !== 'string') return;
-      setDrawings((prev) => (prev.some((s) => s.id === stroke.id) ? prev : [...prev, stroke]));
+      setDrawings((prev) => {
+        if (typeof stroke.epoch === 'number' && stroke.epoch !== prev.epoch) return prev;
+        if (prev.strokes.some((s) => s.id === stroke.id)) return prev;
+        const seq = typeof stroke.seq === 'number' ? stroke.seq : prev.seq;
+        return { epoch: prev.epoch, seq: Math.max(prev.seq, seq), strokes: [...prev.strokes, stroke] };
+      });
     };
     const onDrawUndo = (payload: unknown) => {
       const raw = (payload ?? {}) as Record<string, unknown>;
-      const strokeId = typeof raw.strokeId === 'string' ? raw.strokeId : '';
+      const strokeId = typeof raw.id === 'string' ? raw.id : '';
       if (!strokeId) return;
-      setDrawings((prev) => prev.filter((s) => s.id !== strokeId));
+      const epoch = Number(raw.epoch);
+      const seq = Number(raw.seq);
+      setDrawings((prev) => {
+        if (Number.isFinite(epoch) && epoch !== prev.epoch) return prev;
+        if (!prev.strokes.some((s) => s.id === strokeId)) return prev;
+        return {
+          epoch: prev.epoch,
+          seq: Number.isFinite(seq) ? Math.max(prev.seq, seq) : prev.seq,
+          strokes: prev.strokes.filter((s) => s.id !== strokeId),
+        };
+      });
     };
-    const onDrawClear = () => {
-      setDrawings([]);
+    const onDrawClear = (payload: unknown) => {
+      const raw = (payload ?? {}) as Record<string, unknown>;
+      const epoch = Number(raw.epoch);
+      const seq = Number(raw.seq);
+      setDrawings({
+        epoch: Number.isFinite(epoch) ? epoch : 0,
+        seq: Number.isFinite(seq) ? seq : 0,
+        strokes: [],
+      });
     };
 
     socket.on('playback-update', onPlaybackUpdate);
@@ -391,7 +433,7 @@ export function useRoom({ socket, clientId, displayName, onPlayback, onError }: 
     queueRef.current = [];
     setReactions({});
     setTyping({});
-    setDrawings([]);
+    setDrawings(EMPTY_DRAWINGS);
   }, [socket, roomCode]);
 
   /**
