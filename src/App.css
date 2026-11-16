@@ -281,6 +281,7 @@
 
 /* --- Player ---------------------------------------------------------------- */
 .player-card {
+  position: relative;
   display: grid;
   grid-template-columns: minmax(260px, 420px) minmax(300px, 1fr);
   align-items: center;
@@ -3442,4 +3443,119 @@
 @media (prefers-reduced-motion: reduce) {
   .view-pane--enter, .app .room-header, .app .player-card, .stage-wrap.is-playing .stage-poster, .stage-wrap.is-playing .stage-ring, .stage-wrap:not(.is-playing) .stage-ring, .stage-wrap.is-playing .stage-aura, .track-transition, .like-btn.is-liked, .vinyl-disc, .vinyl-glow, .mini-player, .reaction-btn .reaction-emoji, .chat-emoji-panel, .toast, .dedication-card, .queue-row, .search-card, .library-card, .reaction-burst span, .mini-player-info.is-changing { animation: none !important; }
   .app .main, .app .right { transform: none !important; transition: none !important; }
+}
+
+/* --- Couple on player frame ------------------------------------------------ */
+/* Positioned relative to the MAIN player card (`.player-card` is `position:
+   relative`), not the album-art stage. It dangles over the top-right edge so
+   it never overlaps the title, artist, artwork, progress bar or controls. */
+.couple-layer {
+  position: absolute;
+  top: -30px;
+  right: 20px;
+  width: 70px;
+  height: 52px;
+  pointer-events: none;
+  z-index: 5;
+  transform-origin: bottom center;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  will-change: transform;
+}
+.couple-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: bottom center;
+  display: block;
+  filter: drop-shadow(0 6px 6px rgba(48, 43, 66, 0.22)) drop-shadow(0 2px 3px rgba(48, 43, 66, 0.14));
+}
+
+/* Idle: gentle breathing + subtle sway. Whole-image only, since the asset is
+   a single flattened image with no separate facial/limb layers. All transforms
+   are GPU-friendly (translate/scale/rotate) and never stretch or distort. */
+.couple-layer.is-playing {
+  animation: coupleListen 3.6s var(--ease-soft) infinite, coupleGaze 14s var(--ease-soft) infinite;
+}
+.couple-layer.is-paused {
+  animation: coupleRest 6.4s var(--ease-soft) infinite;
+}
+
+/* Playing: relaxed listening posture — soft breathing, a slight forward lean
+   and a gentle sway that reads as a shared, coordinated moment. The slow
+   coupleGaze cycle adds one subtle shared head-turn every ~14s, giving the
+   couple an occasional coordinated moment without any timers or randomness. */
+@keyframes coupleListen {
+  0%, 100% { transform: translateY(0) rotate(-0.4deg) scale(1); }
+  25% { transform: translateY(-1.6px) rotate(-0.7deg) scale(1.008); }
+  50% { transform: translateY(-3px) rotate(0deg) scale(1.014); }
+  75% { transform: translateY(-1.4px) rotate(0.5deg) scale(1.007); }
+}
+@keyframes coupleGaze {
+  0%, 82%, 100% { transform: translateY(0) rotate(0deg); }
+  90% { transform: translateY(-1px) rotate(0.8deg); }
+}
+
+/* Paused: slower, calmer idle — almost still, with a very soft breath. */
+@keyframes coupleRest {
+  0%, 100% { transform: translateY(0) rotate(-0.2deg) scale(1); }
+  50% { transform: translateY(-1.2px) rotate(-0.2deg) scale(1.006); }
+}
+
+/* Kept for backwards-compat with any class that referenced the old name. */
+@keyframes coupleBreathe {
+  0%, 100% { transform: translateY(0) scale(1); }
+  50% { transform: translateY(-2px) scale(1.012); }
+}
+
+/* Subtle leg-swing feel for a flattened image: a very slight rotation that
+   reads as a gentle sway without pretending individual limbs move. */
+@keyframes coupleSway {
+  0%, 100% { transform: translateY(0) rotate(-0.6deg) scale(1); }
+  50% { transform: translateY(-2px) rotate(0.6deg) scale(1.012); }
+}
+
+/* New track entrance: a soft, coordinated pop-in that reads as a shared
+   reaction to the new song. */
+.couple-layer.is-entrance {
+  animation: coupleEntrance 1.1s var(--ease-out) both;
+}
+@keyframes coupleEntrance {
+  0% { opacity: 0; transform: translateY(8px) scale(0.9); filter: brightness(0.92); }
+  35% { opacity: 1; }
+  60% { transform: translateY(-2px) scale(1.03); filter: brightness(1.08); }
+  100% { opacity: 1; transform: translateY(0) scale(1); filter: brightness(1); }
+}
+
+/* Beat reactions: gentle tilt + brightness, only when a beat is detected. */
+.couple-layer.is-beat {
+  animation: coupleBeat 380ms var(--ease-out) both;
+}
+.couple-layer.is-beat-strong {
+  animation: coupleBeatStrong 380ms var(--ease-out) both;
+}
+@keyframes coupleBeat {
+  0% { transform: translateY(0) rotate(0deg) scale(1); filter: drop-shadow(0 6px 6px rgba(48, 43, 66, 0.22)) drop-shadow(0 2px 3px rgba(48, 43, 66, 0.14)) brightness(1); }
+  25% { transform: translateY(-3px) rotate(-1.2deg) scale(1.03); filter: drop-shadow(0 8px 8px rgba(48, 43, 66, 0.28)) drop-shadow(0 3px 4px rgba(48, 43, 66, 0.16)) brightness(1.12); }
+  100% { transform: translateY(0) rotate(0deg) scale(1); filter: drop-shadow(0 6px 6px rgba(48, 43, 66, 0.22)) drop-shadow(0 2px 3px rgba(48, 43, 66, 0.14)) brightness(1); }
+}
+@keyframes coupleBeatStrong {
+  0% { transform: translateY(0) rotate(0deg) scale(1); filter: drop-shadow(0 6px 6px rgba(48, 43, 66, 0.22)) drop-shadow(0 2px 3px rgba(48, 43, 66, 0.14)) brightness(1); }
+  25% { transform: translateY(-5px) rotate(-2deg) scale(1.06); filter: drop-shadow(0 10px 10px rgba(48, 43, 66, 0.32)) drop-shadow(0 4px 5px rgba(48, 43, 66, 0.18)) brightness(1.22); }
+  100% { transform: translateY(0) rotate(0deg) scale(1); filter: drop-shadow(0 6px 6px rgba(48, 43, 66, 0.22)) drop-shadow(0 2px 3px rgba(48, 43, 66, 0.14)) brightness(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .couple-layer,
+  .couple-layer.is-playing,
+  .couple-layer.is-paused,
+  .couple-layer.is-entrance,
+  .couple-layer.is-beat,
+  .couple-layer.is-beat-strong {
+    animation: none;
+  }
+}
+
+@media (max-width: 640px) {
+  .couple-layer { width: 55px; height: 41px; top: -24px; right: 6px; }
 }
