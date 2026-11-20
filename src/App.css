@@ -1448,30 +1448,6 @@
   color: var(--text-faint);
 }
 
-.chat-time-wrap {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-}
-
-/* Read receipt ticks next to the timestamp of outgoing messages. */
-.chat-status {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  flex: none;
-  width: 16px;
-  height: 14px;
-  color: var(--receipt-grey);
-  transition:
-    color var(--t-base) var(--ease-out),
-    transform var(--t-fast) var(--ease-out);
-}
-
-.chat-status.is-seen {
-  color: var(--receipt-blue);
-}
-
 /* Received: white with a faint light-blue wash. */
 .chat-bubble:not(.is-self) {
   background: rgba(168, 221, 247, 0.10);
@@ -1663,31 +1639,6 @@
   width: 18px;
   height: 18px;
   flex: none;
-}
-
-/* Read receipt ticks next to the timestamp of outgoing messages. */
-.chat-status-tick {
-  width: 12px;
-  height: 12px;
-  flex: none;
-  margin-inline-start: 4px;
-  color: var(--text-faint);
-  transition:
-    color var(--t-base) var(--ease-out),
-    transform var(--t-fast) var(--ease-out);
-}
-
-.chat-status-tick.is-sent {
-  color: var(--text-faint);
-}
-
-.chat-status-tick-group {
-  display: inline-flex;
-  align-items: center;
-}
-
-.chat-status-tick-group.is-seen .chat-status-tick {
-  color: var(--mint);
 }
 
 .chat-reply-info {

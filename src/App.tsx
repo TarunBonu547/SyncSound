@@ -1023,8 +1023,6 @@ export default function App() {
               onCancelReply={room.cancelReply}
               muted={chatNotify.muted}
               onToggleMute={chatNotify.toggleMute}
-              onAckMessage={room.ackMessage}
-              onAckAll={room.ackAllMessages}
             />
           )}
         </aside>
@@ -1204,8 +1202,6 @@ export default function App() {
               onCancelReply={room.cancelReply}
               muted={chatNotify.muted}
               onToggleMute={chatNotify.toggleMute}
-              onAckMessage={room.ackMessage}
-              onAckAll={room.ackAllMessages}
               onClose={() => setChatOpen(false)}
             />
           )}

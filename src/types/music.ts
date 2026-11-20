@@ -97,14 +97,8 @@ export interface ChatEntry {
   timestamp: number;
   isSelf: boolean;
   /** Optional metadata of the message this entry replies to. Legacy messages
-      do not have it, so it stays optional and absent entries render as before. */
+     do not have it, so it stays optional and absent entries render as before. */
   replyTo?: ChatReply;
-  /** Delivery status for outgoing messages. Absent for incoming messages. */
-  status?: 'sent' | 'delivered' | 'seen';
-  /** When the message was delivered to a recipient (epoch ms). */
-  deliveredAt?: number;
-  /** When the message was seen by a recipient (epoch ms). */
-  seenAt?: number;
 }
 
 /** A member of a room, exactly as the server reports it. */

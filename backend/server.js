@@ -373,95 +373,11 @@ io.on('connection', (socket) => {
       userName: member.name,
       text: body,
       timestamp: Date.now(),
-      status: 'sent',
       ...(replyMetadata && { replyTo: replyMetadata }),
     };
     room.addChatMessage(message);
     io.to(room.code).emit('chat:message', message);
     if (cb) cb({ ok: true, id: message.id, timestamp: message.timestamp });
-  });
-
-  /**
-   * Acknowledges that a remote participant has received a message.
-   * Only the actual recipient may mark a message as delivered or seen.
-   */
-  socket.on('message:ack', ({ code, messageId, status, recipientClientId } = {}, cb) => {
-    const wanted = normalizeCode(code);
-    const room = wanted ? getRoom(wanted) : null;
-    if (!room || !room.participants.has(socket.id)) {
-      if (cb) cb({ ok: false, error: 'Not in room' });
-      return;
-    }
-    const member = room.getMember(socket.id);
-    if (!member) {
-      if (cb) cb({ ok: false, error: 'Not in room' });
-      return;
-    }
-    const targetClientId = recipientClientId || member.clientId;
-    if (typeof messageId !== 'string' || !messageId) {
-      if (cb) cb({ ok: false, error: 'Missing message id' });
-      return;
-    }
-    let result;
-    if (status === 'delivered') {
-      result = room.markDelivered(messageId, targetClientId);
-    } else if (status === 'seen') {
-      result = room.markSeen(messageId, targetClientId);
-    } else {
-      if (cb) cb({ ok: false, error: 'Invalid status' });
-      return;
-    }
-    if (!result.ok) {
-      if (cb) cb({ ok: false, error: result.error });
-      return;
-    }
-    const updated = room.getChatMessage(messageId);
-    if (updated) {
-      io.to(room.code).emit('message:status', {
-        id: updated.id,
-        status: updated.status,
-        deliveredAt: updated.deliveredAt || null,
-        seenAt: updated.seenAt || null,
-      });
-    }
-    if (cb) cb({ ok: true, status: result.delivered !== undefined ? result.delivered : result.seen });
-  });
-
-  /**
-   * Marks every pending message from a sender as delivered to the recipient.
-   * Sent when a client reconnects or first opens the chat.
-   */
-  socket.on('message:ack-all', ({ code, status, recipientClientId } = {}, cb) => {
-    const wanted = normalizeCode(code);
-    const room = wanted ? getRoom(wanted) : null;
-    if (!room || !room.participants.has(socket.id)) {
-      if (cb) cb({ ok: false, error: 'Not in room' });
-      return;
-    }
-    const member = room.getMember(socket.id);
-    if (!member) {
-      if (cb) cb({ ok: false, error: 'Not in room' });
-      return;
-    }
-    const targetClientId = recipientClientId || member.clientId;
-    if (status !== 'delivered' && status !== 'seen') {
-      if (cb) cb({ ok: false, error: 'Invalid status' });
-      return;
-    }
-    const senderIds = [...room.members.values()].map((m) => m.clientId).filter((id) => id !== targetClientId);
-    let count = 0;
-    for (const senderId of senderIds) {
-      const n = status === 'delivered' ? room.markAllDelivered(senderId, targetClientId) : room.markAllSeen(senderId, targetClientId);
-      if (n > 0) count += n;
-    }
-    if (count > 0) {
-      // Broadcast the aggregate update so the sender sees the new status.
-      const updates = room.chat
-        .filter((m) => m.status === status)
-        .map((m) => ({ id: m.id, status: m.status, deliveredAt: m.deliveredAt || null, seenAt: m.seenAt || null }));
-      io.to(room.code).emit('message:status:bulk', { status, updates });
-    }
-    if (cb) cb({ ok: true, count });
   });
 
   /**

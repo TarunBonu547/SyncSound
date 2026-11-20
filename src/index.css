@@ -55,10 +55,6 @@
   --reply-rose-wash: rgba(217, 154, 167, 0.14);
   --reply-lavender-wash: rgba(184, 172, 222, 0.14);
 
-  /* --- Read receipts ------------------------------------------------------- */
-  --receipt-grey: #929292;
-  --receipt-blue: #2998E8;
-
   /* --- Icon system ------------------------------------------------------ */
   --icon-size-xs: 14px;
   --icon-size-sm: 16px;
