@@ -8,7 +8,6 @@ import PlaybackControls from './PlaybackControls';
 import QueuePanel from '../queue/QueuePanel';
 import AddToQueueForm from '../queue/AddToQueueForm';
 import DedicationCard from './DedicationCard';
-import ReactionPicker from './ReactionPicker';
 import ReactionBubble from './ReactionBubble';
 import type { SongDedication } from '../../types/music';
 
@@ -73,10 +72,6 @@ type MainPlayerProps = {
   onInvite: () => void;
   onVideoCall: () => void;
   onFocusQueueInput: () => void;
-  /** Sends an emoji reaction to the room. */
-  onSendReaction: (emoji: string) => void;
-  /** True while a reaction is being sent. */
-  reactionSending: boolean;
   /** Reactions to the current song, keyed by emoji. */
   reactions: Record<string, { id: string; clientId: string; clientName: string; timestamp: number }[]>;
   /** The id of this client, used to mark self reactions. */
@@ -138,8 +133,6 @@ export default function MainPlayer({
   onInvite,
   onVideoCall,
   onFocusQueueInput,
-  onSendReaction,
-  reactionSending,
   reactions,
   reactionClientId,
 }: MainPlayerProps) {
@@ -263,11 +256,6 @@ export default function MainPlayer({
           onRemove={onRemoveDedication}
         />
       )}
-
-      <ReactionPicker
-        onReaction={onSendReaction}
-        sending={reactionSending}
-      />
 
       <div className="scrubber">
         <input

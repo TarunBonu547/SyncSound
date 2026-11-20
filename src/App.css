@@ -3007,8 +3007,6 @@
   .home-title { font-size: clamp(30px, 9vw, 40px); }
   .track-title { font-size: 18px; }
   .quick-actions { grid-template-columns: 1fr; }
-  .reaction-picker-grid { gap: 6px; flex-wrap: wrap; justify-content: center; }
-  .reaction-btn { width: 44px; height: 44px; min-width: 44px; min-height: 44px; font-size: 22px; }
   .transport { gap: 8px; }
   .play-btn { width: 52px; height: 52px; }
 }
@@ -3280,98 +3278,6 @@
   .reaction-float { animation: none; }
 }
 
-/* Reaction picker placed below the song info, above the scrubber. */
-.reaction-picker {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 8px;
-  margin: 10px 0 4px 0;
-}
-
-.reaction-picker-label {
-  font-size: 11px;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: var(--text-faint);
-}
-
-.reaction-picker-grid {
-  display: flex;
-  gap: 10px;
-}
-
-.reaction-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 54px;
-  height: 54px;
-  min-width: 54px;
-  min-height: 54px;
-  border-radius: 50%;
-  border: 1px solid var(--border-soft);
-  background: var(--surface-strong);
-  color: var(--text);
-  cursor: pointer;
-  font-size: 26px;
-  line-height: 1;
-  transition:
-    transform var(--t-fast) var(--ease-out),
-    border-color var(--t-fast) var(--ease-out),
-    background-color var(--t-fast) var(--ease-out),
-    box-shadow var(--t-fast) var(--ease-out);
-  box-shadow: var(--shadow-xs);
-}
-
-.reaction-btn:hover:not(:disabled) {
-  border-color: var(--accent);
-  background: #fff;
-  transform: translateY(-2px) scale(1.05);
-  box-shadow: var(--shadow-sm);
-}
-
-.reaction-btn:focus-visible {
-  outline: 2px solid var(--accent-strong);
-  outline-offset: 2px;
-}
-
-.reaction-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-  transform: none;
-  box-shadow: none;
-}
-
-.reaction-btn.is-pressed {
-  border-color: var(--accent-strong);
-  background: var(--peach-wash);
-  transform: scale(0.92);
-  box-shadow: var(--shadow-xs);
-}
-
-.reaction-emoji {
-  font-size: 26px;
-  line-height: 1;
-  display: block;
-}
-
-@media (max-width: 720px) {
-  .reaction-btn {
-    width: 50px;
-    height: 50px;
-    min-width: 50px;
-    min-height: 50px;
-    font-size: 24px;
-  }
-  .reaction-emoji { font-size: 24px; }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .reaction-btn { transition: none; }
-  .reaction-btn:hover:not(:disabled) { transform: none; }
-}
-
 /* ==========================================================================
    Cosmic UI motion enhancements (additive, preserves existing layout/palette)
    ========================================================================== */
@@ -3451,20 +3357,6 @@
 @keyframes emojiPanelIn { from { opacity: 0; transform: translateY(6px) scale(0.96); } to { opacity: 1; transform: translateY(0) scale(1); } }
 @media (max-width: 720px) { .chat-emoji-panel { transform-origin: bottom center; } }
 
-.reaction-btn .reaction-emoji { display: inline-block; animation: emojiIdleFloat 4.5s ease-in-out infinite; }
-.reaction-btn:nth-child(2) .reaction-emoji { animation-delay: -0.6s; }
-.reaction-btn:nth-child(3) .reaction-emoji { animation-delay: -1.2s; }
-.reaction-btn:nth-child(4) .reaction-emoji { animation-delay: -1.8s; }
-.reaction-btn:nth-child(5) .reaction-emoji { animation-delay: -2.4s; }
-.reaction-btn:nth-child(6) .reaction-emoji { animation-delay: -3s; }
-@keyframes emojiIdleFloat { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-2px)} }
-.reaction-btn:hover:not(:disabled) .reaction-emoji { transform: scale(1.15) rotate(-6deg); animation-play-state: paused; }
-.reaction-btn:active:not(:disabled) { transform: scale(0.9); }
-.reaction-btn { position: relative; overflow: visible; }
-.reaction-burst { position: absolute; left: 50%; top: 50%; width: 0; height: 0; pointer-events: none; }
-.reaction-burst span { position: absolute; font-size: 14px; opacity: 0; animation: reactionBurst 700ms ease-out forwards; filter: drop-shadow(0 0 6px rgba(167,139,250,0.35)); }
-@keyframes reactionBurst { 0% { transform: translate(0,0) scale(0.4); opacity: 0.95; } 100% { transform: translate(var(--bx), var(--by)) scale(1); opacity: 0; } }
-
 .toast { animation: toastIn 320ms var(--ease-out) both; }
 @keyframes toastIn { from { opacity: 0; transform: translateY(-8px) scale(0.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
 .dedication-card { animation: modalIn 280ms var(--ease-out) both; }
@@ -3472,6 +3364,6 @@
 .search-card, .library-card { animation: viewPaneIn 420ms var(--ease-out) both; }
 
 @media (prefers-reduced-motion: reduce) {
-  .view-pane--enter, .app .room-header, .app .player-card, .stage-wrap.is-playing .stage-poster, .stage-wrap.is-playing .stage-ring, .stage-wrap:not(.is-playing) .stage-ring, .stage-wrap.is-playing .stage-aura, .track-transition, .like-btn.is-liked, .vinyl-disc, .vinyl-glow, .mini-player, .reaction-btn .reaction-emoji, .chat-emoji-panel, .toast, .dedication-card, .queue-row, .search-card, .library-card, .reaction-burst span, .mini-player-info.is-changing { animation: none !important; }
+  .view-pane--enter, .app .room-header, .app .player-card, .stage-wrap.is-playing .stage-poster, .stage-wrap.is-playing .stage-ring, .stage-wrap:not(.is-playing) .stage-ring, .stage-wrap.is-playing .stage-aura, .track-transition, .like-btn.is-liked, .vinyl-disc, .vinyl-glow, .mini-player, .chat-emoji-panel, .toast, .dedication-card, .queue-row, .search-card, .library-card, .mini-player-info.is-changing { animation: none !important; }
   .app .main, .app .right { transform: none !important; transition: none !important; }
 }

@@ -15,6 +15,25 @@ const REACTION_TTL_MS = 10 * 1000;
 /** A typing indicator expires this long after the last keystroke. */
 const TYPING_TTL_MS = 3000;
 
+/** The maximum number of sticky notes a room may keep. */
+const MAX_NOTES = 200;
+/** A note title may not be longer than this. */
+const MAX_NOTE_TITLE = 80;
+/** A note body may not be longer than this. */
+const MAX_NOTE_BODY = 2000;
+/** The maximum number of checklist items a room may keep. */
+const MAX_CHECKLIST_ITEMS = 100;
+/** A checklist item may not be longer than this. */
+const MAX_CHECKLIST_ITEM_TEXT = 200;
+/** The maximum number of pinned photos a room may keep. */
+const MAX_PHOTOS = 100;
+/** A photo caption may not be longer than this. */
+const MAX_PHOTO_CAPTION = 120;
+/** A photo URL must start with http(s) and stay under this length. */
+const MAX_PHOTO_URL = 512;
+/** Allowed note colours, matching the approved palette. */
+const NOTE_COLOURS = ['#FFF3B0', '#F4C2C2', '#C9B3E8', '#A8E6CF', '#FFB6C1', '#B3D4FC', '#FFE4B5', '#E8B7AD'];
+
 /**
  * The artwork of a queue item may only come from the image hosts of YouTube.
  *
@@ -70,6 +89,18 @@ class RoomState {
     this.drawingSeq = 0;
     /** Incremented on clear so stale operations can be ignored. */
     this.drawingEpoch = 0;
+    /** Sticky notes of the room: id -> note. */
+    this.notes = new Map();
+    /** Monotonic sticky note sequence for this room. */
+    this.noteSeq = 0;
+    /** Checklist of the room: id -> item. */
+    this.checklist = new Map();
+    /** Monotonic checklist sequence for this room. */
+    this.checklistSeq = 0;
+    /** Pinned photos of the room: id -> photo. */
+    this.photos = new Map();
+    /** Monotonic photo sequence for this room. */
+    this.photoSeq = 0;
     this.queue = [];
     this.currentQueueItemId = null;
     this.currentVideoId = null;
