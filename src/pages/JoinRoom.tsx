@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { LogIn } from 'lucide-react';
+import { LogIn, Clipboard, Headphones } from 'lucide-react';
 import { useSocket } from '../hooks/useSocket';
 import { readClientId } from '../utils/clientId';
 import { normalizeDisplayName, saveDisplayName } from '../utils/displayName';
@@ -96,8 +96,24 @@ export default function JoinRoom({ displayName, onDisplayNameChange, onJoined }:
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [socket, displayName]);
 
+  const handlePaste = async () => {
+    try {
+      const text = await navigator.clipboard.readText();
+      const params = new URLSearchParams(text.includes('?') ? text.split('?')[1] : '');
+      const roomCode = params.get('room') || params.get('code') || text.trim();
+      if (roomCode) {
+        setCode(roomCode);
+      }
+    } catch {
+      // Clipboard not available
+    }
+  };
+
   return (
     <div className="card room-card fade-in-up">
+      <div className="room-card-icon join-room-icon" aria-hidden="true">
+        <Headphones size={24} />
+      </div>
       <p className="eyebrow">Join</p>
       <h2>Enter a room</h2>
       <p className="card-sub">Have a room code? Enter it and you will join the room on the same track, at the same moment.</p>
@@ -119,6 +135,14 @@ export default function JoinRoom({ displayName, onDisplayNameChange, onJoined }:
         value={code}
         onChange={(e) => setCode(e.target.value)}
       />
+      <button
+        type="button"
+        className="paste-shortcut"
+        onClick={handlePaste}
+        aria-label="Paste room link from clipboard"
+      >
+        <Clipboard size={16} /> Paste room link
+      </button>
       {status === 'error' && (
         <p className="error-text" role="alert" style={{ marginTop: 8 }}>
           {message}

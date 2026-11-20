@@ -2,51 +2,47 @@
    SyncSound
    Design tokens, base styles and shared primitives.
 
-   Approved palette: a warm cream background, dark plum text and playful
-   accents in peach, butter, mint, sky, lavender and pink. The interface
-   stays quiet so the music stays in focus.
+   Premium music lounge palette: warm cream, peach, rose, lavender, dusk blue,
+   plum, twilight. The interface stays quiet so the music stays in focus.
    ========================================================================== */
 
 :root {
-  /* --- Approved palette -------------------------------------------------- */
-  --cream: #FFFAF3;
-  --cream-soft: #FDF7EE;
-  --peach: #FFBDA8;
-  --pink: #FFC4DF;
-  --lavender: #D9CAFF;
-  --butter: #FFE18A;
-  --mint: #A9E9CE;
-  --sky: #A8DDF7;
+  /* --- Premium palette ----------------------------------------------------- */
+  --cream: #F6EDE7;
+  --peach: #E8B7AD;
+  --rose: #D99AA7;
+  --lavender: #B8ACDE;
+  --dusk-blue: #879DBA;
+  --plum: #755568;
+  --twilight: #332C3B;
 
-  /* --- Text ------------------------------------------------------------- */
-  --ink: #302B42;
-  --text: #302B42;
-  --text-muted: #6B6278;
-  --text-faint: #9A8FB0;
-  --text-on-accent: #302B42;
+  /* --- Text --------------------------------------------------------------- */
+  --ink: #332C3B;
+  --text: #332C3B;
+  --text-muted: #755568;
+  --text-faint: #A89DB0;
+  --text-on-accent: #332C3B;
 
-  /* --- Surfaces --------------------------------------------------------- */
+  /* --- Surfaces ----------------------------------------------------------- */
   --surface: rgba(255, 255, 255, 0.62);
   --surface-strong: rgba(255, 255, 255, 0.84);
   --panel: rgba(255, 255, 255, 0.72);
-  --border: rgba(48, 43, 66, 0.10);
-  --border-soft: rgba(48, 43, 66, 0.06);
+  --border: rgba(51, 44, 59, 0.10);
+  --border-soft: rgba(51, 44, 59, 0.06);
   --border-light: rgba(255, 255, 255, 0.78);
 
-  /* --- Accents ---------------------------------------------------------- */
-  --accent: #FFBDA8;
-  --accent-hover: #FFA88F;
-  --accent-strong: #F58A63;
-  --accent-soft: #D9CAFF;
-  --peach-wash: rgba(255, 189, 168, 0.18);
-  --pink-wash: rgba(255, 196, 223, 0.20);
-  --butter-wash: rgba(255, 225, 138, 0.22);
-  --mint-wash: rgba(169, 233, 206, 0.22);
-  --sky-wash: rgba(168, 221, 247, 0.22);
-  --lavender-wash: rgba(217, 202, 255, 0.24);
-  --plum-wash: rgba(48, 43, 66, 0.08);
+  /* --- Accents ------------------------------------------------------------ */
+  --accent: #E8B7AD;
+  --accent-hover: #D99AA7;
+  --accent-strong: #C88A9C;
+  --accent-soft: #B8ACDE;
+  --peach-wash: rgba(232, 183, 173, 0.18);
+  --rose-wash: rgba(217, 154, 167, 0.20);
+  --lavender-wash: rgba(184, 172, 222, 0.24);
+  --dusk-wash: rgba(135, 157, 186, 0.18);
+  --plum-wash: rgba(117, 85, 104, 0.08);
 
-  /* --- Reply to message palette (cream, rose, lavender, plum) ----------- */
+  /* --- Reply palette ------------------------------------------------------ */
   --reply-cream: #F6EDE7;
   --reply-rose: #D99AA7;
   --reply-lavender: #B8ACDE;
@@ -55,7 +51,7 @@
   --reply-rose-wash: rgba(217, 154, 167, 0.14);
   --reply-lavender-wash: rgba(184, 172, 222, 0.14);
 
-  /* --- Icon system ------------------------------------------------------ */
+  /* --- Icon system -------------------------------------------------------- */
   --icon-size-xs: 14px;
   --icon-size-sm: 16px;
   --icon-size-md: 18px;
@@ -63,10 +59,10 @@
   --icon-size-xl: 24px;
   --icon-stroke-width: 2px;
 
-  /* --- Typography ------------------------------------------------------- */
+  /* --- Typography --------------------------------------------------------- */
   --font-sans: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
 
-  /* --- Spacing ---------------------------------------------------------- */
+  /* --- Spacing ------------------------------------------------------------ */
   --sp-1: 4px;
   --sp-2: 8px;
   --sp-3: 12px;
@@ -76,7 +72,7 @@
   --sp-7: 32px;
   --sp-8: 40px;
 
-  /* --- Radii ------------------------------------------------------------ */
+  /* --- Radii -------------------------------------------------------------- */
   --r-xs: 8px;
   --r-sm: 12px;
   --r-md: 16px;
@@ -84,15 +80,16 @@
   --r-xl: 28px;
   --r-pill: 999px;
 
-  /* --- Shadows ---------------------------------------------------------- */
-  --shadow-xs: 0 1px 2px rgba(48, 43, 66, 0.06);
-  --shadow-sm: 0 4px 14px rgba(48, 43, 66, 0.08);
-  --shadow-md: 0 14px 34px rgba(48, 43, 66, 0.10);
-  --shadow-lg: 0 26px 60px rgba(48, 43, 66, 0.16);
-  --shadow-accent: 0 12px 26px rgba(255, 189, 168, 0.24);
+  /* --- Shadows ------------------------------------------------------------ */
+  --shadow-xs: 0 1px 2px rgba(51, 44, 59, 0.06);
+  --shadow-sm: 0 4px 14px rgba(51, 44, 59, 0.08);
+  --shadow-md: 0 14px 34px rgba(51, 44, 59, 0.10);
+  --shadow-lg: 0 26px 60px rgba(51, 44, 59, 0.16);
+  --shadow-accent: 0 12px 26px rgba(232, 183, 173, 0.24);
+  --shadow-glow: 0 0 40px rgba(217, 154, 167, 0.15);
   --shadow-inset: inset 0 1px 0 rgba(255, 255, 255, 0.8);
 
-  /* --- Motion ----------------------------------------------------------- */
+  /* --- Motion ------------------------------------------------------------- */
   --ease-out: cubic-bezier(0.22, 0.61, 0.36, 1);
   --ease-soft: cubic-bezier(0.4, 0, 0.2, 1);
   --t-fast: 160ms;
@@ -119,11 +116,11 @@ body {
   color: var(--text);
   background-color: var(--cream);
   background-image:
-    radial-gradient(760px 460px at 50% -8%, rgba(255, 225, 138, 0.35), transparent 62%),
-    radial-gradient(1180px 700px at 6% -14%, rgba(255, 189, 168, 0.35), transparent 62%),
-    radial-gradient(980px 620px at 94% -4%, rgba(217, 202, 255, 0.3), transparent 64%),
-    radial-gradient(920px 640px at 82% 110%, rgba(168, 221, 247, 0.25), transparent 62%),
-    linear-gradient(168deg, #fffaf3 0%, #fdf7ee 40%, #fbf3ea 76%, #f2e8f7 100%);
+    radial-gradient(760px 460px at 50% -8%, rgba(232, 183, 173, 0.35), transparent 62%),
+    radial-gradient(1180px 700px at 6% -14%, rgba(217, 154, 167, 0.35), transparent 62%),
+    radial-gradient(980px 620px at 94% -4%, rgba(184, 172, 222, 0.3), transparent 64%),
+    radial-gradient(920px 640px at 82% 110%, rgba(135, 157, 186, 0.25), transparent 62%),
+    linear-gradient(168deg, #f6ede7 0%, #fbf3ea 40%, #f2e8f7 76%, #e8d5f0 100%);
   background-attachment: fixed;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -170,7 +167,7 @@ img {
 .chat-scroll::-webkit-scrollbar-thumb,
 .drawer-panel::-webkit-scrollbar-thumb,
 .home::-webkit-scrollbar-thumb {
-  background: rgba(48, 43, 66, 0.16);
+  background: rgba(51, 44, 59, 0.16);
   border: 3px solid transparent;
   border-radius: var(--r-pill);
   background-clip: padding-box;
@@ -222,7 +219,7 @@ img {
 
 .btn:hover:not(:disabled) {
   background: #fff;
-  border-color: rgba(255, 189, 168, 0.35);
+  border-color: rgba(232, 183, 173, 0.35);
   box-shadow: var(--shadow-sm);
   transform: translateY(-1px);
 }
@@ -240,16 +237,16 @@ img {
 }
 
 .btn.primary {
-  background: linear-gradient(135deg, var(--butter) 0%, var(--peach) 58%, #ffa07e 100%);
+  background: linear-gradient(135deg, var(--peach) 0%, var(--rose) 58%, var(--accent-strong) 100%);
   color: var(--text-on-accent);
   border-color: transparent;
   box-shadow: var(--shadow-accent);
 }
 
 .btn.primary:hover:not(:disabled) {
-  background: linear-gradient(135deg, #ffe3a8 0%, #ffc49e 58%, #ffa88f 100%);
+  background: linear-gradient(135deg, #f0c8bc 0%, var(--rose) 58%, var(--accent-strong) 100%);
   border-color: transparent;
-  box-shadow: 0 16px 32px rgba(255, 189, 168, 0.3);
+  box-shadow: 0 16px 32px rgba(232, 183, 173, 0.3);
 }
 
 .btn.ghost {
@@ -279,10 +276,6 @@ img {
 }
 
 /* --- Shared icon system ------------------------------------------------- */
-/* Consistent stroke weight and alignment for every lucide icon used inside
-   buttons and interactive elements. Size is controlled by each icon's `size`
-   prop so individual components can vary scale. Color and disabled states
-   are inherited from the parent automatically. */
 .btn svg,
 [class*="-icon"] svg,
 .chat-reply-btn svg,
@@ -293,7 +286,6 @@ img {
   display: block;
 }
 
-/* Icons inside buttons that also carry a label stay vertically centered. */
 .btn svg {
   margin-inline-end: 6px;
 }
@@ -303,7 +295,6 @@ img {
   margin-inline-end: 0;
 }
 
-/* Larger default for primary playback controls. */
 .play-btn svg,
 .music-icon-btn.primary svg,
 .mini-player-play svg {
@@ -321,25 +312,25 @@ img {
 
 .btn.soft {
   background: var(--lavender-wash);
-  border-color: rgba(217, 202, 255, 0.4);
+  border-color: rgba(184, 172, 222, 0.4);
   color: var(--text);
 }
 
 .btn.soft:hover:not(:disabled) {
-  background: rgba(217, 202, 255, 0.38);
-  border-color: rgba(217, 202, 255, 0.5);
+  background: rgba(184, 172, 222, 0.38);
+  border-color: rgba(184, 172, 222, 0.5);
   color: var(--text);
 }
 
 .btn.danger {
-  background: var(--pink-wash);
-  border-color: rgba(255, 196, 223, 0.5);
-  color: #8a526b;
+  background: var(--rose-wash);
+  border-color: rgba(217, 154, 167, 0.5);
+  color: #755568;
 }
 
 .btn.danger:hover:not(:disabled) {
-  background: rgba(255, 196, 223, 0.55);
-  border-color: rgba(255, 196, 223, 0.7);
+  background: rgba(217, 154, 167, 0.55);
+  border-color: rgba(217, 154, 167, 0.7);
 }
 
 /* --- Inputs -------------------------------------------------------------- */
@@ -364,7 +355,7 @@ img {
 }
 
 .input:hover {
-  border-color: rgba(255, 189, 168, 0.35);
+  border-color: rgba(232, 183, 173, 0.35);
 }
 
 .input:focus {
@@ -416,7 +407,7 @@ img {
   margin: 0;
   font-size: 12.5px;
   font-weight: 500;
-  color: #8a526b;
+  color: #755568;
 }
 
 .success-text {
@@ -430,7 +421,7 @@ img {
 .wordmark {
   display: inline-flex;
   align-items: baseline;
-  font-size: 21px;
+  font-size: 24px;
   font-weight: 600;
   letter-spacing: -0.035em;
   color: var(--ink);
@@ -439,7 +430,7 @@ img {
 
 .wordmark em {
   font-style: normal;
-  background: linear-gradient(112deg, var(--peach) 0%, var(--lavender) 46%, var(--pink) 100%);
+  background: linear-gradient(112deg, var(--peach) 0%, var(--lavender) 46%, var(--rose) 100%);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -484,11 +475,11 @@ img {
 }
 
 .status-dot.is-online {
-  background: var(--sky);
+  background: var(--dusk-blue);
 }
 
 .status-dot.is-live {
-  background: var(--mint);
+  background: var(--peach);
   animation: pulseRing 3.2s var(--ease-soft) infinite;
 }
 
@@ -517,8 +508,8 @@ img {
   top: -210px;
   left: -160px;
   background: var(--peach);
-  opacity: 0.3;
-  animation: driftA 34s var(--ease-soft) infinite;
+  opacity: 0.25;
+  animation: driftA 40s var(--ease-soft) infinite;
 }
 
 .ambient-blob.b2 {
@@ -527,8 +518,8 @@ img {
   bottom: -200px;
   right: -150px;
   background: var(--lavender);
-  opacity: 0.26;
-  animation: driftB 40s var(--ease-soft) infinite;
+  opacity: 0.2;
+  animation: driftB 46s var(--ease-soft) infinite;
 }
 
 .ambient-blob.b3 {
@@ -536,17 +527,115 @@ img {
   height: 420px;
   top: 30%;
   left: 44%;
-  background: var(--sky);
-  opacity: 0.22;
-  animation: driftC 46s var(--ease-soft) infinite;
+  background: var(--dusk-blue);
+  opacity: 0.18;
+  animation: driftC 52s var(--ease-soft) infinite;
+}
+
+/* Subtle gradient orbs for home screen */
+.ambient-orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  opacity: 0.12;
+  animation: orbFloat 60s var(--ease-soft) infinite;
+}
+
+.ambient-orb.o1 {
+  width: 300px;
+  height: 300px;
+  top: 15%;
+  left: 8%;
+  background: var(--peach);
+  animation-delay: 0s;
+}
+
+.ambient-orb.o2 {
+  width: 240px;
+  height: 240px;
+  top: 60%;
+  right: 10%;
+  background: var(--lavender);
+  animation-delay: -15s;
+}
+
+.ambient-orb.o3 {
+  width: 180px;
+  height: 180px;
+  bottom: 20%;
+  left: 15%;
+  background: var(--rose);
+  animation-delay: -30s;
+}
+
+.ambient-orb.o4 {
+  width: 200px;
+  height: 200px;
+  top: 40%;
+  right: 20%;
+  background: var(--dusk-blue);
+  animation-delay: -45s;
+}
+
+@keyframes orbFloat {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1); opacity: 0.08; }
+  25% { transform: translate3d(20px, -30px, 0) scale(1.1); opacity: 0.15; }
+  50% { transform: translate3d(-15px, 20px, 0) scale(0.95); opacity: 0.1; }
+  75% { transform: translate3d(25px, 10px, 0) scale(1.05); opacity: 0.12; }
+}
+
+/* Subtle floating musical notes */
+.ambient-note {
+  position: absolute;
+  font-size: 18px;
+  color: var(--peach);
+  opacity: 0.08;
+  animation: noteFloat 20s var(--ease-soft) infinite;
+  pointer-events: none;
+  user-select: none;
+}
+
+.ambient-note.n1 { top: 12%; left: 5%; animation-delay: 0s; }
+.ambient-note.n2 { top: 25%; right: 8%; animation-delay: -3s; font-size: 22px; color: var(--lavender); }
+.ambient-note.n3 { top: 45%; left: 3%; animation-delay: -6s; font-size: 16px; color: var(--rose); }
+.ambient-note.n4 { top: 65%; right: 5%; animation-delay: -9s; font-size: 20px; color: var(--dusk-blue); }
+.ambient-note.n5 { bottom: 15%; left: 10%; animation-delay: -12s; font-size: 18px; color: var(--peach); }
+.ambient-note.n6 { bottom: 30%; right: 12%; animation-delay: -15s; font-size: 24px; color: var(--lavender); }
+
+@keyframes noteFloat {
+  0%, 100% { transform: translateY(0) rotate(0deg); opacity: 0.04; }
+  25% { transform: translateY(-20px) rotate(5deg); opacity: 0.1; }
+  50% { transform: translateY(10px) rotate(-3deg); opacity: 0.06; }
+  75% { transform: translateY(-15px) rotate(2deg); opacity: 0.08; }
+}
+
+/* Subtle waveform pattern overlay */
+.ambient-waveform {
+  position: absolute;
+  inset: 0;
+  background-image: 
+    radial-gradient(ellipse 2px 4px at 10% 20%, rgba(232, 183, 173, 0.06) 50%, transparent 50%),
+    radial-gradient(ellipse 2px 4px at 25% 40%, rgba(184, 172, 222, 0.05) 50%, transparent 50%),
+    radial-gradient(ellipse 2px 4px at 40% 60%, rgba(217, 154, 167, 0.06) 50%, transparent 50%),
+    radial-gradient(ellipse 2px 4px at 60% 30%, rgba(135, 157, 186, 0.05) 50%, transparent 50%),
+    radial-gradient(ellipse 2px 4px at 75% 70%, rgba(232, 183, 173, 0.06) 50%, transparent 50%),
+    radial-gradient(ellipse 2px 4px at 90% 50%, rgba(184, 172, 222, 0.05) 50%, transparent 50%);
+  background-size: 200px 150px;
+  opacity: 0.4;
+  animation: waveformDrift 120s linear infinite;
+}
+
+@keyframes waveformDrift {
+  0% { background-position: 0 0; }
+  100% { background-position: 200px 150px; }
 }
 
 .bokeh {
   position: absolute;
   border-radius: 50%;
-  background: radial-gradient(circle at 34% 30%, rgba(255, 255, 255, 0.9), rgba(255, 189, 168, 0.24) 58%, transparent 72%);
+  background: radial-gradient(circle at 34% 30%, rgba(255, 255, 255, 0.9), rgba(232, 183, 173, 0.24) 58%, transparent 72%);
   filter: blur(4px);
-  opacity: 0.5;
+  opacity: 0.4;
 }
 
 .bokeh.k1 {
@@ -554,7 +643,7 @@ img {
   height: 86px;
   top: 18%;
   left: 14%;
-  animation: floaty 24s var(--ease-soft) infinite;
+  animation: floaty 28s var(--ease-soft) infinite;
 }
 
 .bokeh.k2 {
@@ -562,7 +651,7 @@ img {
   height: 52px;
   top: 60%;
   left: 24%;
-  animation: floaty 30s var(--ease-soft) infinite;
+  animation: floaty 34s var(--ease-soft) infinite;
   animation-delay: -6s;
 }
 
@@ -571,7 +660,7 @@ img {
   height: 104px;
   top: 26%;
   right: 12%;
-  animation: floaty 34s var(--ease-soft) infinite;
+  animation: floaty 38s var(--ease-soft) infinite;
   animation-delay: -12s;
 }
 
@@ -627,9 +716,9 @@ img {
 }
 
 @keyframes pulseRing {
-  0% { box-shadow: 0 0 0 0 rgba(169, 233, 206, 0.45); }
-  70% { box-shadow: 0 0 0 6px rgba(169, 233, 206, 0); }
-  100% { box-shadow: 0 0 0 0 rgba(169, 233, 206, 0); }
+  0% { box-shadow: 0 0 0 0 rgba(232, 183, 173, 0.45); }
+  70% { box-shadow: 0 0 0 6px rgba(232, 183, 173, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(232, 183, 173, 0); }
 }
 
 @keyframes driftA {
@@ -656,9 +745,39 @@ img {
   to { transform: rotate(360deg); }
 }
 
+/* --- Waveform animation -------------------------------------------------- */
+@keyframes waveform {
+  0%, 100% { height: 20%; }
+  25% { height: 60%; }
+  50% { height: 40%; }
+  75% { height: 80%; }
+}
+
+.waveform {
+  display: inline-flex;
+  align-items: flex-end;
+  gap: 3px;
+  height: 18px;
+}
+
+.waveform-bar {
+  width: 3px;
+  border-radius: 2px;
+  background: currentColor;
+  animation: waveform 1.2s ease-in-out infinite;
+}
+
+.waveform-bar:nth-child(2) { animation-delay: 0.1s; }
+.waveform-bar:nth-child(3) { animation-delay: 0.2s; }
+.waveform-bar:nth-child(4) { animation-delay: 0.3s; }
+.waveform-bar:nth-child(5) { animation-delay: 0.4s; }
+
 /* --- Reduced motion ------------------------------------------------------ */
 @media (prefers-reduced-motion: reduce) {
   .ambient-blob,
+  .ambient-orb,
+  .ambient-note,
+  .ambient-waveform,
   .bokeh,
   .status-dot.is-live,
   .fade-in-up,
@@ -675,7 +794,8 @@ img {
   .chat-typing-dot,
   .queue-item,
   .modal,
-  .spin {
+  .spin,
+  .waveform-bar {
     animation: none;
   }
 

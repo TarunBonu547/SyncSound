@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Menu, X, Copy, MessageCircle, ArrowLeft, LogOut } from 'lucide-react';
+import { Menu, X, Copy, ArrowLeft, LogOut, Settings, User, Music, Home, Search } from 'lucide-react';
 import { useYouTubePlayer, extractVideoId } from './hooks/useYouTubePlayer';
 import { useSocket } from './hooks/useSocket';
 import { useRoom } from './hooks/useRoom';
@@ -112,10 +112,53 @@ export default function App() {
     dedication: SongDedication;
     itemId: string;
   } | null>(null);
+  /** Profile dropdown state. */
+  const [profileOpen, setProfileOpen] = useState(false);
+  /** Volume for mini player. */
+  const [volume, setVolume] = useState(1);
+  /** Recently played rooms from localStorage. */
+  const [recentRooms, setRecentRooms] = useState<Array<{
+    code: string;
+    name: string;
+    lastTrack?: { title: string; thumbnail: string };
+    lastActive: number;
+  }>>([]);
 
   const library = useLibrary();
   /** On narrow screens the chat lives in a drawer instead of a side column. */
   const isNarrow = useMediaQuery('(max-width: 1024px)');
+
+  /** Load recent rooms from localStorage on mount. */
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem('syncsound-recent-rooms');
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed)) setRecentRooms(parsed);
+      }
+    } catch {}
+  }, []);
+
+  /** Save recent rooms to localStorage. */
+  const saveRecentRooms = useCallback((rooms: typeof recentRooms) => {
+    try {
+      localStorage.setItem('syncsound-recent-rooms', JSON.stringify(rooms));
+    } catch {}
+    setRecentRooms(rooms);
+  }, []);
+
+  /** Add or update a room in recent history. */
+  const addRecentRoom = useCallback((code: string, name: string, track?: { title: string; thumbnail: string }) => {
+    setRecentRooms((prev) => {
+      const filtered = prev.filter((r) => r.code !== code);
+      const next = [
+        { code, name, lastTrack: track, lastActive: Date.now() },
+        ...filtered,
+      ].slice(0, 10);
+      saveRecentRooms(next);
+      return next;
+    });
+  }, [saveRecentRooms]);
 
   /** Message notification sound and mute preference. */
   const chatNotify = useChatNotification();
@@ -694,12 +737,22 @@ export default function App() {
       setView('room');
       setHomeFocus(null);
       setMobileNav(false);
+      // Add to recent rooms with current track if available
+      if (current) {
+        addRecentRoom(code, room.roomName || code, { title: current.title, thumbnail: current.thumbnail });
+      } else {
+        addRecentRoom(code, room.roomName || code);
+      }
     },
-    [room],
+    [room, current, addRecentRoom],
   );
 
   /** Leaves the room on purpose and returns to the lobby. */
   const leaveRoom = useCallback(() => {
+    // Save last track to recent rooms before leaving
+    if (room.roomCode && current) {
+      addRecentRoom(room.roomCode, room.roomName || room.roomCode, { title: current.title, thumbnail: current.thumbnail });
+    }
     room.leaveRoom();
     setCallOpen(false);
     setSettingsOpen(false);
@@ -721,7 +774,7 @@ export default function App() {
     }
     setView('home');
     setHomeFocus(null);
-  }, [room]);
+  }, [room, current, addRecentRoom]);
 
   const focusQueueInput = () => {
     const el = document.getElementById('queue-url-input');
@@ -854,69 +907,121 @@ export default function App() {
   const peer = room.members.find((m) => m.clientId !== clientId) || null;
   const profile = avatarFor(displayName || 'You', clientId);
 
+  // Close profile dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      if (!target.closest('.profile-dropdown')) {
+        setProfileOpen(false);
+      }
+    };
+    if (profileOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [profileOpen]);
+
   return (
     <div className="app-root">
       <div className="ambient" aria-hidden="true">
         <span className="ambient-blob b1" />
         <span className="ambient-blob b2" />
         <span className="ambient-blob b3" />
+        <span className="ambient-orb o1" />
+        <span className="ambient-orb o2" />
+        <span className="ambient-orb o3" />
+        <span className="ambient-orb o4" />
+        <span className="ambient-waveform" />
         <span className="bokeh k1" />
         <span className="bokeh k2" />
         <span className="bokeh k3" />
+        <span className="ambient-note n1" aria-hidden="true">♪</span>
+        <span className="ambient-note n2" aria-hidden="true">♫</span>
+        <span className="ambient-note n3" aria-hidden="true">♪</span>
+        <span className="ambient-note n4" aria-hidden="true">♩</span>
+        <span className="ambient-note n5" aria-hidden="true">♫</span>
+        <span className="ambient-note n6" aria-hidden="true">♪</span>
       </div>
 
       {/* ------------------------------ Listening room ---------------------- */}
       <div className={`app ${view !== 'room' ? 'is-hidden' : ''}`} inert={view !== 'room'}>
         <header className="navbar">
-          <div className="navbar-brand">
+          <div className="navbar-left">
             <button
               className="btn icon ghost menu-btn"
               onClick={() => setMobileNav(true)}
               title="Open the menu"
               aria-label="Open the menu"
             >
-              <Menu size={18} aria-hidden="true" />
+              <Menu size={20} aria-hidden="true" />
             </button>
             <button className="wordmark-btn" onClick={goHome} title="Back to the start" aria-label="SyncSound home">
+              <span className="waveform-icon" aria-hidden="true">
+                <span className="bar" />
+                <span className="bar" />
+                <span className="bar" />
+                <span className="bar" />
+                <span className="bar" />
+              </span>
               <span className="wordmark">
                 <em>Sync</em>Sound
               </span>
             </button>
           </div>
 
-          <nav className="navbar-nav" aria-label="Main">
+          <nav className="navbar-center" aria-label="Main navigation">
             <button className={`nav-link ${view === 'home' ? 'is-active' : ''}`} onClick={goHome}>
-              Home
+              <Home size={16} aria-hidden="true" />
+              <span>Home</span>
             </button>
             <button className={`nav-link ${view === 'search' ? 'is-active' : ''}`} onClick={goSearch}>
-              Search
+              <Search size={16} aria-hidden="true" />
+              <span>Search</span>
             </button>
             <button
               className={`nav-link ${view === 'library' ? 'is-active' : ''}`}
               onClick={() => goLibrary('liked')}
             >
-              Your Library
+              <Music size={16} aria-hidden="true" />
+              <span>Your Library</span>
             </button>
           </nav>
 
-          <div className="navbar-brand navbar-end">
-            <button
-              className="chat-toggle"
-              onClick={() => setChatOpen(true)}
-              title="Open the chat"
-              aria-label="Open the chat"
-            >
-              <MessageCircle size={20} aria-hidden="true" />
-              <span>Chat</span>
-            </button>
-            <span
-              className="navbar-avatar"
-              style={{ background: profile.color }}
-              title={displayName ? `You are ${displayName}` : 'You'}
-              aria-hidden="true"
-            >
-              {profile.initials}
-            </span>
+          <div className="navbar-right">
+            <div className="profile-dropdown">
+              <button
+                className="navbar-avatar"
+                style={{ background: profile.color }}
+                title={displayName ? `You are ${displayName}` : 'You'}
+                aria-label="Profile menu"
+                aria-expanded={profileOpen}
+                aria-haspopup="true"
+                onClick={() => setProfileOpen(!profileOpen)}
+              >
+                {profile.initials}
+              </button>
+              {profileOpen && (
+                <div className="profile-dropdown-menu" role="menu">
+                  <div className="profile-dropdown-header">
+                    <div className="profile-dropdown-name">{displayName || 'You'}</div>
+                    <div className="profile-dropdown-email">Listener</div>
+                  </div>
+                  <div className="profile-dropdown-divider" />
+                  <button className="profile-dropdown-item" role="menuitem" onClick={() => { setProfileOpen(false); goLibrary('liked'); }}>
+                    <User size={18} /> Your Library
+                  </button>
+                  <button className="profile-dropdown-item" role="menuitem" onClick={() => { setProfileOpen(false); setSettingsOpen(true); }}>
+                    <Settings size={18} /> Settings
+                  </button>
+                  <div className="profile-dropdown-divider" />
+                  {room.roomCode && (
+                    <button className="profile-dropdown-item danger" role="menuitem" onClick={() => { setProfileOpen(false); leaveRoom(); }}>
+                      <LogOut size={18} /> Leave Room
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
         </header>
 
@@ -1021,13 +1126,17 @@ export default function App() {
         ready={yt.ready}
         currentTime={yt.currentTime}
         duration={yt.duration}
+        volume={volume}
         onPlayPause={togglePlayback}
         onPrevious={playPrevious}
         onNext={playNext}
         hasPrevious={hasPrevious}
         hasNext={hasNext}
         onSeek={handleSeek}
+        onVolumeChange={setVolume}
+        onToggleMute={() => setVolume((v) => (v === 0 ? 1 : 0))}
         onOpenPlayer={goRoom}
+        onOpenQueue={goRoom}
       />
 
       {/*
@@ -1046,8 +1155,8 @@ export default function App() {
       {/* ------------------------------ Lobby ------------------------------ */}
       {view !== 'room' && (
         <div className="home">
-          <div className="home-top">
-            <div className="navbar-brand">
+          <header className="navbar home-navbar">
+            <div className="navbar-left">
               <button
                 className="btn icon ghost menu-btn"
                 onClick={() => setMobileNav(true)}
@@ -1057,41 +1166,71 @@ export default function App() {
                 <Menu size={20} aria-hidden="true" />
               </button>
               <button className="wordmark-btn" onClick={goHome} title="SyncSound home" aria-label="SyncSound home">
+                <span className="waveform-icon" aria-hidden="true">
+                  <span className="bar" />
+                  <span className="bar" />
+                  <span className="bar" />
+                  <span className="bar" />
+                  <span className="bar" />
+                </span>
                 <span className="wordmark">
                   <em>Sync</em>Sound
                 </span>
               </button>
             </div>
-            <nav className="navbar-nav" aria-label="Main">
+
+            <nav className="navbar-center" aria-label="Main navigation">
               <button className={`nav-link ${view === 'home' ? 'is-active' : ''}`} onClick={goHome}>
-                Home
+                <Home size={16} aria-hidden="true" />
+                <span>Home</span>
               </button>
               <button className={`nav-link ${view === 'search' ? 'is-active' : ''}`} onClick={goSearch}>
-                Search
+                <Search size={16} aria-hidden="true" />
+                <span>Search</span>
               </button>
               <button
                 className={`nav-link ${view === 'library' ? 'is-active' : ''}`}
                 onClick={() => goLibrary('liked')}
               >
-                Your Library
+                <Music size={16} aria-hidden="true" />
+                <span>Your Library</span>
               </button>
             </nav>
-            <span
-              className="navbar-avatar"
-              style={{ background: profile.color }}
-              title={displayName ? `You are ${displayName}` : 'You'}
-              aria-hidden="true"
-            >
-              {profile.initials}
-            </span>
-          </div>
+
+            <div className="navbar-right">
+              <span
+                className="navbar-avatar"
+                style={{ background: profile.color }}
+                title={displayName ? `You are ${displayName}` : 'You'}
+                aria-hidden="true"
+              >
+                {profile.initials}
+              </span>
+            </div>
+          </header>
 
           {view === 'home' && (
             <>
+              <div className="hero-ambient" aria-hidden="true">
+                <span className="wave-ring" />
+                <span className="wave-ring" />
+                <span className="wave-ring" />
+                <span className="wave-ring" />
+                <span className="wave-ring" />
+              </div>
               <div className="home-hero fade-in-up">
-                <h1 className="home-title">SyncSound</h1>
+                <div className="hero-waveform" aria-hidden="true">
+                  <span className="bar" />
+                  <span className="bar" />
+                  <span className="bar" />
+                  <span className="bar" />
+                  <span className="bar" />
+                  <span className="bar" />
+                  <span className="bar" />
+                </div>
+                <h1 className="home-title">Music feels better together.</h1>
                 <p className="home-sub">
-                  Listen together. Create a room, share the link, and every track plays in sync for everyone in it.
+                  Create a room, invite someone and enjoy every beat together.
                 </p>
               </div>
 
@@ -1111,6 +1250,58 @@ export default function App() {
                   />
                 </div>
               </div>
+
+              {/* Recently Played Rooms */}
+              {recentRooms.length > 0 && (
+                <section className="recently-played fade-in-up stagger-4" aria-label="Recently played rooms">
+                  <div className="recently-played-header">
+                    <h2 className="recently-played-title">Recently Played</h2>
+                  </div>
+                  <div className="recently-played-grid">
+                    {recentRooms.map((recent) => (
+                      <article key={recent.code} className="recent-room-card">
+                        {recent.lastTrack && (
+                          <img
+                            className="recent-room-art"
+                            src={recent.lastTrack.thumbnail}
+                            alt={`Artwork for ${recent.lastTrack.title}`}
+                          />
+                        )}
+                        <div className="recent-room-info">
+                          <h3 className="recent-room-name">{recent.name}</h3>
+                          <div className="recent-room-meta">
+                            <span className="recent-room-code">{recent.code}</span>
+                            <span className="recent-room-time">
+                              {new Date(recent.lastActive).toLocaleDateString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                            </span>
+                          </div>
+                        </div>
+                        <button
+                          className="recent-room-rejoin"
+                          onClick={() => enterRoom(recent.code)}
+                          aria-label={`Rejoin ${recent.name}`}
+                        >
+                          Rejoin
+                        </button>
+                      </article>
+                    ))}
+                  </div>
+                </section>
+              )}
+
+              {recentRooms.length === 0 && (
+                <section className="recently-played fade-in-up stagger-4" aria-label="Recently played rooms">
+                  <div className="recently-played-empty">
+                    <div className="recently-played-empty-icon" aria-hidden="true">
+                      <Music size={24} />
+                    </div>
+                    <h3 className="recently-played-empty-title">No rooms yet</h3>
+                    <p className="recently-played-empty-hint">
+                      Create or join a room to start listening together. Your recent rooms will appear here.
+                    </p>
+                  </div>
+                </section>
+              )}
             </>
           )}
 

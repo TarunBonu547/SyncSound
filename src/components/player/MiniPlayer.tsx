@@ -1,5 +1,5 @@
 import type { CSSProperties } from 'react';
-import { Play, Pause, SkipBack, SkipForward, Maximize2 } from 'lucide-react';
+import { Play, Pause, SkipBack, SkipForward, Maximize2, Volume2, VolumeX, ListMusic } from 'lucide-react';
 import type { Track } from '../../types/music';
 
 type MiniPlayerProps = {
@@ -8,13 +8,17 @@ type MiniPlayerProps = {
   ready: boolean;
   currentTime: number;
   duration: number;
+  volume: number;
   onPlayPause: () => void;
   onPrevious: () => void;
   onNext: () => void;
   hasPrevious: boolean;
   hasNext: boolean;
   onSeek: (value: number) => void;
+  onVolumeChange: (value: number) => void;
+  onToggleMute: () => void;
   onOpenPlayer: () => void;
+  onOpenQueue: () => void;
 };
 
 function formatTime(seconds: number) {
@@ -36,16 +40,21 @@ export default function MiniPlayer({
   ready,
   currentTime,
   duration,
+  volume,
   onPlayPause,
   onPrevious,
   onNext,
   hasPrevious,
   hasNext,
   onSeek,
+  onVolumeChange,
+  onToggleMute,
   onOpenPlayer,
+  onOpenQueue,
 }: MiniPlayerProps) {
   const progress = duration > 0 ? Math.min(100, (currentTime / duration) * 100) : 0;
   const infoKey = current?.id || 'none';
+  const isMuted = volume === 0;
 
   return (
     <div className={`mini-player ${playing ? 'is-playing' : ''}`} aria-label="Now playing">
@@ -55,7 +64,7 @@ export default function MiniPlayer({
         <span className="mini-player-art is-empty" aria-hidden="true" />
       )}
 
-      <div className="mini-player-info is-changing" key={infoKey}>
+      <div className="mini-player-info" key={infoKey}>
         <p className="mini-player-title">{current?.title || 'Nothing playing'}</p>
         <p className="mini-player-channel">{current?.channel || 'Pick a track in the room'}</p>
       </div>
@@ -107,6 +116,31 @@ export default function MiniPlayer({
           <span>{formatTime(duration)}</span>
         </div>
       </div>
+
+      <div className="mini-player-volume">
+        <button
+          className="btn icon sm"
+          onClick={onToggleMute}
+          aria-label={isMuted ? 'Unmute' : 'Mute'}
+          title={isMuted ? 'Unmute' : 'Mute'}
+        >
+          {isMuted ? <VolumeX size={16} /> : <Volume2 size={16} />}
+        </button>
+        <input
+          type="range"
+          min={0}
+          max={1}
+          step={0.05}
+          value={volume}
+          aria-label="Volume"
+          style={{ '--volume': `${volume * 100}%` } as CSSProperties}
+          onChange={(e) => onVolumeChange(Number(e.target.value))}
+        />
+      </div>
+
+      <button className="mini-player-queue" onClick={onOpenQueue} title="Open queue" aria-label="Open queue">
+        <ListMusic size={16} /> Queue
+      </button>
 
       <button className="mini-player-open" onClick={onOpenPlayer} title="Open the player" aria-label="Open the player">
         <Maximize2 size={16} aria-hidden="true" />

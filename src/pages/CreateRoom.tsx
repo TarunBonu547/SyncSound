@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { Copy, Check } from 'lucide-react';
+import { Copy, Check, Music } from 'lucide-react';
 import { useSocket } from '../hooks/useSocket';
 import { readClientId } from '../utils/clientId';
 import { normalizeDisplayName, saveDisplayName } from '../utils/displayName';
@@ -81,6 +81,9 @@ export default function CreateRoom({
 
   return (
     <div className="card room-card fade-in-up">
+      <div className="room-card-icon create-room-icon" aria-hidden="true">
+        <Music size={24} />
+      </div>
       <p className="eyebrow">New room</p>
       <h2>Start a room</h2>
       <p className="card-sub">Name your room, then share the code or the link so someone can join you.</p>
@@ -98,10 +101,10 @@ export default function CreateRoom({
       <input
         id="create-room-name"
         className="input"
-          placeholder="e.g. Sunday morning"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-        />
+        placeholder="e.g. Sunday morning"
+        value={name}
+        onChange={(e) => setName(e.target.value)}
+      />
       {error && (
         <p className="error-text" role="alert" style={{ marginTop: 8 }}>
           {error}
