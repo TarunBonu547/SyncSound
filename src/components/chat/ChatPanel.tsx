@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Send, Reply, Users, MessageCircle, X, Volume2, VolumeX } from 'lucide-react';
+import { Send, Reply, Users, MessageCircle, X, Volume2, VolumeX, Check, CheckCheck } from 'lucide-react';
 import type { ChatEntry, RoomMember } from '../../types/music';
 import { avatarFor, formatTime } from '../../utils/avatar';
 import { MAX_CHAT_LENGTH } from '../../hooks/useRoom';
@@ -33,6 +33,10 @@ type ChatPanelProps = {
   muted: boolean;
   /** Toggles the mute state of incoming message notifications. */
   onToggleMute: () => void;
+  /** Marks a single message as delivered or seen. */
+  onAckMessage: (messageId: string, status: 'delivered' | 'seen') => void;
+  /** Marks every pending local message as delivered or seen. */
+  onAckAll: (status: 'delivered' | 'seen') => void;
   /** Shown when the panel is used outside of the room, e.g. in a drawer. */
   onClose?: () => void;
 };
@@ -51,6 +55,27 @@ function previewOf(text: string) {
 /** True when a grapheme cluster should be treated as an emoji for sizing. */
 function isEmojiGrapheme(segment: string) {
   return /(\p{Extended_Pictographic}|\p{Emoji_Presentation}|[\u{1F1E6}-\u{1F1FF}])/u.test(segment);
+}
+
+/** Renders the read-receipt tick(s) for an outgoing message. */
+function MessageStatus({ status }: { status?: 'sent' | 'delivered' | 'seen' }) {
+  if (!status) return null;
+  if (status === 'sent') {
+    return <Check size={12} className="chat-status-tick is-sent" aria-label="Sent" />;
+  }
+  if (status === 'delivered') {
+    return (
+      <span className="chat-status-tick-group" aria-label="Delivered">
+        <Check size={12} className="chat-status-tick" />
+        <Check size={12} className="chat-status-tick" />
+      </span>
+    );
+  }
+  return (
+    <span className="chat-status-tick-group is-seen" aria-label="Seen">
+      <CheckCheck size={12} className="chat-status-tick" />
+    </span>
+  );
 }
 
 /**
@@ -100,6 +125,8 @@ export default function ChatPanel({
   onCancelReply,
   muted,
   onToggleMute,
+  onAckMessage,
+  onAckAll,
   onClose,
 }: ChatPanelProps) {
   const scrollRef = useRef<HTMLDivElement | null>(null);
@@ -145,6 +172,12 @@ export default function ChatPanel({
     },
     [onDraftChange],
   );
+
+  /** Marks every pending local message as delivered when the chat is opened. */
+  useEffect(() => {
+    if (!roomCode) return;
+    onAckAll('delivered');
+  }, [roomCode, onAckAll]);
 
   /** Wraps onDraftChange so typing transitions emit TYPING_START/TYPING_STOP. */
   const onDraftChangeWithTyping = useCallback(
@@ -224,6 +257,62 @@ export default function ChatPanel({
 
   const count = Math.max(1, members.length);
   const inRoom = !!roomCode;
+
+  /** Tracks which messages have already been reported as seen. */
+  const seenRef = useRef<Set<string>>(new Set());
+  /** Intersection observer that marks visible messages as seen. */
+  const observerRef = useRef<IntersectionObserver | null>(null);
+
+  // When the chat is open, mark every pending outgoing message as delivered
+  // once, so the sender sees the double grey tick.
+  useEffect(() => {
+    if (!roomCode) return;
+    onAckAll('delivered');
+  }, [roomCode, onAckAll]);
+
+  // Watch the chat scroll container for messages entering the viewport and
+  // mark them as seen. Only outgoing messages get a receipt; incoming ones
+  // do not display an outgoing status.
+  useEffect(() => {
+    const scrollEl = scrollRef.current;
+    if (!scrollEl) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const toAck: string[] = [];
+        for (const entry of entries) {
+          if (!entry.isIntersecting) continue;
+          const id = entry.target.id.replace(/^msg-/, '');
+          const message = messages.find((m) => m.id === id);
+          if (!message || !message.isSelf) continue;
+          if (message.status === 'seen') continue;
+          if (seenRef.current.has(id)) continue;
+          seenRef.current.add(id);
+          toAck.push(id);
+        }
+        if (toAck.length) {
+          toAck.forEach((id) => onAckMessage(id, 'seen'));
+        }
+      },
+      { root: scrollEl, rootMargin: '0px 0px -10% 0px', threshold: 0.6 },
+    );
+    observerRef.current = observer;
+
+    // Observe every outgoing message that is not yet seen.
+    const timer = window.setTimeout(() => {
+      messages.forEach((m) => {
+        if (m.isSelf && m.status !== 'seen') {
+          const el = document.getElementById(`msg-${m.id}`);
+          if (el) observer.observe(el);
+        }
+      });
+    }, 150);
+
+    return () => {
+      window.clearTimeout(timer);
+      observer.disconnect();
+    };
+  }, [messages, onAckMessage]);
 
   return (
     <section className="card chat-card" aria-labelledby="chat-title">
@@ -363,7 +452,10 @@ export default function ChatPanel({
                   {showHeader && (
                     <div className="chat-bubble-head">
                       <span className="chat-author">{m.userName}</span>
-                      <time className="chat-time">{formatTime(m.timestamp)}</time>
+                      <time className="chat-time">
+                        {formatTime(m.timestamp)}
+                        {m.isSelf && <MessageStatus status={m.status} />}
+                      </time>
                     </div>
                   )}
                   {quote && (

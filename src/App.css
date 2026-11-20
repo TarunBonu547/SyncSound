@@ -1641,6 +1641,31 @@
   flex: none;
 }
 
+/* Read receipt ticks next to the timestamp of outgoing messages. */
+.chat-status-tick {
+  width: 12px;
+  height: 12px;
+  flex: none;
+  margin-inline-start: 4px;
+  color: var(--text-faint);
+  transition:
+    color var(--t-base) var(--ease-out),
+    transform var(--t-fast) var(--ease-out);
+}
+
+.chat-status-tick.is-sent {
+  color: var(--text-faint);
+}
+
+.chat-status-tick-group {
+  display: inline-flex;
+  align-items: center;
+}
+
+.chat-status-tick-group.is-seen .chat-status-tick {
+  color: var(--mint);
+}
+
 .chat-reply-info {
   min-width: 0;
   flex: 1;

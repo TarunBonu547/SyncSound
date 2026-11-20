@@ -111,6 +111,8 @@ export function useRoom({ socket, clientId, displayName, onPlayback, onError, on
   const videoIdRef = useRef<string | null>(null);
   /** Monotonic counter for unique reaction instance ids. */
   const reactionIdCounter = useRef(0);
+  /** Debounce timers for status updates to avoid flooding the server. */
+  const statusTimersRef = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
 
   useEffect(() => {
     playbackRef.current = onPlayback;
@@ -288,6 +290,49 @@ export function useRoom({ socket, clientId, displayName, onPlayback, onError, on
       if (!entry.isSelf && onRemoteMessage) onRemoteMessage(entry);
     };
 
+    /** A remote participant marked one of the local messages as delivered. */
+    const onMessageStatus = (payload: unknown) => {
+      if (!payload || typeof payload !== 'object') return;
+      const raw = payload as Record<string, unknown>;
+      const id = typeof raw.id === 'string' ? raw.id : '';
+      const status = typeof raw.status === 'string' ? raw.status : '';
+      if (!id || !status) return;
+      setMessages((prev) =>
+        prev.map((m) =>
+          m.id === id
+            ? {
+                ...m,
+                status: status as ChatEntry['status'],
+                deliveredAt: typeof raw.deliveredAt === 'number' ? raw.deliveredAt : m.deliveredAt,
+                seenAt: typeof raw.seenAt === 'number' ? raw.seenAt : m.seenAt,
+              }
+            : m,
+        ),
+      );
+    };
+
+    /** Bulk status update from a reconnection or batch ack. */
+    const onMessageStatusBulk = (payload: unknown) => {
+      if (!payload || typeof payload !== 'object') return;
+      const raw = payload as Record<string, unknown>;
+      const updates = Array.isArray(raw.updates) ? raw.updates : [];
+      if (!updates.length) return;
+      setMessages((prev) =>
+        prev.map((m) => {
+          const hit = updates.find((u) => u && typeof u === 'object' && (u as Record<string, unknown>).id === m.id) as
+            | Record<string, unknown>
+            | undefined;
+          if (!hit) return m;
+          return {
+            ...m,
+            status: (typeof hit.status === 'string' ? hit.status : m.status) as ChatEntry['status'],
+            deliveredAt: typeof hit.deliveredAt === 'number' ? hit.deliveredAt : m.deliveredAt,
+            seenAt: typeof hit.seenAt === 'number' ? hit.seenAt : m.seenAt,
+          };
+        }),
+      );
+    };
+
     /** A reaction to the current song. The server already rate limits, so the
        client only stores and renders it. Each accepted reaction gets a unique
        instance id so repeated emojis from the same client coexist instead of
@@ -392,6 +437,8 @@ export function useRoom({ socket, clientId, displayName, onPlayback, onError, on
     socket.on('DRAW_STROKE_END', onDrawStrokeEnd);
     socket.on('DRAW_UNDO', onDrawUndo);
     socket.on('DRAW_CLEAR', onDrawClear);
+    socket.on('message:status', onMessageStatus);
+    socket.on('message:status:bulk', onMessageStatusBulk);
 
     return () => {
       socket.off('connect', join);
@@ -405,8 +452,13 @@ export function useRoom({ socket, clientId, displayName, onPlayback, onError, on
       socket.off('DRAW_STROKE_END', onDrawStrokeEnd);
       socket.off('DRAW_UNDO', onDrawUndo);
       socket.off('DRAW_CLEAR', onDrawClear);
+      socket.off('message:status', onMessageStatus);
+      socket.off('message:status:bulk', onMessageStatusBulk);
       // Clear any pending typing fallbacks when the socket or room goes away.
       for (const timer of Object.values(typingTimersRef.current)) {
+        if (timer) clearTimeout(timer);
+      }
+      for (const timer of Object.values(statusTimersRef.current)) {
         if (timer) clearTimeout(timer);
       }
     };
@@ -455,6 +507,47 @@ export function useRoom({ socket, clientId, displayName, onPlayback, onError, on
   const cancelReply = useCallback(() => {
     setReplyTo(null);
   }, []);
+
+  /**
+   * Acknowledges that a remote participant has received one of the local
+   * messages. The server validates the recipient and transitions the status.
+   */
+  const ackMessage = useCallback(
+    (messageId: string, status: 'delivered' | 'seen') => {
+      if (!socket || !roomCode) return;
+      // Debounce: a duplicate ack must not reach the server twice.
+      const key = `${messageId}:${status}`;
+      if (statusTimersRef.current[key]) return;
+      statusTimersRef.current[key] = setTimeout(() => {
+        delete statusTimersRef.current[key];
+      }, 250);
+      socket.emit('message:ack', { code: roomCode, messageId, status }, (res: unknown) => {
+        const answer = (res ?? {}) as Record<string, unknown>;
+        if (!answer.ok) {
+          // The server rejected the ack; nothing to do, the status stays.
+        }
+      });
+    },
+    [socket, roomCode],
+  );
+
+  /**
+   * Marks every pending local message as delivered or seen in one round
+   * trip. Used when the chat opens (delivered) or when the recipient scrolls
+   * new messages into view (seen).
+   */
+  const ackAllMessages = useCallback(
+    (status: 'delivered' | 'seen') => {
+      if (!socket || !roomCode) return;
+      socket.emit('message:ack-all', { code: roomCode, status }, (res: unknown) => {
+        const answer = (res ?? {}) as Record<string, unknown>;
+        if (!answer.ok) {
+          // Ignore - the status stays as it was.
+        }
+      });
+    },
+    [socket, roomCode],
+  );
 
   /**
    * Sends a chat message. The server owns the chat, so the message is only
@@ -674,6 +767,8 @@ export function useRoom({ socket, clientId, displayName, onPlayback, onError, on
     enterRoom,
     leaveRoom,
     sendMessage,
+    ackMessage,
+    ackAllMessages,
     addTrackToQueue,
     playTrack,
     playQueueItem,

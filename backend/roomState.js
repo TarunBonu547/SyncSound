@@ -165,6 +165,84 @@ class RoomState {
   }
 
   /**
+   * Looks up a chat message by id.
+   * @returns {ChatMessage|null}
+   */
+  getChatMessage(messageId) {
+    return this.chat.find((m) => m.id === messageId) || null;
+  }
+
+  /**
+   * Marks a message as delivered to a recipient.
+   * @param {string} messageId
+   * @param {string} recipientClientId
+   * @returns {{ ok: boolean, error?: string, delivered?: boolean }}
+   */
+  markDelivered(messageId, recipientClientId) {
+    const message = this.getChatMessage(messageId);
+    if (!message) return { ok: false, error: 'Message not found' };
+    if (message.userId !== recipientClientId) return { ok: false, error: 'Not the recipient' };
+    if (message.status === 'sent') {
+      message.status = 'delivered';
+      message.deliveredAt = Date.now();
+    }
+    return { ok: true, delivered: message.status === 'delivered' };
+  }
+
+  /**
+   * Marks a message as seen by a recipient.
+   * @param {string} messageId
+   * @param {string} recipientClientId
+   * @returns {{ ok: boolean, error?: string, seen?: boolean }}
+   */
+  markSeen(messageId, recipientClientId) {
+    const message = this.getChatMessage(messageId);
+    if (!message) return { ok: false, error: 'Message not found' };
+    if (message.userId !== recipientClientId) return { ok: false, error: 'Not the recipient' };
+    if (message.status === 'sent' || message.status === 'delivered') {
+      message.status = 'seen';
+      message.seenAt = Date.now();
+    }
+    return { ok: true, seen: message.status === 'seen' };
+  }
+
+  /**
+   * Marks all pending messages from a sender as delivered to a recipient.
+   * @param {string} senderClientId
+   * @param {string} recipientClientId
+   * @returns {number} count of newly delivered messages
+   */
+  markAllDelivered(senderClientId, recipientClientId) {
+    let count = 0;
+    for (const message of this.chat) {
+      if (message.userId === senderClientId && message.status === 'sent') {
+        message.status = 'delivered';
+        message.deliveredAt = Date.now();
+        count += 1;
+      }
+    }
+    return count;
+  }
+
+  /**
+   * Marks all pending messages from a sender as seen by a recipient.
+   * @param {string} senderClientId
+   * @param {string} recipientClientId
+   * @returns {number} count of newly seen messages
+   */
+  markAllSeen(senderClientId, recipientClientId) {
+    let count = 0;
+    for (const message of this.chat) {
+      if (message.userId === senderClientId && (message.status === 'sent' || message.status === 'delivered')) {
+        message.status = 'seen';
+        message.seenAt = Date.now();
+        count += 1;
+      }
+    }
+    return count;
+  }
+
+  /**
    * Records a reaction to the current song.
    *
    * Rate limited per client: a client may not send the same emoji again within
