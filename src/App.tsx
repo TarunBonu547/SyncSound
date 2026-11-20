@@ -5,6 +5,7 @@ import { useSocket } from './hooks/useSocket';
 import { useRoom } from './hooks/useRoom';
 import { useLibrary } from './hooks/useLibrary';
 import { useMediaQuery } from './hooks/useMediaQuery';
+import { useChatNotification } from './hooks/useChatNotification';
 import { syncDebug } from './utils/syncDebug';
 import { readClientId } from './utils/clientId';
 import { fetchVideoMeta } from './utils/youtubeMeta';
@@ -118,6 +119,9 @@ export default function App() {
   /** On narrow screens the chat lives in a drawer instead of a side column. */
   const isNarrow = useMediaQuery('(max-width: 1024px)');
 
+  /** Message notification sound and mute preference. */
+  const chatNotify = useChatNotification();
+
   const currentVideoId = useRef<string | null>(null);
   const lastRevision = useRef(0);
   /** Bumped on every applied state so stale async work can be discarded. */
@@ -156,6 +160,7 @@ export default function App() {
     displayName,
     onPlayback: (p) => applyRemoteRef.current(p),
     onError: (message) => pushToast(message, 'error'),
+    onRemoteMessage: () => chatNotify.playChime(),
   });
   const { editDedication, sendReaction } = room;
 
@@ -1016,6 +1021,8 @@ export default function App() {
               sendTyping={room.sendTyping}
               onSelectReply={room.selectReply}
               onCancelReply={room.cancelReply}
+              muted={chatNotify.muted}
+              onToggleMute={chatNotify.toggleMute}
             />
           )}
         </aside>
@@ -1175,27 +1182,29 @@ export default function App() {
         aria-label="Chat of the room"
         aria-hidden={!chatOpen}
       >
-        {isNarrow && (
-          <ChatPanel
-            roomCode={room.roomCode}
-            roomName={room.roomName}
-            members={room.members}
-            clientId={clientId}
-            connected={connected}
-            messages={room.messages}
-            typing={room.typing}
-            draft={room.draft}
-            chatError={room.chatError}
-            chatSending={room.chatSending}
-            replyTo={room.replyTo}
-            onDraftChange={room.setDraft}
-            onSend={room.sendMessage}
-            sendTyping={room.sendTyping}
-            onSelectReply={room.selectReply}
-            onCancelReply={room.cancelReply}
-            onClose={() => setChatOpen(false)}
-          />
-        )}
+{isNarrow && (
+            <ChatPanel
+              roomCode={room.roomCode}
+              roomName={room.roomName}
+              members={room.members}
+              clientId={clientId}
+              connected={connected}
+              messages={room.messages}
+              typing={room.typing}
+              draft={room.draft}
+              chatError={room.chatError}
+              chatSending={room.chatSending}
+              replyTo={room.replyTo}
+              onDraftChange={room.setDraft}
+              onSend={room.sendMessage}
+              sendTyping={room.sendTyping}
+              onSelectReply={room.selectReply}
+              onCancelReply={room.cancelReply}
+              muted={chatNotify.muted}
+              onToggleMute={chatNotify.toggleMute}
+              onClose={() => setChatOpen(false)}
+            />
+          )}
       </aside>
 
       {/* ------------------------------ Overlays ------------------------------ */}

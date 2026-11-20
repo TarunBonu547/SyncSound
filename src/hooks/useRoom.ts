@@ -34,6 +34,8 @@ export type UseRoomOptions = {
   onPlayback: (state: PlaybackState) => void;
   /** Reports a failure that has no place of its own. */
   onError: (message: string) => void;
+  /** Called when a new chat message arrives from a remote participant. */
+  onRemoteMessage?: (entry: ChatEntry) => void;
 };
 
 export type SharedDrawingPoint = { x: number; y: number };
@@ -70,7 +72,7 @@ const EMPTY_DRAWINGS: SharedDrawingState = { epoch: 0, seq: 0, strokes: [] };
  * removed when the room or the socket goes away, so a room change never
  * leaves a second listener behind.
  */
-export function useRoom({ socket, clientId, displayName, onPlayback, onError }: UseRoomOptions) {
+export function useRoom({ socket, clientId, displayName, onPlayback, onError, onRemoteMessage }: UseRoomOptions) {
   const [roomCode, setRoomCode] = useState<string | null>(null);
   const [roomName, setRoomName] = useState<string | null>(null);
   const [members, setMembers] = useState<RoomMember[]>([]);
@@ -280,6 +282,10 @@ export function useRoom({ socket, clientId, displayName, onPlayback, onError }: 
       // The server sends every message once, but a duplicated broadcast must
       // not become a second bubble.
       setMessages((prev) => (prev.some((x) => x.id === entry.id) ? prev : [...prev, entry]));
+      // Notify the host (the notification system) only for messages that
+      // actually arrived from a remote participant, never for the local
+      // sender's own messages or for history that was loaded on join.
+      if (!entry.isSelf && onRemoteMessage) onRemoteMessage(entry);
     };
 
     /** A reaction to the current song. The server already rate limits, so the
@@ -404,7 +410,7 @@ export function useRoom({ socket, clientId, displayName, onPlayback, onError }: 
         if (timer) clearTimeout(timer);
       }
     };
-  }, [socket, roomCode, clientId, applyQueue, applyPresence, toChatEntry]);
+  }, [socket, roomCode, clientId, applyQueue, applyPresence, toChatEntry, onRemoteMessage]);
 
   // --- actions ----------------------------------------------------------------
   /** Enters a room. The room is joined by the effect above. */

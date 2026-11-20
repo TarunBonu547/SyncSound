@@ -1,11 +1,9 @@
 import type { CSSProperties, RefObject } from 'react';
-import { useRef, useState, useEffect } from 'react';
 import { Video, Plus, UserPlus, Loader2, AlertCircle, Play } from 'lucide-react';
 import type { QueueEntry, Track } from '../../types/music';
 import type { SearchResult } from '../../utils/youtubeSearch';
 import { YT_STATE, type YouTubePlayer } from '../../hooks/useYouTubePlayer';
 import TrackInfo from './TrackInfo';
-import CoupleOnPlayer from './CoupleOnPlayer';
 import PlaybackControls from './PlaybackControls';
 import QueuePanel from '../queue/QueuePanel';
 import AddToQueueForm from '../queue/AddToQueueForm';
@@ -166,22 +164,8 @@ export default function MainPlayer({
   /** The video may not be played. */
   const failed = hasTrack && !!yt.error;
 
-  /** A new track just started: the couple gets a soft entrance reaction. */
-  const lastVideoIdRef = useRef<string | null>(null);
-  const [newSong, setNewSong] = useState(false);
-  useEffect(() => {
-    if (!hasTrack || !current) return;
-    if (lastVideoIdRef.current !== current.id) {
-      lastVideoIdRef.current = current.id;
-      setNewSong(true);
-      const t = window.setTimeout(() => setNewSong(false), 1400);
-      return () => window.clearTimeout(t);
-    }
-  }, [current, hasTrack]);
-
   return (
     <section className="card player-card" aria-label="Now playing">
-      <CoupleOnPlayer playing={localPlaying} newSong={newSong} />
       <div className={`stage-wrap ${hasTrack ? 'has-track' : 'is-empty'} ${localPlaying ? 'is-playing' : 'is-paused'}`}>
         <div className="reaction-stage" aria-hidden="true">
           {hasTrack &&

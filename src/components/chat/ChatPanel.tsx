@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Send, Reply, Users, MessageCircle, X } from 'lucide-react';
+import { Send, Reply, Users, MessageCircle, X, Volume2, VolumeX } from 'lucide-react';
 import type { ChatEntry, RoomMember } from '../../types/music';
 import { avatarFor, formatTime } from '../../utils/avatar';
 import { MAX_CHAT_LENGTH } from '../../hooks/useRoom';
@@ -29,6 +29,10 @@ type ChatPanelProps = {
   onSelectReply: (message: { messageId: string; senderId: string; senderName: string; text: string }) => void;
   /** Cancels the reply that is being composed. */
   onCancelReply: () => void;
+  /** True when incoming message notifications are muted. */
+  muted: boolean;
+  /** Toggles the mute state of incoming message notifications. */
+  onToggleMute: () => void;
   /** Shown when the panel is used outside of the room, e.g. in a drawer. */
   onClose?: () => void;
 };
@@ -94,6 +98,8 @@ export default function ChatPanel({
   sendTyping,
   onSelectReply,
   onCancelReply,
+  muted,
+  onToggleMute,
   onClose,
 }: ChatPanelProps) {
   const scrollRef = useRef<HTMLDivElement | null>(null);
@@ -244,6 +250,16 @@ export default function ChatPanel({
             <span aria-hidden="true">×</span>
           </button>
         )}
+        <button
+          className="btn icon sm chat-mute"
+          onClick={onToggleMute}
+          title={muted ? 'Unmute message notifications' : 'Mute message notifications'}
+          aria-label={muted ? 'Unmute message notifications' : 'Mute message notifications'}
+          aria-pressed={muted}
+        >
+          {muted ? <VolumeX size={18} aria-hidden="true" /> : <Volume2 size={18} aria-hidden="true" />}
+          <span className="sr-only">{muted ? 'Unmute' : 'Mute'}</span>
+        </button>
       </div>
 
       {members.length > 0 && (

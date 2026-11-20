@@ -1721,6 +1721,37 @@
   outline-offset: 2px;
 }
 
+/* Message notification toggle, sits beside the close button in the chat head. */
+.chat-mute {
+  width: 34px;
+  height: 34px;
+  min-width: 34px;
+  min-height: 34px;
+  padding: 0;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: var(--surface-strong);
+  color: var(--text);
+  transition:
+    background-color var(--t-fast) var(--ease-out),
+    border-color var(--t-fast) var(--ease-out),
+    color var(--t-fast) var(--ease-out);
+}
+
+.chat-mute:hover:not(:disabled) {
+  background: #fff;
+  border-color: var(--border-soft);
+}
+
+.chat-mute:focus-visible {
+  outline: 2px solid var(--accent-strong);
+  outline-offset: 2px;
+}
+
+.chat-mute[aria-pressed="true"] {
+  color: var(--text-muted);
+}
+
 /* --- Floating emoji picker panel ------------------------------------------ */
 /* Desktop: glassmorphism popup that floats above the chat input, portaled to
    the body so it can escape the overflow-hidden sidebar. */
@@ -3443,114 +3474,4 @@
 @media (prefers-reduced-motion: reduce) {
   .view-pane--enter, .app .room-header, .app .player-card, .stage-wrap.is-playing .stage-poster, .stage-wrap.is-playing .stage-ring, .stage-wrap:not(.is-playing) .stage-ring, .stage-wrap.is-playing .stage-aura, .track-transition, .like-btn.is-liked, .vinyl-disc, .vinyl-glow, .mini-player, .reaction-btn .reaction-emoji, .chat-emoji-panel, .toast, .dedication-card, .queue-row, .search-card, .library-card, .reaction-burst span, .mini-player-info.is-changing { animation: none !important; }
   .app .main, .app .right { transform: none !important; transition: none !important; }
-}
-
-/* --- Couple on player frame ------------------------------------------------ */
-/* Positioned relative to the MAIN player card (`.player-card` is `position:
-   relative`), not the album-art stage. It dangles over the top-right edge so
-   it never overlaps the title, artist, artwork, progress bar or controls. */
-.couple-layer {
-  position: absolute;
-  top: -30px;
-  right: 20px;
-  width: 70px;
-  height: 52px;
-  pointer-events: none;
-  z-index: 5;
-  transform-origin: bottom center;
-  transform: translateZ(0);
-  backface-visibility: hidden;
-  will-change: transform;
-}
-.couple-img {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-  object-position: bottom center;
-  display: block;
-  filter: drop-shadow(0 6px 6px rgba(48, 43, 66, 0.22)) drop-shadow(0 2px 3px rgba(48, 43, 66, 0.14));
-}
-
-/* TEST ANIMATION (diagnostic): while playing the couple must move visibly —
-   ~8px up/down plus a gentle left/right rotate, continuous. This confirms the
-   animation pipeline is live. Swap for the subtler production values once
-   movement is confirmed. */
-.couple-layer.is-playing {
-  animation: coupleTest 2s var(--ease-soft) infinite !important;
-}
-@keyframes coupleTest {
-  0%   { transform: translateY(0)    rotate(-3deg); }
-  25%  { transform: translateY(-4px) rotate(-4deg); }
-  50%  { transform: translateY(-8px) rotate( 0deg); }
-  75%  { transform: translateY(-4px) rotate( 4deg); }
-  100% { transform: translateY(0)    rotate(-3deg); }
-}
-
-/* Paused: very subtle idle so the transition from playing is calm, not frozen. */
-.couple-layer.is-paused {
-  animation: coupleRest 5s var(--ease-soft) infinite;
-}
-@keyframes coupleRest {
-  0%   { transform: translateY(0) rotate(-0.6deg) scale(1); }
-  50%  { transform: translateY(-1.5px) rotate(-0.6deg) scale(1.006); }
-  100% { transform: translateY(0) rotate(-0.6deg) scale(1); }
-}
-
-/* Kept for backwards-compat with any class that referenced the old name. */
-@keyframes coupleBreathe {
-  0%, 100% { transform: translateY(0) scale(1); }
-  50% { transform: translateY(-2px) scale(1.012); }
-}
-
-/* Subtle leg-swing feel for a flattened image: a very slight rotation that
-   reads as a gentle sway without pretending individual limbs move. */
-@keyframes coupleSway {
-  0%, 100% { transform: translateY(0) rotate(-0.6deg) scale(1); }
-  50% { transform: translateY(-2px) rotate(0.6deg) scale(1.012); }
-}
-
-/* New track entrance: a visible, smooth pop-in that reads as a shared reaction
-   to the new song — scale and vertical motion together, no excessive bounce. */
-.couple-layer.is-entrance {
-  animation: coupleEntrance 1.3s var(--ease-out) both;
-}
-@keyframes coupleEntrance {
-  0%   { opacity: 0; transform: translateY(10px) scale(0.85); filter: brightness(0.9); }
-  40%  { opacity: 1; transform: translateY(-3px) scale(1.05); filter: brightness(1.1); }
-  70%  { transform: translateY(0.5px) scale(0.99); filter: brightness(1); }
-  100% { opacity: 1; transform: translateY(0) scale(1); filter: brightness(1); }
-}
-
-/* Beat reactions: a clear tilt + brightness lift, only when a beat is
-   detected. Scaled up to stay visible against the playing sway. */
-.couple-layer.is-beat {
-  animation: coupleBeat 420ms var(--ease-out) both;
-}
-.couple-layer.is-beat-strong {
-  animation: coupleBeatStrong 420ms var(--ease-out) both;
-}
-@keyframes coupleBeat {
-  0%   { transform: translateY(0) rotate(0deg) scale(1); filter: drop-shadow(0 6px 6px rgba(48, 43, 66, 0.22)) drop-shadow(0 2px 3px rgba(48, 43, 66, 0.14)) brightness(1); }
-  25%  { transform: translateY(-6px) rotate(-3deg) scale(1.05); filter: drop-shadow(0 10px 10px rgba(48, 43, 66, 0.3)) drop-shadow(0 4px 5px rgba(48, 43, 66, 0.18)) brightness(1.18); }
-  100% { transform: translateY(0) rotate(0deg) scale(1); filter: drop-shadow(0 6px 6px rgba(48, 43, 66, 0.22)) drop-shadow(0 2px 3px rgba(48, 43, 66, 0.14)) brightness(1); }
-}
-@keyframes coupleBeatStrong {
-  0%   { transform: translateY(0) rotate(0deg) scale(1); filter: drop-shadow(0 6px 6px rgba(48, 43, 66, 0.22)) drop-shadow(0 2px 3px rgba(48, 43, 66, 0.14)) brightness(1); }
-  25%  { transform: translateY(-9px) rotate(-4.5deg) scale(1.09); filter: drop-shadow(0 14px 14px rgba(48, 43, 66, 0.34)) drop-shadow(0 5px 6px rgba(48, 43, 66, 0.2)) brightness(1.3); }
-  100% { transform: translateY(0) rotate(0deg) scale(1); filter: drop-shadow(0 6px 6px rgba(48, 43, 66, 0.22)) drop-shadow(0 2px 3px rgba(48, 43, 66, 0.14)) brightness(1); }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .couple-layer,
-  .couple-layer.is-playing,
-  .couple-layer.is-paused,
-  .couple-layer.is-entrance,
-  .couple-layer.is-beat,
-  .couple-layer.is-beat-strong {
-    animation: none;
-  }
-}
-
-@media (max-width: 640px) {
-  .couple-layer { width: 55px; height: 41px; top: -24px; right: 6px; }
 }
