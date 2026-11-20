@@ -178,7 +178,7 @@ class RoomState {
    * @param {string} recipientClientId
    * @returns {{ ok: boolean, error?: string, delivered?: boolean }}
    */
-  markDelivered(messageId, recipientClientId) {
+  markDelivered(messageId, _recipientClientId) {
     const message = this.getChatMessage(messageId);
     if (!message) return { ok: false, error: 'Message not found' };
     if (message.userId !== recipientClientId) return { ok: false, error: 'Not the recipient' };
@@ -195,7 +195,7 @@ class RoomState {
    * @param {string} recipientClientId
    * @returns {{ ok: boolean, error?: string, seen?: boolean }}
    */
-  markSeen(messageId, recipientClientId) {
+  markSeen(messageId, _recipientClientId) {
     const message = this.getChatMessage(messageId);
     if (!message) return { ok: false, error: 'Message not found' };
     if (message.userId !== recipientClientId) return { ok: false, error: 'Not the recipient' };

@@ -1448,6 +1448,30 @@
   color: var(--text-faint);
 }
 
+.chat-time-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* Read receipt ticks next to the timestamp of outgoing messages. */
+.chat-status {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 16px;
+  height: 14px;
+  color: var(--receipt-grey);
+  transition:
+    color var(--t-base) var(--ease-out),
+    transform var(--t-fast) var(--ease-out);
+}
+
+.chat-status.is-seen {
+  color: var(--receipt-blue);
+}
+
 /* Received: white with a faint light-blue wash. */
 .chat-bubble:not(.is-self) {
   background: rgba(168, 221, 247, 0.10);

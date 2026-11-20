@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Send, Reply, Users, MessageCircle, X, Volume2, VolumeX, Check, CheckCheck } from 'lucide-react';
+import { Send, Reply, Users, MessageCircle, X, Volume2, VolumeX } from 'lucide-react';
 import type { ChatEntry, RoomMember } from '../../types/music';
 import { avatarFor, formatTime } from '../../utils/avatar';
 import { MAX_CHAT_LENGTH } from '../../hooks/useRoom';
@@ -61,19 +61,30 @@ function isEmojiGrapheme(segment: string) {
 function MessageStatus({ status }: { status?: 'sent' | 'delivered' | 'seen' }) {
   if (!status) return null;
   if (status === 'sent') {
-    return <Check size={12} className="chat-status-tick is-sent" aria-label="Sent" />;
+    return (
+      <span className="chat-status" aria-label="Sent">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+          <polyline points="5 12 10 17 19 7" />
+        </svg>
+      </span>
+    );
   }
   if (status === 'delivered') {
     return (
-      <span className="chat-status-tick-group" aria-label="Delivered">
-        <Check size={12} className="chat-status-tick" />
-        <Check size={12} className="chat-status-tick" />
+      <span className="chat-status" aria-label="Delivered">
+        <svg width="16" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+          <polyline points="3 12 8 17 13 7" />
+          <polyline points="11 12 16 17 25 7" />
+        </svg>
       </span>
     );
   }
   return (
-    <span className="chat-status-tick-group is-seen" aria-label="Seen">
-      <CheckCheck size={12} className="chat-status-tick" />
+    <span className="chat-status is-seen" aria-label="Seen">
+      <svg width="16" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+        <polyline points="3 12 8 17 13 7" />
+        <polyline points="11 12 16 17 25 7" />
+      </svg>
     </span>
   );
 }
@@ -452,10 +463,10 @@ export default function ChatPanel({
                   {showHeader && (
                     <div className="chat-bubble-head">
                       <span className="chat-author">{m.userName}</span>
-                      <time className="chat-time">
-                        {formatTime(m.timestamp)}
+                      <span className="chat-time-wrap">
+                        <time className="chat-time">{formatTime(m.timestamp)}</time>
                         {m.isSelf && <MessageStatus status={m.status} />}
-                      </time>
+                      </span>
                     </div>
                   )}
                   {quote && (
