@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Menu, X, Copy, ArrowLeft, LogOut, Settings, User, Music, Home, Search } from 'lucide-react';
+import { Menu, X, Copy, ArrowLeft, LogOut, Settings, User, Music, Home, Search, MessageCircle } from 'lucide-react';
 import { useYouTubePlayer, extractVideoId } from './hooks/useYouTubePlayer';
 import { useSocket } from './hooks/useSocket';
 import { useRoom } from './hooks/useRoom';
@@ -82,6 +82,32 @@ export default function App() {
 
   /** The lobby has three parts: the start screen, the search and the library. */
   const [view, setView] = useState<View>('home');
+
+  /* --- Background animation elements --- */
+  const bgMusicNotes = useMemo(() => {
+    const notes = ['♪', '♫', '♬', '♩'];
+    return Array.from({ length: 12 }, (_, i) => ({
+      char: notes[i % notes.length],
+      left: `${5 + Math.random() * 90}%`,
+      size: `${16 + Math.random() * 16}px`,
+      duration: `${20 + Math.random() * 20}s`,
+      delay: `${-Math.random() * 20}s`,
+    }));
+  }, []);
+
+  const bgGeoShapes = useMemo(() => {
+    return Array.from({ length: 8 }, (_, i) => {
+      const type = i % 3; // 0=circle, 1=ring, 2=star
+      return {
+        type,
+        left: `${5 + Math.random() * 90}%`,
+        size: `${8 + Math.random() * 24}px`,
+        duration: `${25 + Math.random() * 25}s`,
+        delay: `${-Math.random() * 25}s`,
+        tx: `${-50 + Math.random() * 100}px`,
+      };
+    });
+  }, []);
   /** The part of the library that is open. */
   const [librarySection, setLibrarySection] = useState<LibrarySection>('liked');
   /** Which of the two room cards is in front. */
@@ -648,20 +674,18 @@ export default function App() {
     [room, clientId, displayName],
   );
 
-  /** Looks the metadata of a video up and plays it in the room. */
-  const playNowById = async (id: string): Promise<string | null> => {
-    const meta = await fetchVideoMeta(id);
-    return room.playTrack({
-      id,
-      title: meta.title,
-      channel: meta.channel,
-      thumbnail: meta.thumbnail,
-      durationSeconds: meta.duration || null,
-    });
-  };
-
   /* --- the invite ------------------------------------------------------------ */
   const inviteLink = room.roomCode ? `${window.location.origin}/?room=${room.roomCode}` : `${window.location.origin}`;
+
+  /** Plays a track from the library by finding it in favorites or recent. */
+  const playLibraryTrack = useCallback(
+    async (id: string): Promise<string | null> => {
+      const track = library.favoriteList.find((t) => t.id === id) || library.recent.find((t) => t.id === id);
+      if (!track) return 'Track not found';
+      return room.playTrack(track);
+    },
+    [library, room],
+  );
 
   const copyLink = async () => {
     let copied = false;
@@ -745,6 +769,28 @@ export default function App() {
       }
     },
     [room, current, addRecentRoom],
+  );
+
+  /**
+   * Room entry transition. The cards validate their own inputs before calling
+   * this handler, so by the time we get here the room code and name are real.
+   * The handler triggers the vinyl-inspired circular reveal and then hands off to
+   * the existing room logic, preserving all room state and user information.
+   */
+  const handleEnterRoom = useCallback(
+    (code: string, name?: string | null) => {
+      const overlay = document.querySelector('.room-reveal') as HTMLElement;
+      if (overlay) {
+        overlay.classList.add('active');
+        window.setTimeout(() => {
+          enterRoom(code, name);
+          overlay.classList.remove('active');
+        }, 800);
+      } else {
+        enterRoom(code, name);
+      }
+    },
+    [enterRoom],
   );
 
   /** Leaves the room on purpose and returns to the lobby. */
@@ -923,28 +969,39 @@ export default function App() {
 
   return (
     <div className="app-root">
-      <div className="ambient" aria-hidden="true">
-        <span className="ambient-blob b1" />
-        <span className="ambient-blob b2" />
-        <span className="ambient-blob b3" />
-        <span className="ambient-orb o1" />
-        <span className="ambient-orb o2" />
-        <span className="ambient-orb o3" />
-        <span className="ambient-orb o4" />
-        <span className="ambient-waveform" />
-        <span className="bokeh k1" />
-        <span className="bokeh k2" />
-        <span className="bokeh k3" />
-        <span className="ambient-note n1" aria-hidden="true">♪</span>
-        <span className="ambient-note n2" aria-hidden="true">♫</span>
-        <span className="ambient-note n3" aria-hidden="true">♪</span>
-        <span className="ambient-note n4" aria-hidden="true">♩</span>
-        <span className="ambient-note n5" aria-hidden="true">♫</span>
-        <span className="ambient-note n6" aria-hidden="true">♪</span>
-      </div>
-
       {/* ------------------------------ Listening room ---------------------- */}
-      <div className={`app ${view !== 'room' ? 'is-hidden' : ''}`} inert={view !== 'room'}>
+      <div className={`sunday-room app ${view !== 'room' ? 'is-hidden' : ''}`} inert={view !== 'room'}>
+        {/* Floating Sunday Radio background decor, kept behind the interface. */}
+        <div className="sr-room-bg" aria-hidden="true">
+          {bgMusicNotes.map((note, i) => (
+            <span
+              key={`rn-${i}`}
+              className="sr-float-note"
+              style={{
+                left: note.left,
+                fontSize: note.size,
+                animationDuration: note.duration,
+                animationDelay: note.delay,
+              }}
+            >
+              {note.char}
+            </span>
+          ))}
+          {bgGeoShapes.map((shape, i) => (
+            <span
+              key={`rg-${i}`}
+              className={`sr-float-shape ${shape.type === 0 ? 'is-circle' : shape.type === 1 ? 'is-ring' : 'is-star'}`}
+              style={{
+                left: shape.left,
+                width: shape.size,
+                height: shape.size,
+                animationDuration: shape.duration,
+                animationDelay: shape.delay,
+                ['--tx' as string]: shape.tx,
+              } as React.CSSProperties}
+            />
+          ))}
+        </div>
         <header className="navbar">
           <div className="navbar-left">
             <button
@@ -988,6 +1045,16 @@ export default function App() {
           </nav>
 
           <div className="navbar-right">
+            {isNarrow && room.roomCode && (
+              <button
+                className="btn icon mobile-chat-btn"
+                onClick={() => setChatOpen(true)}
+                title="On Air Chat"
+                aria-label="Open the room chat"
+              >
+                <MessageCircle size={16} aria-hidden="true" />
+              </button>
+            )}
             <div className="profile-dropdown">
               <button
                 className="navbar-avatar"
@@ -1120,24 +1187,26 @@ export default function App() {
       </div>
 
       {/* --------------------------- Persistent mini player ------------------ */}
-      <MiniPlayer
-        current={current}
-        playing={roomPlaying}
-        ready={yt.ready}
-        currentTime={yt.currentTime}
-        duration={yt.duration}
-        volume={volume}
-        onPlayPause={togglePlayback}
-        onPrevious={playPrevious}
-        onNext={playNext}
-        hasPrevious={hasPrevious}
-        hasNext={hasNext}
-        onSeek={handleSeek}
-        onVolumeChange={setVolume}
-        onToggleMute={() => setVolume((v) => (v === 0 ? 1 : 0))}
-        onOpenPlayer={goRoom}
-        onOpenQueue={goRoom}
-      />
+      {view === 'room' && (
+        <MiniPlayer
+          current={current}
+          playing={roomPlaying}
+          ready={yt.ready}
+          currentTime={yt.currentTime}
+          duration={yt.duration}
+          volume={volume}
+          onPlayPause={togglePlayback}
+          onPrevious={playPrevious}
+          onNext={playNext}
+          hasPrevious={hasPrevious}
+          hasNext={hasNext}
+          onSeek={handleSeek}
+          onVolumeChange={setVolume}
+          onToggleMute={() => setVolume((v) => (v === 0 ? 1 : 0))}
+          onOpenPlayer={goRoom}
+          onOpenQueue={goRoom}
+        />
+      )}
 
       {/*
         The call window lives outside the room shell: it floats above the
@@ -1154,159 +1223,110 @@ export default function App() {
 
       {/* ------------------------------ Lobby ------------------------------ */}
       {view !== 'room' && (
-        <div className="home">
-          <header className="navbar home-navbar">
-            <div className="navbar-left">
-              <button
-                className="btn icon ghost menu-btn"
-                onClick={() => setMobileNav(true)}
-                title="Open the menu"
-                aria-label="Open the menu"
-              >
-                <Menu size={20} aria-hidden="true" />
-              </button>
-              <button className="wordmark-btn" onClick={goHome} title="SyncSound home" aria-label="SyncSound home">
-                <span className="waveform-icon" aria-hidden="true">
-                  <span className="bar" />
-                  <span className="bar" />
-                  <span className="bar" />
-                  <span className="bar" />
-                  <span className="bar" />
-                </span>
-                <span className="wordmark">
-                  <em>Sync</em>Sound
-                </span>
-              </button>
-            </div>
-
-            <nav className="navbar-center" aria-label="Main navigation">
-              <button className={`nav-link ${view === 'home' ? 'is-active' : ''}`} onClick={goHome}>
-                <Home size={16} aria-hidden="true" />
-                <span>Home</span>
-              </button>
-              <button className={`nav-link ${view === 'search' ? 'is-active' : ''}`} onClick={goSearch}>
-                <Search size={16} aria-hidden="true" />
-                <span>Search</span>
-              </button>
-              <button
-                className={`nav-link ${view === 'library' ? 'is-active' : ''}`}
-                onClick={() => goLibrary('liked')}
-              >
-                <Music size={16} aria-hidden="true" />
-                <span>Your Library</span>
-              </button>
-            </nav>
-
-            <div className="navbar-right">
+        <div className="sunday-home">
+          {/* Background animations */}
+          <div className="sunday-home-bg" aria-hidden="true">
+            <div className="ambient-wash" />
+            {bgMusicNotes.map((note, i) => (
               <span
-                className="navbar-avatar"
-                style={{ background: profile.color }}
-                title={displayName ? `You are ${displayName}` : 'You'}
-                aria-hidden="true"
+                key={`note-${i}`}
+                className="music-note"
+                style={{
+                  left: note.left,
+                  fontSize: note.size,
+                  animationDuration: note.duration,
+                  animationDelay: note.delay,
+                }}
               >
-                {profile.initials}
+                {note.char}
               </span>
-            </div>
+            ))}
+            {bgGeoShapes.map((shape, i) => (
+              <span
+                key={`geo-${i}`}
+                className={`geo-shape ${shape.type === 0 ? 'circle' : shape.type === 1 ? 'ring' : 'star'}`}
+                style={{
+                  left: shape.left,
+                  width: shape.size,
+                  height: shape.size,
+                  animationDuration: shape.duration,
+                  animationDelay: shape.delay,
+                  '--tx': shape.tx,
+                } as React.CSSProperties}
+              />
+            ))}
+          </div>
+
+          <header className="home-header">
+            <div className="brand">SUNDAY RADIO<span className="reg" aria-hidden="true">®</span></div>
+            <div className="header-right">VOL. 001 &nbsp; / &nbsp; MUSIC CLUB</div>
           </header>
 
           {view === 'home' && (
             <>
-              <div className="hero-ambient" aria-hidden="true">
-                <span className="wave-ring" />
-                <span className="wave-ring" />
-                <span className="wave-ring" />
-                <span className="wave-ring" />
-                <span className="wave-ring" />
-              </div>
-              <div className="home-hero fade-in-up">
-                <div className="hero-waveform" aria-hidden="true">
-                  <span className="bar" />
-                  <span className="bar" />
-                  <span className="bar" />
-                  <span className="bar" />
-                  <span className="bar" />
-                  <span className="bar" />
-                  <span className="bar" />
+              <section className="hero">
+                <div className="hero-copy">
+                  <div className="eyebrow">✳ YOUR PERSONAL BROADCAST STATION</div>
+                  <h1>GOOD<br />MUSIC.<br /><span>GOOD</span><br />MOOD.</h1>
+                  <p>Find your frequency. Share your sound.</p>
                 </div>
-                <h1 className="home-title">Music feels better together.</h1>
-                <p className="home-sub">
-                  Create a room, invite someone and enjoy every beat together.
-                </p>
+                <div className="record-wrap" aria-hidden="true">
+                  <div className="record">
+                    <div className="record-label">SUNDAY<br />RADIO<br />♫</div>
+                  </div>
+                </div>
+                <div className="decor star one" aria-hidden="true">✳</div>
+                <div className="decor star two" aria-hidden="true">✴</div>
+                <div className="decor circle" aria-hidden="true" />
+                <div className="decor ring" aria-hidden="true" />
+              </section>
+
+              <div className="wave-section" id="wave" aria-hidden="true" />
+
+              <div className="section-heading">
+                <h2>Pick your station.</h2>
+                <span>SELECT / 01—02</span>
               </div>
 
-              <div className="home-cards">
-                <div className={`home-card fade-in-up stagger-2 ${homeFocus === 'create' ? 'is-focused' : ''}`}>
+              <section className="panels">
+                <div className="panel create">
+                  <div className="panel-top">
+                    <span className="number">STATION 01 / HOST</span>
+                    <span className="panel-icon">◉</span>
+                  </div>
+                  <h3>Go On Air.</h3>
+                  <p>Start a new listening session.</p>
                   <CreateRoom
                     displayName={displayNameInput}
                     onDisplayNameChange={setDisplayNameInput}
-                    onCreated={enterRoom}
+                    onCreated={handleEnterRoom}
                   />
                 </div>
-                <div className={`home-card fade-in-up stagger-3 ${homeFocus === 'join' ? 'is-focused' : ''}`}>
+
+                <div className="panel join">
+                  <div className="panel-top">
+                    <span className="number">STATION 02 / GUEST</span>
+                    <span className="panel-icon">✳</span>
+                  </div>
+                  <h3>Tune In.</h3>
+                  <p>Enter a room code to join the session.</p>
                   <JoinRoom
                     displayName={displayNameInput}
                     onDisplayNameChange={setDisplayNameInput}
-                    onJoined={enterRoom}
+                    onJoined={handleEnterRoom}
                   />
                 </div>
-              </div>
+              </section>
 
-              {/* Recently Played Rooms */}
-              {recentRooms.length > 0 && (
-                <section className="recently-played fade-in-up stagger-4" aria-label="Recently played rooms">
-                  <div className="recently-played-header">
-                    <h2 className="recently-played-title">Recently Played</h2>
-                  </div>
-                  <div className="recently-played-grid">
-                    {recentRooms.map((recent) => (
-                      <article key={recent.code} className="recent-room-card">
-                        {recent.lastTrack && (
-                          <img
-                            className="recent-room-art"
-                            src={recent.lastTrack.thumbnail}
-                            alt={`Artwork for ${recent.lastTrack.title}`}
-                          />
-                        )}
-                        <div className="recent-room-info">
-                          <h3 className="recent-room-name">{recent.name}</h3>
-                          <div className="recent-room-meta">
-                            <span className="recent-room-code">{recent.code}</span>
-                            <span className="recent-room-time">
-                              {new Date(recent.lastActive).toLocaleDateString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
-                            </span>
-                          </div>
-                        </div>
-                        <button
-                          className="recent-room-rejoin"
-                          onClick={() => enterRoom(recent.code)}
-                          aria-label={`Rejoin ${recent.name}`}
-                        >
-                          Rejoin
-                        </button>
-                      </article>
-                    ))}
-                  </div>
-                </section>
-              )}
-
-              {recentRooms.length === 0 && (
-                <section className="recently-played fade-in-up stagger-4" aria-label="Recently played rooms">
-                  <div className="recently-played-empty">
-                    <div className="recently-played-empty-icon" aria-hidden="true">
-                      <Music size={24} />
-                    </div>
-                    <h3 className="recently-played-empty-title">No rooms yet</h3>
-                    <p className="recently-played-empty-hint">
-                      Create or join a room to start listening together. Your recent rooms will appear here.
-                    </p>
-                  </div>
-                </section>
-              )}
+              <footer className="home-footer">
+                <span>NO ALGORITHMS. JUST GOOD TUNES.</span>
+                <span>MADE FOR MUSIC LOVERS ✳</span>
+              </footer>
             </>
           )}
 
           {view === 'search' && (
-            <div className="lobby-view">
+            <div className="sunday-home-content">
               <SearchView
                 inRoom={!!room.roomCode}
                 onAddToQueue={room.addTrackToQueue}
@@ -1317,14 +1337,14 @@ export default function App() {
           )}
 
           {view === 'library' && (
-            <div className="lobby-view">
+            <div className="sunday-home-content">
               <LibraryView
                 section={librarySection}
                 onSectionChange={setLibrarySection}
                 favorites={library.favoriteList}
                 recent={library.recent}
                 inRoom={!!room.roomCode}
-                onPlay={playNowById}
+                onPlay={playLibraryTrack}
                 onRemoveFavorite={library.removeFavorite}
                 onGoHome={goHome}
               />
@@ -1345,6 +1365,7 @@ export default function App() {
               <ArrowLeft size={18} className="room-return-icon" aria-hidden="true" />
             </button>
           )}
+
         </div>
       )}
 
@@ -1355,7 +1376,7 @@ export default function App() {
         aria-hidden="true"
       />
       <aside
-        className={`chat-drawer ${chatOpen ? 'is-open' : ''}`}
+        className={`sunday-room chat-drawer ${chatOpen ? 'is-open' : ''}`}
         aria-label="Chat of the room"
         aria-hidden={!chatOpen}
       >
@@ -1511,6 +1532,17 @@ export default function App() {
             </div>
             <div className="side-divider" />
             <div className="side-section side-section-bottom">
+              {room.roomCode && (
+                <button
+                  className="side-link"
+                  onClick={() => {
+                    setMobileNav(false);
+                    setChatOpen(true);
+                  }}
+                >
+                  On Air Chat
+                </button>
+              )}
               <button
                 className="side-link"
                 onClick={() => {
@@ -1532,3 +1564,4 @@ export default function App() {
     </div>
   );
 }
+

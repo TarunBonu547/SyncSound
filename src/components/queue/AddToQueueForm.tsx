@@ -130,7 +130,7 @@ export default function AddToQueueForm({
     <section className="panel add-queue" aria-labelledby="add-queue-title">
       <div className="panel-head">
         <div>
-          <p className="eyebrow">Shared queue</p>
+          <p className="eyebrow">Station Requests</p>
           <h2 className="section-title" id="add-queue-title">
             Add to Queue
           </h2>

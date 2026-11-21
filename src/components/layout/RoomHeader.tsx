@@ -1,4 +1,4 @@
-import { Copy, Check, Video, Users } from 'lucide-react';
+import { Copy, Check, Video, Users, Radio } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import type { RoomMember } from '../../types/music';
 import { avatarFor } from '../../utils/avatar';
@@ -16,11 +16,11 @@ type RoomHeaderProps = {
 };
 
 /**
- * The head of the room.
+ * The editorial masthead of the room.
  *
- * It carries the three things a person needs to share the room: the name, the
- * code and the button that copies the invite link. The members of the room
- * are shown as initials, so it is obvious who is listening.
+ * It reads like the header of a Sunday Radio broadcast: a small technical
+ * label, the room name as a bold headline, the room code as a badge and the
+ * connection/listener metadata, with the two sharing actions set apart.
  */
 export default function RoomHeader({
   roomCode,
@@ -42,10 +42,13 @@ export default function RoomHeader({
   }, [linkCopied]);
 
   return (
-    <header className="room-header card">
+    <header className="room-header sr-surface">
       <div className="room-header-main">
         <div className="room-header-text">
-          <p className="eyebrow">Now playing together</p>
+          <p className="sr-label sr-label--orange">
+            <Radio size={13} aria-hidden="true" />
+            Now Playing Together
+          </p>
           <h1 className="room-title">{roomName || 'Your room'}</h1>
           <div className="room-header-meta">
             <span className={`room-code-chip ${pulse ? 'is-copied' : ''}`} title="The code of the room">
@@ -53,7 +56,7 @@ export default function RoomHeader({
             </span>
             <StatusIndicator
               connected={connected}
-              label={connected ? 'Connected' : 'Reconnecting…'}
+              label={connected ? 'On Air' : 'Reconnecting…'}
               live={!!roomCode}
             />
             <span className="room-member-count" key={count}>
@@ -80,12 +83,12 @@ export default function RoomHeader({
             })}
             {members.length > 5 && <span className="room-avatar is-more">+{members.length - 5}</span>}
           </div>
-          <button className={`btn ${pulse ? 'is-copied' : ''}`} onClick={onCopyInvite} title="Copy the invite link">
-            {linkCopied ? <Check size={16} /> : <Copy size={16} />}
+          <button className={`sr-btn ${pulse ? 'is-copied' : ''}`} onClick={onCopyInvite} title="Copy the invite link">
+            {linkCopied ? <Check size={15} /> : <Copy size={15} />}
             {linkCopied ? 'Link copied' : 'Invite'}
           </button>
-          <button className="btn primary" onClick={onVideoCall} title="Start a video call">
-            <Video size={16} aria-hidden="true" />
+          <button className="sr-btn sr-btn--primary" onClick={onVideoCall} title="Start a video call">
+            <Video size={15} aria-hidden="true" />
             <span>Video Call</span>
           </button>
         </div>

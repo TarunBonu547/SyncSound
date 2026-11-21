@@ -1,0 +1,651 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sunday Radio Club | SyncSound</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+
+<style>
+:root {
+  --paper: #f4ebdd;
+  --ink: #292823;
+  --orange: #f16b45;
+  --blue: #5269c9;
+  --yellow: #f3ce68;
+  --green: #a9bb85;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  min-height: 100vh;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: 'Outfit', sans-serif;
+  overflow-x: hidden;
+}
+
+button, input { font: inherit; }
+button { cursor: pointer; }
+
+.page {
+  position: relative;
+  z-index: 2;
+  width: min(1160px, 92%);
+  margin: auto;
+  padding: 25px 0 35px;
+}
+
+/* PAPER TEXTURE */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  pointer-events: none;
+  opacity: .13;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.24'/%3E%3C/svg%3E");
+}
+
+/* HEADER */
+header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 17px;
+  border-bottom: 2px solid var(--ink);
+}
+
+.brand {
+  font-size: 25px;
+  font-weight: 900;
+  letter-spacing: -1.5px;
+}
+
+.brand span { color: var(--orange); }
+
+.header-right {
+  font: 11px 'Space Mono', monospace;
+  letter-spacing: 1px;
+}
+
+/* HERO */
+.hero {
+  min-height: 340px;
+  margin-top: 24px;
+  border-radius: 5px;
+  background: var(--orange);
+  color: white;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  padding: 45px 7%;
+}
+
+.hero-copy {
+  position: relative;
+  z-index: 3;
+  max-width: 570px;
+}
+
+.eyebrow {
+  font: 11px 'Space Mono', monospace;
+  letter-spacing: 2px;
+  margin-bottom: 17px;
+}
+
+.hero h1 {
+  font-size: clamp(43px, 7vw, 78px);
+  font-weight: 900;
+  line-height: .91;
+  letter-spacing: -4px;
+  text-transform: uppercase;
+}
+
+.hero h1 span { color: var(--yellow); }
+
+.hero-copy p {
+  font-size: 14px;
+  margin-top: 22px;
+  color: #fff0e8;
+}
+
+/* RECORD */
+.record-wrap {
+  position: absolute;
+  right: 9%;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 245px;
+  height: 245px;
+  z-index: 2;
+  animation: recordBob 4s ease-in-out infinite;
+}
+
+.record {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: repeating-radial-gradient(
+    circle,
+    #242321 0px,
+    #242321 3px,
+    #383632 4px,
+    #242321 5px,
+    #242321 8px
+  );
+  box-shadow: 0 18px 35px #7b382d55;
+  display: grid;
+  place-items: center;
+  animation: spin 8s linear infinite;
+  position: relative;
+}
+
+.record::after {
+  content: "";
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  background: #d9d2c5;
+  border-radius: 50%;
+}
+
+.record-label {
+  width: 91px;
+  height: 91px;
+  background: var(--yellow);
+  border: 4px solid #292823;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 900;
+  text-align: center;
+  line-height: 1;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes recordBob {
+  0%, 100% { margin-top: 0; }
+  50% { margin-top: -12px; }
+}
+
+/* FLOATING DECOR */
+.decor {
+  position: absolute;
+  pointer-events: none;
+  z-index: 1;
+  animation: drift 5s ease-in-out infinite;
+}
+
+.star {
+  color: var(--yellow);
+  font-size: 35px;
+}
+
+.hero .star.one { top: 12%; right: 39%; }
+.hero .star.two { bottom: 12%; right: 42%; animation-delay: 1s; }
+.hero .circle {
+  width: 19px;
+  height: 19px;
+  background: var(--blue);
+  border-radius: 50%;
+  top: 15%;
+  right: 9%;
+  animation-delay: 1.5s;
+}
+.hero .ring {
+  width: 45px;
+  height: 45px;
+  border: 5px solid var(--yellow);
+  border-radius: 50%;
+  right: 38%;
+  bottom: 8%;
+}
+
+@keyframes drift {
+  0%,100% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(-14px) rotate(12deg); }
+}
+
+/* SOUND WAVE */
+.wave-section {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 5px;
+  height: 65px;
+  overflow: hidden;
+}
+
+.bar {
+  width: 5px;
+  border-radius: 10px;
+  background: var(--blue);
+  animation: wave 1s ease-in-out infinite alternate;
+}
+
+.bar:nth-child(3n) { background: var(--orange); }
+.bar:nth-child(4n) { background: #9e8bc8; }
+
+@keyframes wave {
+  from { height: 8px; }
+  to { height: var(--h); }
+}
+
+/* ROOM PANELS */
+.section-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 5px 0 16px;
+}
+
+.section-heading h2 {
+  font-size: 25px;
+  font-weight: 800;
+  letter-spacing: -1px;
+}
+
+.section-heading span {
+  font: 10px 'Space Mono', monospace;
+}
+
+.panels {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 17px;
+}
+
+.panel {
+  padding: 25px;
+  border-radius: 5px;
+  min-height: 265px;
+  position: relative;
+  overflow: hidden;
+  transition: transform .3s ease, box-shadow .3s ease;
+}
+
+.panel:hover {
+  transform: translateY(-5px) rotate(-.3deg);
+  box-shadow: 8px 10px 0 #29282315;
+}
+
+.create { background: var(--yellow); }
+.join { background: var(--blue); color: white; }
+
+.panel-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 17px;
+}
+
+.number {
+  font: 12px 'Space Mono', monospace;
+  opacity: .7;
+}
+
+.panel-icon {
+  font-size: 29px;
+  animation: drift 3s ease-in-out infinite;
+}
+
+.panel h3 {
+  font-size: 31px;
+  font-weight: 900;
+  letter-spacing: -1px;
+}
+
+.panel p {
+  font-size: 13px;
+  opacity: .75;
+  margin: 5px 0 17px;
+}
+
+.panel input {
+  width: 100%;
+  border: 1.5px solid #29282340;
+  border-radius: 3px;
+  padding: 12px;
+  margin-bottom: 10px;
+  outline: none;
+  background: #ffffffa8;
+  color: var(--ink);
+  font-size: 13px;
+}
+
+.panel input:focus { border-color: var(--ink); }
+
+.panel button {
+  width: 100%;
+  padding: 13px;
+  background: var(--ink);
+  border: 0;
+  border-radius: 3px;
+  color: white;
+  font: 700 12px 'Space Mono', monospace;
+  transition: .25s;
+}
+
+.join button {
+  background: var(--yellow);
+  color: var(--ink);
+}
+
+.panel button:hover {
+  letter-spacing: 1px;
+  transform: translateY(-2px);
+}
+
+/* FOOTER */
+footer {
+  display: flex;
+  justify-content: space-between;
+  padding-top: 20px;
+  font: 10px 'Space Mono', monospace;
+}
+
+/* BACKGROUND ORBITING NOTES */
+.ambient {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.note {
+  position: absolute;
+  font-size: 22px;
+  opacity: .13;
+  animation: noteFloat linear infinite;
+}
+
+@keyframes noteFloat {
+  from { transform: translateY(110vh) rotate(0); }
+  to { transform: translateY(-20vh) rotate(180deg); }
+}
+
+/* TRANSITION OVERLAY */
+.transition {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  pointer-events: none;
+  display: grid;
+  place-items: center;
+  background: var(--paper);
+  clip-path: circle(0% at 50% 50%);
+}
+
+.transition.active {
+  animation: revealCircle 1.15s cubic-bezier(.7,0,.2,1) forwards;
+}
+
+@keyframes revealCircle {
+  0% { clip-path: circle(0% at 50% 50%); }
+  100% { clip-path: circle(150% at 50% 50%); }
+}
+
+.transition-record {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  background: repeating-radial-gradient(circle, #292823 0 3px, #494640 4px 5px);
+  border: 8px solid var(--orange);
+  animation: spin 1s linear infinite;
+  position: relative;
+}
+
+.transition-record::after {
+  content: "♫";
+  position: absolute;
+  inset: 28px;
+  border-radius: 50%;
+  background: var(--yellow);
+  display: grid;
+  place-items: center;
+  font-size: 19px;
+}
+
+/* ROOM PAGE */
+#roomPage {
+  display: none;
+  min-height: 80vh;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.room-box {
+  width: min(500px, 95%);
+  background: white;
+  padding: 45px 25px;
+  border: 2px solid var(--ink);
+  box-shadow: 9px 9px 0 var(--yellow);
+  animation: roomEnter .7s cubic-bezier(.2,.8,.2,1) both;
+}
+
+@keyframes roomEnter {
+  from { opacity: 0; transform: translateY(35px) rotate(-3deg) scale(.92); }
+  to { opacity: 1; transform: translateY(0) rotate(0) scale(1); }
+}
+
+.room-box h1 {
+  font-size: 40px;
+  font-weight: 900;
+}
+
+.room-box p {
+  margin: 12px 0;
+  color: #777;
+}
+
+.room-code {
+  font: 700 22px 'Space Mono', monospace;
+  background: var(--yellow);
+  padding: 15px;
+  margin: 25px auto;
+  max-width: 230px;
+}
+
+.room-box button {
+  background: var(--orange);
+  color: white;
+  border: none;
+  padding: 13px 25px;
+  font: 700 12px 'Space Mono', monospace;
+}
+
+/* MOBILE */
+@media(max-width: 700px) {
+  .hero { min-height: 460px; align-items: flex-start; padding: 35px 25px; }
+  .hero h1 { font-size: 52px; }
+  .record-wrap { width: 165px; height: 165px; top: auto; bottom: 15px; right: 12%; }
+  .record-label { width: 65px; height: 65px; font-size: 10px; }
+  .panels { grid-template-columns: 1fr; }
+  .panel { min-height: 240px; }
+  .header-right { font-size: 8px; }
+  footer { gap: 15px; font-size: 8px; }
+}
+</style>
+</head>
+
+<body>
+
+<div class="ambient" id="ambient"></div>
+<div class="transition" id="transition">
+  <div class="transition-record"></div>
+</div>
+
+<div class="page" id="homePage">
+
+<header>
+  <div class="brand">SUNDAY RADIO<span>®</span></div>
+  <div class="header-right">VOL. 001 &nbsp; / &nbsp; MUSIC CLUB</div>
+</header>
+
+<section class="hero">
+  <div class="hero-copy">
+    <div class="eyebrow">✳ YOUR PERSONAL BROADCAST STATION</div>
+    <h1>GOOD<br>MUSIC.<br><span>GOOD</span><br>MOOD.</h1>
+    <p>Find your frequency. Share your sound.</p>
+  </div>
+
+  <div class="record-wrap">
+    <div class="record">
+      <div class="record-label">SUNDAY<br>RADIO<br>♫</div>
+    </div>
+  </div>
+
+  <div class="decor star one">✳</div>
+  <div class="decor star two">✴</div>
+  <div class="decor circle"></div>
+  <div class="decor ring"></div>
+</section>
+
+<div class="wave-section" id="wave"></div>
+
+<div class="section-heading">
+  <h2>Pick your station.</h2>
+  <span>SELECT / 01—02</span>
+</div>
+
+<section class="panels">
+
+  <div class="panel create">
+    <div class="panel-top">
+      <span class="number">STATION 01 / HOST</span>
+      <span class="panel-icon">◉</span>
+    </div>
+    <h3>Go On Air.</h3>
+    <p>Start a new listening session.</p>
+    <input id="createName" placeholder="What's your name?">
+    <button onclick="createRoom()">CREATE YOUR ROOM ↗</button>
+  </div>
+
+  <div class="panel join">
+    <div class="panel-top">
+      <span class="number">STATION 02 / GUEST</span>
+      <span class="panel-icon">✳</span>
+    </div>
+    <h3>Tune In.</h3>
+    <p>Enter a room code to join the session.</p>
+    <input id="joinName" placeholder="What's your name?">
+    <input id="joinCode" placeholder="Enter room code">
+    <button onclick="joinRoom()">JOIN THE SESSION ↗</button>
+  </div>
+
+</section>
+
+<footer>
+  <span>NO ALGORITHMS. JUST GOOD TUNES.</span>
+  <span>MADE FOR MUSIC LOVERS ✳</span>
+</footer>
+</div>
+
+<div class="page" id="roomPage">
+  <div class="room-box">
+    <div style="font-size:42px;margin-bottom:15px">♫</div>
+    <h1>You're On Air!</h1>
+    <p id="welcome"></p>
+    <div class="room-code" id="roomCode"></div>
+    <p>Your station is ready.</p>
+    <button onclick="backHome()">← BACK TO STATIONS</button>
+  </div>
+</div>
+
+<script>
+// Animated waveform
+const wave = document.getElementById('wave');
+
+for (let i = 0; i < 55; i++) {
+  const bar = document.createElement('div');
+  bar.className = 'bar';
+  bar.style.setProperty('--h', (12 + Math.random() * 40) + 'px');
+  bar.style.animationDelay = Math.random() + 's';
+  bar.style.animationDuration = (.5 + Math.random() * .8) + 's';
+  wave.appendChild(bar);
+}
+
+// Ambient background notes
+const ambient = document.getElementById('ambient');
+const notes = ['♪','♫','♬','♩','✳','✴'];
+
+for (let i = 0; i < 14; i++) {
+  const note = document.createElement('span');
+  note.className = 'note';
+  note.textContent = notes[Math.floor(Math.random() * notes.length)];
+  note.style.left = Math.random() * 100 + '%';
+  note.style.animationDuration = (12 + Math.random() * 18) + 's';
+  note.style.animationDelay = (-Math.random() * 25) + 's';
+  note.style.fontSize = (15 + Math.random() * 20) + 'px';
+  ambient.appendChild(note);
+}
+
+// Transition
+let busy = false;
+
+function enterRoom(name, code) {
+  if (busy) return;
+  busy = true;
+
+  const overlay = document.getElementById('transition');
+  overlay.classList.remove('active');
+  void overlay.offsetWidth;
+  overlay.classList.add('active');
+
+  setTimeout(() => {
+    document.getElementById('homePage').style.display = 'none';
+    document.getElementById('roomPage').style.display = 'flex';
+
+    document.getElementById('welcome').textContent =
+      'Welcome, ' + name + '. Your listening session is ready.';
+
+    document.getElementById('roomCode').textContent = code;
+  }, 800);
+
+  setTimeout(() => {
+    overlay.classList.remove('active');
+    busy = false;
+  }, 1500);
+}
+
+function createRoom() {
+  const name = document.getElementById('createName').value.trim();
+
+  if (!name) {
+    alert('Enter your name to create a room!');
+    return;
+  }
+
+  const code = 'SR-' + Math.floor(1000 + Math.random() * 9000);
+  enterRoom(name, code);
+}
+
+function joinRoom() {
+  const name = document.getElementById('joinName').value.trim();
+  const code = document.getElementById('joinCode').value.trim().toUpperCase();
+
+  if (!name || !/^SR-\d{4}$/.test(code)) {
+    alert('Enter your name and a valid room code (SR-1234).');
+    return;
+  }
+
+  enterRoom(name, code);
+}
+
+function backHome() {
+  document.getElementById('roomPage').style.display = 'none';
+  document.getElementById('homePage').style.display = 'block';
+}
+</script>
+
+</body>
+</html>

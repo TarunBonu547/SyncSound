@@ -45,9 +45,9 @@ export default function QueuePanel({
           <span className="queue-empty-icon" aria-hidden="true">
             <ListMusic size={20} />
           </span>
-          <p className="queue-empty-title">The queue is empty</p>
+          <p className="queue-empty-title">The station is quiet</p>
           <p className="queue-empty-hint">
-            Search for a track above and it lands here for every listener of the room.
+            Search for a track above and add it to the queue.
           </p>
         </div>
       ) : (

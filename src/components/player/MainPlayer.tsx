@@ -158,7 +158,7 @@ export default function MainPlayer({
   const failed = hasTrack && !!yt.error;
 
   return (
-    <section className="card player-card" aria-label="Now playing">
+    <section className="player-card sr-surface" aria-label="Now playing">
       <div className={`stage-wrap ${hasTrack ? 'has-track' : 'is-empty'} ${localPlaying ? 'is-playing' : 'is-paused'}`}>
         <div className="reaction-stage" aria-hidden="true">
           {hasTrack &&
@@ -181,11 +181,6 @@ export default function MainPlayer({
           {hasTrack && <img src={current.thumbnail} alt="" />}
         </div>
         <div className={`stage ${hasTrack ? 'has-video' : ''} ${localPlaying ? 'is-playing' : ''}`}>
-          <div className="stage-rings" aria-hidden="true">
-            <span className="stage-ring r1" />
-            <span className="stage-ring r2" />
-            <span className="stage-ring r3" />
-          </div>
           <div className="stage-aura" aria-hidden="true" />
           {/* The real video of the room lives here. The IFrame API fills the
               container, so the video is seen instead of the artwork. */}
@@ -200,19 +195,32 @@ export default function MainPlayer({
               />
             ) : (
               <div className="stage-empty">
-                <span className="stage-empty-visual" aria-hidden="true">
-                  <span className="vinyl-glow" />
-                  <span className="vinyl-disc">
-                    <span className="vinyl-shine" />
-                  </span>
+                <span className="sr-eq sr-eq--stage" aria-hidden="true">
+                  <span />
+                  <span />
+                  <span />
+                  <span />
+                  <span />
+                  <span />
+                  <span />
                 </span>
-                <p className="stage-empty-title">Nothing playing yet</p>
-                <p className="stage-empty-hint">
-                  Add a song below and it starts for everyone in the room.
-                </p>
+                <p className="sr-label sr-stage-empty-title">Waiting for the next track</p>
+                <p className="sr-stage-empty-hint">Add a song below and let the station come alive.</p>
               </div>
             )}
           </div>
+
+          {hasTrack && playing && !failed && (
+            <div className="sr-stage-live" aria-hidden="true">
+              <span className="sr-wave sr-wave--sm">
+                <span />
+                <span />
+                <span />
+              </span>
+              <span className="sr-stage-live-text">On Air</span>
+            </div>
+          )}
+
           {loading && (
             <div className="stage-overlay" role="status">
               <Loader2 size={20} className="spin" aria-hidden="true" />
@@ -227,7 +235,7 @@ export default function MainPlayer({
           )}
           {needsGesture && !failed && (
             <div className="stage-overlay" role="status">
-              <button className="btn primary" onClick={onRequestPlay}>
+              <button className="sr-btn sr-btn--primary" onClick={onRequestPlay}>
                 <Play size={16} aria-hidden="true" /> Play the video
               </button>
               <span className="stage-overlay-hint">
@@ -242,6 +250,7 @@ export default function MainPlayer({
       <TrackInfo
         current={current}
         isLiked={isLiked}
+        playing={playing}
         ytError={ytError}
         playerError={playerError}
         onToggleLike={onToggleLike}
@@ -291,22 +300,26 @@ export default function MainPlayer({
 
       <div className="quick-actions">
         <button className="quick-action" onClick={onInvite} title="Invite a friend to this room">
-          <span className="qa-icon qa-icon-mint" aria-hidden="true">
+          <span className="qa-icon qa-icon--orange" aria-hidden="true">
             <UserPlus size={18} />
           </span>
-          <span>Invite Friend</span>
+          <span className="quick-action-label">Invite Friend</span>
         </button>
         <button className="quick-action" onClick={onVideoCall} title="Start a video call">
-          <span className="qa-icon qa-icon-lavender" aria-hidden="true">
+          <span className="qa-icon qa-icon--blue" aria-hidden="true">
             <Video size={18} />
           </span>
-          <span>Video Call</span>
+          <span className="quick-action-label">Video Call</span>
         </button>
-        <button className="quick-action" onClick={onFocusQueueInput} title="Search for a song">
-          <span className="qa-icon qa-icon-butter" aria-hidden="true">
+        <button
+          className="quick-action quick-action--primary"
+          onClick={onFocusQueueInput}
+          title="Search for a song"
+        >
+          <span className="qa-icon qa-icon--yellow" aria-hidden="true">
             <Plus size={18} />
           </span>
-          <span>Add Song</span>
+          <span className="quick-action-label">Add Song</span>
         </button>
       </div>
 

@@ -1,5 +1,5 @@
 import type { CSSProperties } from 'react';
-import { Play, Pause, SkipBack, SkipForward, Maximize2, Volume2, VolumeX, ListMusic } from 'lucide-react';
+import { Play, Pause, SkipBack, SkipForward, Maximize2, Volume2, VolumeX, ListMusic, Disc3 } from 'lucide-react';
 import type { Track } from '../../types/music';
 
 type MiniPlayerProps = {
@@ -57,11 +57,17 @@ export default function MiniPlayer({
   const isMuted = volume === 0;
 
   return (
-    <div className={`mini-player ${playing ? 'is-playing' : ''}`} aria-label="Now playing">
+    <div
+      className={`sunday-room mini-player ${playing ? 'is-playing' : ''}`}
+      role="region"
+      aria-label="Now playing"
+    >
       {current ? (
         <img className="mini-player-art" src={current.thumbnail} alt={`Artwork for ${current.title}`} />
       ) : (
-        <span className="mini-player-art is-empty" aria-hidden="true" />
+        <span className="mini-player-art is-empty" aria-hidden="true">
+          <Disc3 size={22} />
+        </span>
       )}
 
       <div className="mini-player-info" key={infoKey}>
@@ -71,7 +77,7 @@ export default function MiniPlayer({
 
       <div className="mini-player-controls">
         <button
-          className="btn icon sm"
+          className="sr-icon-btn mini-player-skip"
           onClick={onPrevious}
           disabled={!hasPrevious}
           title="Previous track"
@@ -80,7 +86,7 @@ export default function MiniPlayer({
           <SkipBack size={16} />
         </button>
         <button
-          className="btn icon mini-player-play"
+          className="sr-icon-btn mini-player-play"
           onClick={onPlayPause}
           disabled={!current}
           aria-label={playing ? 'Pause' : 'Play'}
@@ -89,7 +95,7 @@ export default function MiniPlayer({
           {playing ? <Pause size={18} /> : <Play size={18} />}
         </button>
         <button
-          className="btn icon sm"
+          className="sr-icon-btn mini-player-skip"
           onClick={onNext}
           disabled={!hasNext}
           title="Next track"
@@ -119,7 +125,7 @@ export default function MiniPlayer({
 
       <div className="mini-player-volume">
         <button
-          className="btn icon sm"
+          className="sr-icon-btn mini-player-skip"
           onClick={onToggleMute}
           aria-label={isMuted ? 'Unmute' : 'Mute'}
           title={isMuted ? 'Unmute' : 'Mute'}
@@ -139,7 +145,7 @@ export default function MiniPlayer({
       </div>
 
       <button className="mini-player-queue" onClick={onOpenQueue} title="Open queue" aria-label="Open queue">
-        <ListMusic size={16} /> Queue
+        <ListMusic size={16} /> <span className="mini-player-queue-text">Queue</span>
       </button>
 
       <button className="mini-player-open" onClick={onOpenPlayer} title="Open the player" aria-label="Open the player">

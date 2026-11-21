@@ -1,13 +1,23 @@
 /* ==========================================================================
-   SyncSound
+   Sunday Radio Club
    Design tokens, base styles and shared primitives.
-
-   Premium music lounge palette: warm cream, peach, rose, lavender, dusk blue,
-   plum, twilight. The interface stays quiet so the music stays in focus.
    ========================================================================== */
 
 :root {
-  /* --- Premium palette ----------------------------------------------------- */
+  /* --- Sunday Radio Club homepage palette ---------------------------------- */
+  --paper: #f4ebdd;
+  --ink: #292823;
+  --orange: #f16b45;
+  --blue: #5269c9;
+  --yellow: #f3ce68;
+  --green: #a9bb85;
+
+  /* --- Sunday Radio Club typography ---------------------------------------- */
+  --font-heading: "Outfit", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+  --font-mono: "Space Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  --font-sans: "Outfit", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+
+  /* --- Premium palette (retained for the room/player UI) ------------------- */
   --cream: #F6EDE7;
   --peach: #E8B7AD;
   --rose: #D99AA7;
@@ -60,7 +70,7 @@
   --icon-stroke-width: 2px;
 
   /* --- Typography --------------------------------------------------------- */
-  --font-sans: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+  --font-sans: var(--font-sans);
 
   /* --- Spacing ------------------------------------------------------------ */
   --sp-1: 4px;
@@ -73,11 +83,11 @@
   --sp-8: 40px;
 
   /* --- Radii -------------------------------------------------------------- */
-  --r-xs: 8px;
-  --r-sm: 12px;
-  --r-md: 16px;
-  --r-lg: 22px;
-  --r-xl: 28px;
+  --r-xs: 4px;
+  --r-sm: 5px;
+  --r-md: 8px;
+  --r-lg: 12px;
+  --r-xl: 16px;
   --r-pill: 999px;
 
   /* --- Shadows ------------------------------------------------------------ */
@@ -114,14 +124,7 @@ body {
   font-family: var(--font-sans);
   font-size: 14px;
   color: var(--text);
-  background-color: var(--cream);
-  background-image:
-    radial-gradient(760px 460px at 50% -8%, rgba(232, 183, 173, 0.35), transparent 62%),
-    radial-gradient(1180px 700px at 6% -14%, rgba(217, 154, 167, 0.35), transparent 62%),
-    radial-gradient(980px 620px at 94% -4%, rgba(184, 172, 222, 0.3), transparent 64%),
-    radial-gradient(920px 640px at 82% 110%, rgba(135, 157, 186, 0.25), transparent 62%),
-    linear-gradient(168deg, #f6ede7 0%, #fbf3ea 40%, #f2e8f7 76%, #e8d5f0 100%);
-  background-attachment: fixed;
+  background-color: var(--paper);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   overflow-x: hidden;
@@ -143,12 +146,12 @@ img {
 }
 
 ::selection {
-  background: var(--lavender-wash);
-  color: var(--text);
+  background: var(--yellow);
+  color: var(--ink);
 }
 
 :focus-visible {
-  outline: 2px solid var(--accent-strong);
+  outline: 2px solid var(--orange);
   outline-offset: 3px;
   border-radius: var(--r-xs);
 }
@@ -158,7 +161,7 @@ img {
 .right::-webkit-scrollbar,
 .chat-scroll::-webkit-scrollbar,
 .drawer-panel::-webkit-scrollbar,
-.home::-webkit-scrollbar {
+.sunday-home::-webkit-scrollbar {
   width: 10px;
 }
 
@@ -166,11 +169,428 @@ img {
 .right::-webkit-scrollbar-thumb,
 .chat-scroll::-webkit-scrollbar-thumb,
 .drawer-panel::-webkit-scrollbar-thumb,
-.home::-webkit-scrollbar-thumb {
+.sunday-home::-webkit-scrollbar-thumb {
   background: rgba(51, 44, 59, 0.16);
   border: 3px solid transparent;
   border-radius: var(--r-pill);
   background-clip: padding-box;
+}
+
+/* ==========================================================================
+   Sunday Radio Club — Listening Room scope (.sunday-room)
+
+   A self-contained set of tokens and primitives for the shared listening
+   room. Everything here is namespaced under .sunday-room so the homepage
+   (.sunday-home), Search and Your Library are never affected.
+   ========================================================================== */
+
+.sunday-room {
+  /* Brand palette */
+  --sr-paper: #f4ebdd;
+  --sr-paper-2: #efe4d2;
+  --sr-ink: #292823;
+  --sr-ink-soft: #4a463d;
+  --sr-muted: #8a8172;
+  --sr-orange: #f16b45;
+  --sr-orange-dark: #d9532f;
+  --sr-blue: #5269c9;
+  --sr-yellow: #f3ce68;
+  --sr-green: #a9bb85;
+  --sr-white: #ffffff;
+  --sr-cream: #fbf5ea;
+
+  /* Hairlines and surfaces */
+  --sr-line: rgba(41, 40, 35, 0.16);
+  --sr-line-soft: rgba(41, 40, 35, 0.09);
+  --sr-surface: #fbf6ec;
+  --sr-surface-2: #f6eede;
+
+  /* Type */
+  --sr-font-display: "Outfit", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --sr-font-body: "DM Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --sr-font-mono: "Space Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+
+  /* Motion */
+  --sr-ease: cubic-bezier(0.22, 0.61, 0.36, 1);
+  --sr-fast: 150ms;
+  --sr-base: 260ms;
+
+  position: relative;
+  isolation: isolate;
+  height: 100vh;
+  overflow: hidden;
+  background-color: var(--sr-paper);
+  color: var(--sr-ink);
+  font-family: var(--sr-font-body);
+}
+
+.sunday-room *,
+.sunday-room *::before,
+.sunday-room *::after {
+  box-sizing: border-box;
+}
+
+/* --- Surfaces ------------------------------------------------------------ */
+.sunday-room .sr-surface {
+  background: var(--sr-surface);
+  border: 1px solid var(--sr-line);
+  border-radius: 10px;
+}
+
+/* --- Type helpers -------------------------------------------------------- */
+.sunday-room .sr-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  margin: 0;
+  font-family: var(--sr-font-mono);
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--sr-ink);
+}
+
+.sunday-room .sr-label--orange { color: var(--sr-orange-dark); }
+
+.sunday-room .sr-title {
+  margin: 0;
+  font-family: var(--sr-font-display);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--sr-ink);
+}
+
+.sunday-room .sr-hint {
+  margin: 0;
+  font-family: var(--sr-font-body);
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--sr-muted);
+}
+
+/* --- Buttons ------------------------------------------------------------- */
+.sunday-room .sr-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 40px;
+  padding: 0 16px;
+  font-family: var(--sr-font-mono);
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: var(--sr-ink);
+  background: var(--sr-cream);
+  border: 1.5px solid var(--sr-ink);
+  border-radius: 8px;
+  cursor: pointer;
+  transition:
+    transform var(--sr-fast) var(--sr-ease),
+    box-shadow var(--sr-base) var(--sr-ease),
+    background-color var(--sr-base) var(--sr-ease),
+    color var(--sr-base) var(--sr-ease);
+}
+
+.sunday-room .sr-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 4px 5px 0 rgba(41, 40, 35, 0.18);
+}
+
+.sunday-room .sr-btn:active:not(:disabled) {
+  transform: translateY(0) scale(0.98);
+  box-shadow: none;
+}
+
+.sunday-room .sr-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.sunday-room .sr-btn--primary {
+  background: var(--sr-orange);
+  border-color: var(--sr-ink);
+  color: #fff;
+}
+
+.sunday-room .sr-btn--primary:hover:not(:disabled) {
+  background: var(--sr-orange-dark);
+}
+
+.sunday-room .sr-btn--yellow {
+  background: var(--sr-yellow);
+  border-color: var(--sr-ink);
+  color: var(--sr-ink);
+}
+
+.sunday-room .sr-btn--yellow:hover:not(:disabled) {
+  background: #eec656;
+}
+
+.sunday-room .sr-btn--ghost {
+  background: transparent;
+  border-color: transparent;
+}
+
+.sunday-room .sr-btn--ghost:hover:not(:disabled) {
+  background: rgba(41, 40, 35, 0.06);
+  box-shadow: none;
+}
+
+.sunday-room .sr-btn--sm {
+  min-height: 34px;
+  padding: 0 12px;
+  font-size: 10.5px;
+}
+
+.sunday-room .sr-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  min-width: 40px;
+  padding: 0;
+  border-radius: 50%;
+  color: var(--sr-ink);
+  background: var(--sr-cream);
+  border: 1.5px solid var(--sr-ink);
+  cursor: pointer;
+  transition:
+    transform var(--sr-fast) var(--sr-ease),
+    background-color var(--sr-base) var(--sr-ease),
+    color var(--sr-base) var(--sr-ease),
+    box-shadow var(--sr-fast) var(--sr-ease);
+}
+
+.sunday-room .sr-icon-btn:hover:not(:disabled) {
+  background: var(--sr-yellow);
+  transform: translateY(-2px);
+  box-shadow: 3px 4px 0 rgba(41, 40, 35, 0.18);
+}
+
+.sunday-room .sr-icon-btn:active:not(:disabled) {
+  transform: translateY(0) scale(0.95);
+  box-shadow: none;
+}
+
+.sunday-room .sr-icon-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* --- Inputs -------------------------------------------------------------- */
+.sunday-room .sr-input {
+  width: 100%;
+  height: 46px;
+  padding: 0 14px;
+  font-family: var(--sr-font-body);
+  font-size: 14px;
+  color: var(--sr-ink);
+  background: var(--sr-cream);
+  border: 1.5px solid var(--sr-line);
+  border-radius: 8px;
+  outline: none;
+  transition:
+    border-color var(--sr-base) var(--sr-ease),
+    box-shadow var(--sr-base) var(--sr-ease),
+    background-color var(--sr-base) var(--sr-ease);
+}
+
+.sunday-room .sr-input::placeholder {
+  color: var(--sr-muted);
+}
+
+.sunday-room .sr-input:hover:not(:disabled) {
+  border-color: rgba(41, 40, 35, 0.32);
+}
+
+.sunday-room .sr-input:focus {
+  background: var(--sr-white);
+  border-color: var(--sr-orange);
+  box-shadow: 0 0 0 3px rgba(241, 107, 69, 0.18);
+}
+
+/* --- Chips / badges ------------------------------------------------------ */
+.sunday-room .sr-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 11px;
+  font-family: var(--sr-font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: var(--sr-ink);
+  background: var(--sr-yellow);
+  border: 1.5px solid var(--sr-ink);
+  border-radius: 6px;
+}
+
+/* --- Connection indicator ------------------------------------------------ */
+.sunday-room .sr-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-family: var(--sr-font-mono);
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--sr-ink-soft);
+  white-space: nowrap;
+}
+
+.sunday-room .sr-status-dot {
+  width: 8px;
+  height: 8px;
+  flex: none;
+  border-radius: 50%;
+  background: var(--sr-muted);
+}
+
+.sunday-room .sr-status-dot.is-online {
+  background: var(--sr-green);
+}
+
+.sunday-room .sr-status-dot.is-live {
+  background: var(--sr-orange);
+  box-shadow: 0 0 0 0 rgba(241, 107, 69, 0.5);
+  animation: srPulse 2.4s var(--sr-ease) infinite;
+}
+
+.sunday-room .sr-status-dot.is-offline {
+  background: var(--sr-orange);
+}
+
+/* --- Equalizer ----------------------------------------------------------- */
+.sunday-room .sr-eq {
+  display: inline-flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 5px;
+  height: 64px;
+}
+
+.sunday-room .sr-eq span {
+  width: 7px;
+  height: var(--h, 60%);
+  border-radius: 6px;
+  background: var(--sr-orange);
+  transform-origin: bottom;
+  animation: srEq 1.1s ease-in-out infinite;
+}
+
+.sunday-room .sr-eq span:nth-child(1) { --h: 45%; animation-delay: 0s; }
+.sunday-room .sr-eq span:nth-child(2) { --h: 75%; animation-delay: 0.12s; background: var(--sr-blue); }
+.sunday-room .sr-eq span:nth-child(3) { --h: 55%; animation-delay: 0.24s; }
+.sunday-room .sr-eq span:nth-child(4) { --h: 92%; animation-delay: 0.36s; background: var(--sr-yellow); }
+.sunday-room .sr-eq span:nth-child(5) { --h: 65%; animation-delay: 0.48s; }
+.sunday-room .sr-eq span:nth-child(6) { --h: 80%; animation-delay: 0.6s; background: var(--sr-blue); }
+.sunday-room .sr-eq span:nth-child(7) { --h: 50%; animation-delay: 0.72s; }
+
+/* --- Waveform ------------------------------------------------------------ */
+.sunday-room .sr-wave {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  height: 22px;
+}
+
+.sunday-room .sr-wave span {
+  width: 3px;
+  height: 100%;
+  border-radius: 2px;
+  background: var(--sr-orange);
+  transform-origin: center;
+  animation: srWave 1.1s ease-in-out infinite;
+}
+
+.sunday-room .sr-wave span:nth-child(2) { animation-delay: 0.1s; background: var(--sr-blue); }
+.sunday-room .sr-wave span:nth-child(3) { animation-delay: 0.2s; }
+.sunday-room .sr-wave span:nth-child(4) { animation-delay: 0.3s; background: var(--sr-yellow); }
+.sunday-room .sr-wave span:nth-child(5) { animation-delay: 0.4s; }
+
+/* --- Floating background decor ------------------------------------------ */
+.sunday-room .sr-room-bg {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.sunday-room .sr-room-bg .sr-float-note {
+  position: absolute;
+  font-size: 20px;
+  opacity: 0.05;
+  color: var(--sr-ink);
+  animation: srNoteFloat linear infinite;
+  user-select: none;
+}
+
+.sunday-room .sr-room-bg .sr-float-note:nth-child(3n) { color: var(--sr-orange); }
+.sunday-room .sr-room-bg .sr-float-note:nth-child(3n + 1) { color: var(--sr-blue); }
+.sunday-room .sr-room-bg .sr-float-note:nth-child(3n + 2) { color: var(--sr-yellow); }
+
+.sunday-room .sr-room-bg .sr-float-shape {
+  position: absolute;
+  border-radius: 50%;
+  opacity: 0.05;
+  animation: srShapeFloat linear infinite;
+}
+
+.sunday-room .sr-room-bg .sr-float-shape.is-circle { background: var(--sr-orange); }
+.sunday-room .sr-room-bg .sr-float-shape.is-ring { background: transparent; border: 2px solid var(--sr-blue); }
+.sunday-room .sr-room-bg .sr-float-shape.is-star {
+  background: var(--sr-yellow);
+  clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 38% 35%);
+}
+
+/* --- Keyframes (scoped by name to avoid collisions) --------------------- */
+@keyframes srSpin { to { transform: rotate(360deg); } }
+
+@keyframes srPulse {
+  0% { box-shadow: 0 0 0 0 rgba(241, 107, 69, 0.5); }
+  70% { box-shadow: 0 0 0 6px rgba(241, 107, 69, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(241, 107, 69, 0); }
+}
+
+@keyframes srWave {
+  0%, 100% { transform: scaleY(0.3); }
+  50% { transform: scaleY(1); }
+}
+
+@keyframes srEq {
+  0%, 100% { transform: scaleY(0.35); }
+  50% { transform: scaleY(1); }
+}
+
+@keyframes srNoteFloat {
+  from { transform: translateY(110vh) rotate(0deg); opacity: 0; }
+  10% { opacity: 0.05; }
+  90% { opacity: 0.05; }
+  to { transform: translateY(-20vh) rotate(320deg); opacity: 0; }
+}
+
+@keyframes srShapeFloat {
+  0% { transform: translateY(110vh) translateX(0) rotate(0deg); opacity: 0; }
+  10% { opacity: 0.05; }
+  90% { opacity: 0.05; }
+  100% { transform: translateY(-20vh) translateX(var(--tx, 0)) rotate(300deg); opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sunday-room .sr-eq span,
+  .sunday-room .sr-wave span,
+  .sunday-room .sr-status-dot.is-live,
+  .sunday-room .sr-float-note,
+  .sunday-room .sr-float-shape {
+    animation: none !important;
+  }
 }
 
 /* --- Surfaces ------------------------------------------------------------ */
@@ -487,7 +907,7 @@ img {
   background: var(--peach);
 }
 
-/* --- Ambient atmosphere -------------------------------------------------- */
+/* --- Ambient atmosphere (for room/player) -------------------------------- */
 .ambient {
   position: fixed;
   inset: 0;
@@ -532,7 +952,6 @@ img {
   animation: driftC 52s var(--ease-soft) infinite;
 }
 
-/* Subtle gradient orbs for home screen */
 .ambient-orb {
   position: absolute;
   border-radius: 50%;
@@ -584,7 +1003,6 @@ img {
   75% { transform: translate3d(25px, 10px, 0) scale(1.05); opacity: 0.12; }
 }
 
-/* Subtle floating musical notes */
 .ambient-note {
   position: absolute;
   font-size: 18px;
@@ -609,7 +1027,6 @@ img {
   75% { transform: translateY(-15px) rotate(2deg); opacity: 0.08; }
 }
 
-/* Subtle waveform pattern overlay */
 .ambient-waveform {
   position: absolute;
   inset: 0;

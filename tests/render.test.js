@@ -210,9 +210,9 @@ try {
   check('the application mounted', html.length > 500, `html length ${html.length}`);
   check('the sidebar is on the screen', Boolean(body.querySelector('.sidebar')), 'no .sidebar');
   check('the navigation is on the screen', Boolean(body.querySelector('nav')), 'no nav');
-  check('the start screen is on the screen', Boolean(body.querySelector('.home-hero')), 'no .home-hero');
-  check('the room is offered', text.includes('Create room'), text.slice(0, 200));
-  check('the join is offered', text.includes('Join room'), text.slice(0, 200));
+  check('the start screen is on the screen', Boolean(body.querySelector('.hero')), 'no .hero');
+  check('the room is offered', text.includes('GOOD MUSIC'), text.slice(0, 200));
+  check('the join is offered', text.includes('Tune In.'), text.slice(0, 200));
   check('the library is offered', text.includes('Library'), text.slice(0, 200));
   check('the search is offered', text.includes('Search'), text.slice(0, 200));
   check('the mini player is on the screen', Boolean(body.querySelector('.mini-player')), 'no .mini-player');
@@ -226,7 +226,7 @@ try {
   const joinCodeInput = body.querySelector('#join-room-code');
   check('the room code field is there', Boolean(joinCodeInput), 'no #join-room-code');
   typeInto(joinCodeInput, 'SS-NOSUCHROOM');
-  const joinButton = findByText('button', 'Join Room');
+  const joinButton = findByText('button', 'JOIN THE SESSION');
   check('the join button is there', Boolean(joinButton), 'no join button');
   click(joinButton);
   await wait(400);
@@ -257,7 +257,7 @@ try {
   const roomNameInput = body.querySelector('#create-room-name');
   check('the room name field is there', Boolean(roomNameInput), 'no #create-room-name');
   typeInto(roomNameInput, 'Render Check');
-  const createButton = findByText('button', 'Create Room');
+  const createButton = findByText('button', 'CREATE YOUR ROOM');
   check('the create button is there', Boolean(createButton), 'no create button');
   click(createButton);
   await wait(1500);

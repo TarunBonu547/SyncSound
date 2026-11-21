@@ -229,7 +229,10 @@ export default function ChatPanel({
     <section className="card chat-card" aria-labelledby="chat-title">
       <div className="chat-head">
         <div className="chat-head-text">
-          <p className="eyebrow">Live chat</p>
+          <p className="eyebrow">
+            <span className="chat-live-dot" aria-hidden="true" />
+            On Air / Live Chat
+          </p>
           <h2 className="section-title" id="chat-title">
             {roomName || 'Your room'}
           </h2>

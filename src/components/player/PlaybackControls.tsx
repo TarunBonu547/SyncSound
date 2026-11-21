@@ -21,7 +21,7 @@ type PlaybackControlsProps = {
  * The transport of the player.
  *
  * Previous and next walk through the shared queue of the room, so every
- * member hears the same track change.
+ * member hears the same track change. Rewind and forward jump five seconds.
  */
 export default function PlaybackControls({
   onRewind5,
@@ -40,16 +40,16 @@ export default function PlaybackControls({
   return (
     <div className="transport">
       <button
-        className="music-icon-btn"
+        className="sr-icon-btn transport-skip"
         onClick={onRewind5}
         disabled={!ready}
-        title="Rewind 5 seconds"
-        aria-label="Rewind 5 seconds"
+        title="Replay 5 seconds"
+        aria-label="Replay 5 seconds"
       >
         <RotateCcw size={18} />
       </button>
       <button
-        className="music-icon-btn"
+        className="sr-icon-btn transport-skip"
         onClick={onPrevious}
         disabled={!hasPrevious}
         title="Previous track"
@@ -67,7 +67,7 @@ export default function PlaybackControls({
         {playing ? <Pause size={24} /> : <Play size={24} />}
       </button>
       <button
-        className="music-icon-btn"
+        className="sr-icon-btn transport-skip"
         onClick={onNext}
         disabled={!hasNext}
         title="Next track"
@@ -76,7 +76,7 @@ export default function PlaybackControls({
         <SkipForward size={18} />
       </button>
       <button
-        className="music-icon-btn"
+        className="sr-icon-btn transport-skip"
         onClick={onForward5}
         disabled={!ready}
         title="Forward 5 seconds"
@@ -85,7 +85,7 @@ export default function PlaybackControls({
         <RotateCw size={18} />
       </button>
       <button
-        className={`music-icon-btn like-btn ${isLiked ? 'is-liked' : ''}`}
+        className={`sr-icon-btn like-btn ${isLiked ? 'is-liked' : ''}`}
         onClick={onToggleLike}
         disabled={!hasTrack}
         title={isLiked ? 'Remove from liked songs' : 'Like this song'}

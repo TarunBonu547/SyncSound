@@ -38,37 +38,37 @@
   width: 48px;
   height: 48px;
   border-radius: 50%;
-  border: 1px solid var(--border);
-  background: var(--surface-strong);
-  color: var(--ink);
-  box-shadow: var(--shadow-md);
+  border: 1.5px solid var(--sr-ink, #292823);
+  background: var(--sr-cream, #fbf5ea);
+  color: var(--sr-ink, #292823);
+  box-shadow: 3px 4px 0 rgba(41, 40, 35, 0.18);
   display: inline-flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: transform var(--t-fast) var(--ease-out), box-shadow var(--t-base) var(--ease-out), background var(--t-base) var(--ease-out), border-color var(--t-base) var(--ease-out);
+  transition: transform var(--t-fast, 160ms) var(--ease-out, ease), box-shadow var(--t-base, 260ms) var(--ease-out, ease), background 0.2s ease, border-color 0.2s ease;
 }
 
 .drawing-fab:hover {
   transform: translateY(-2px);
-  box-shadow: var(--shadow-lg);
-  background: #fff;
+  box-shadow: 4px 5px 0 rgba(41, 40, 35, 0.22);
+  background: var(--sr-yellow, #f3ce68);
 }
 
 .drawing-fab.is-active {
-  background: linear-gradient(135deg, var(--peach) 0%, var(--rose) 100%);
-  color: var(--text-on-accent);
-  border-color: transparent;
-  box-shadow: var(--shadow-accent);
+  background: var(--sr-orange, #f16b45);
+  color: #fff;
+  border-color: var(--sr-ink, #292823);
+  box-shadow: 3px 4px 0 rgba(41, 40, 35, 0.22);
 }
 
 .drawing-fab.is-active:hover {
-  filter: brightness(1.05);
-  box-shadow: 0 18px 34px rgba(232, 183, 173, 0.32);
+  background: #d9532f;
+  box-shadow: 4px 5px 0 rgba(41, 40, 35, 0.24);
 }
 
 .drawing-fab:focus-visible {
-  outline: 2px solid var(--accent-strong);
+  outline: 2px solid var(--sr-orange, #f16b45);
   outline-offset: 2px;
 }
 
