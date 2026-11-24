@@ -1,9 +1,8 @@
 import type { CSSProperties, RefObject } from 'react';
-import { Video, Plus, UserPlus, Loader2, AlertCircle, Play } from 'lucide-react';
+import { Heart, Loader2, AlertCircle, Play } from 'lucide-react';
 import type { QueueEntry, Track } from '../../types/music';
 import type { SearchResult } from '../../utils/youtubeSearch';
 import { YT_STATE, type YouTubePlayer } from '../../hooks/useYouTubePlayer';
-import TrackInfo from './TrackInfo';
 import PlaybackControls from './PlaybackControls';
 import QueuePanel from '../queue/QueuePanel';
 import AddToQueueForm from '../queue/AddToQueueForm';
@@ -69,9 +68,6 @@ type MainPlayerProps = {
   onDismissDedication: () => void;
   onSaveDedication: (text: string) => void;
   onRemoveDedication: () => void;
-  onInvite: () => void;
-  onVideoCall: () => void;
-  onFocusQueueInput: () => void;
   /** Reactions to the current song, keyed by emoji. */
   reactions: Record<string, { id: string; clientId: string; clientName: string; timestamp: number }[]>;
   /** The id of this client, used to mark self reactions. */
@@ -86,11 +82,14 @@ function formatTime(seconds: number) {
 }
 
 /**
- * The player in the middle of the room.
+ * The video player at the heart of the listening room.
  *
- * The YouTube player is the real thing: it is mounted into a container that
- * React does not own, so the IFrame API may replace it with its own iframe
- * without breaking the rest of the page.
+ * The YouTube player is the real thing: it is mounted once into a container
+ * that React does not own, so the IFrame API may replace it with its own
+ * iframe without breaking the rest of the page. The left card holds the video
+ * (or the waiting equalizer when nothing plays); the right column holds the
+ * track title, artist, playback status and favourite button. Progress bar and
+ * transport controls span full width below.
  */
 export default function MainPlayer({
   stageRef,
@@ -130,14 +129,10 @@ export default function MainPlayer({
   onDismissDedication,
   onSaveDedication,
   onRemoveDedication,
-  onInvite,
-  onVideoCall,
-  onFocusQueueInput,
   reactions,
   reactionClientId,
 }: MainPlayerProps) {
   const hasTrack = !!current;
-  const localPlaying = yt.state === YT_STATE.playing;
   /** The video is loaded and the IFrame API is ready for it. */
   const playerReady = yt.ready;
   /**
@@ -156,172 +151,193 @@ export default function MainPlayer({
   const loading = hasTrack && !playerReady && !yt.error;
   /** The video may not be played. */
   const failed = hasTrack && !!yt.error;
+  /** Playback status text derived from the YouTube player state. */
+  const statusText = (() => {
+    if (!hasTrack) return 'STANDBY';
+    if (yt.state === YT_STATE.ended) return 'ENDED';
+    if (playing) return 'PLAYING';
+    return 'PAUSED';
+  })();
 
   return (
-    <section className="player-card sr-surface" aria-label="Now playing">
-      <div className={`stage-wrap ${hasTrack ? 'has-track' : 'is-empty'} ${localPlaying ? 'is-playing' : 'is-paused'}`}>
-        <div className="reaction-stage" aria-hidden="true">
-          {hasTrack &&
-            Object.entries(reactions).map(([emoji, list]) => (
-              <div key={emoji} className="reaction-emoji-group" aria-label={`${emoji} reactions`}>
-                <span className="reaction-emoji-count" aria-hidden="true">
-                  {emoji} {list.length}
-                </span>
-                {list.map((r) => (
-                  <ReactionBubble
-                    key={r.id}
-                    reaction={{ ...r, emoji, id: r.id }}
-                    isSelf={r.clientId === reactionClientId}
-                  />
-                ))}
+    <div className="lounge-main-column">
+      <section className="lounge-player" aria-label="Now playing">
+        <div className="player-grid">
+          {/* Left column: Video / visualizer card */}
+          <div className="player-visual">
+            <div className="video-card">
+              {/* The real YouTube player mounts here exactly once. The IFrame API
+                  fills the container; React never owns what is inside it. */}
+              <div className="lounge-stage-video" ref={stageRef} title="SyncSound player" />
+
+              {/* Empty state: animated equalizer + waiting message */}
+              {!hasTrack && (
+                <div className="video-empty-state">
+                  <div className="eq-anim" aria-hidden="true">
+                    <span className="eq-bar" style={{ height: '40%' }} />
+                    <span className="eq-bar" style={{ height: '70%' }} />
+                    <span className="eq-bar" style={{ height: '50%' }} />
+                    <span className="eq-bar" style={{ height: '90%' }} />
+                    <span className="eq-bar" style={{ height: '60%' }} />
+                  </div>
+                  <h3 className="waiting-title">WAITING FOR THE NEXT TRACK</h3>
+                  <p className="waiting-hint">Add a song below to start listening.</p>
+                </div>
+              )}
+
+              <div className="lounge-reaction-stage" aria-hidden="true">
+                {hasTrack &&
+                  Object.entries(reactions).map(([emoji, list]) => (
+                    <div key={emoji} className="lounge-reaction-group" aria-label={`${emoji} reactions`}>
+                      <span className="lounge-reaction-count" aria-hidden="true">
+                        {emoji} {list.length}
+                      </span>
+                      {list.map((r) => (
+                        <ReactionBubble
+                          key={r.id}
+                          reaction={{ ...r, emoji, id: r.id }}
+                          isSelf={r.clientId === reactionClientId}
+                        />
+                      ))}
+                    </div>
+                  ))}
               </div>
-            ))}
-        </div>
-        <div className="stage-glow" aria-hidden="true">
-          {hasTrack && <img src={current.thumbnail} alt="" />}
-        </div>
-        <div className={`stage ${hasTrack ? 'has-video' : ''} ${localPlaying ? 'is-playing' : ''}`}>
-          <div className="stage-aura" aria-hidden="true" />
-          {/* The real video of the room lives here. The IFrame API fills the
-              container, so the video is seen instead of the artwork. */}
-          <div className="stage-video" ref={stageRef} title="SyncSound player" />
-          <div className="stage-art" aria-hidden={hasTrack ? undefined : true}>
-            {hasTrack ? (
-              <img
-                className="stage-poster art-swap"
-                key={current.id}
-                src={current.thumbnail}
-                alt={`Artwork for ${current.title}`}
-              />
-            ) : (
-              <div className="stage-empty">
-                <span className="sr-eq sr-eq--stage" aria-hidden="true">
-                  <span />
-                  <span />
-                  <span />
-                  <span />
-                  <span />
-                  <span />
-                  <span />
-                </span>
-                <p className="sr-label sr-stage-empty-title">Waiting for the next track</p>
-                <p className="sr-stage-empty-hint">Add a song below and let the station come alive.</p>
-              </div>
-            )}
+
+              {loading && (
+                <div className="stage-overlay" role="status">
+                  <Loader2 size={20} className="spin" aria-hidden="true" />
+                  <span>Loading the video…</span>
+                </div>
+              )}
+              {failed && (
+                <div className="stage-overlay is-error" role="alert">
+                  <AlertCircle size={20} aria-hidden="true" />
+                  <span>{yt.error}</span>
+                </div>
+              )}
+              {needsGesture && !failed && (
+                <div className="stage-overlay" role="status">
+                  <button className="lounge-btn lounge-btn--primary" onClick={onRequestPlay}>
+                    <Play size={16} aria-hidden="true" /> Play the video
+                  </button>
+                  <span className="lounge-stage-overlay-hint">
+                    The browser blocked the automatic start. One click and the room is on the same track
+                    again.
+                  </span>
+                </div>
+              )}
+            </div>
           </div>
 
-          {hasTrack && playing && !failed && (
-            <div className="sr-stage-live" aria-hidden="true">
-              <span className="sr-wave sr-wave--sm">
-                <span />
-                <span />
-                <span />
-              </span>
-              <span className="sr-stage-live-text">On Air</span>
-            </div>
-          )}
+          {/* Right column: Song title, artist, status, favorite */}
+          <div className="player-meta">
+            <span
+              className={`lounge-sync-indicator ${playing ? 'is-playing' : 'is-paused'}`}
+              title="Playback is synchronised across the room"
+            >
+              {statusText}
+            </span>
 
-          {loading && (
-            <div className="stage-overlay" role="status">
-              <Loader2 size={20} className="spin" aria-hidden="true" />
-              <span>Loading the video…</span>
+            <div className="track-text">
+              <h2 className="lounge-song-title">
+                {hasTrack ? current.title : 'Waiting for the first song'}
+              </h2>
+              <p className="lounge-artist">
+                {hasTrack ? current.channel || 'Unknown artist' : 'Add a song below to begin'}
+              </p>
             </div>
-          )}
-          {failed && (
-            <div className="stage-overlay is-error" role="alert">
-              <AlertCircle size={20} aria-hidden="true" />
-              <span>{yt.error}</span>
-            </div>
-          )}
-          {needsGesture && !failed && (
-            <div className="stage-overlay" role="status">
-              <button className="sr-btn sr-btn--primary" onClick={onRequestPlay}>
-                <Play size={16} aria-hidden="true" /> Play the video
-              </button>
-              <span className="stage-overlay-hint">
-                The browser blocked the automatic start. One click and the room
-                is on the same track again.
-              </span>
-            </div>
-          )}
+
+            <button
+              className={`lounge-heart-btn ${isLiked ? 'is-active' : ''}`}
+              onClick={onToggleLike}
+              disabled={!hasTrack}
+              title={isLiked ? 'Remove from liked songs' : 'Like this song'}
+              aria-label={isLiked ? 'Remove from liked songs' : 'Like this song'}
+              aria-pressed={isLiked}
+            >
+              <Heart size={18} fill={isLiked ? 'currentColor' : 'none'} />
+            </button>
+
+            {(ytError || playerError) && (
+              <p className="lounge-error-text" role="alert">
+                {ytError || playerError}
+              </p>
+            )}
+          </div>
         </div>
-      </div>
 
-      <TrackInfo
-        current={current}
-        isLiked={isLiked}
-        playing={playing}
-        ytError={ytError}
-        playerError={playerError}
-        onToggleLike={onToggleLike}
-      />
+        {/* Full-width playback progress bar */}
+        <div className="lounge-progress-section">
+          <div
+            className="lounge-progress"
+            onClick={(e) => {
+              if (!yt.duration) return;
+              const rect = e.currentTarget.getBoundingClientRect();
+              const ratio = Math.min(1, Math.max(0, (e.clientX - rect.left) / rect.width));
+              onSeek(ratio * yt.duration);
+            }}
+            role="slider"
+            tabIndex={0}
+            aria-label="Seek position"
+            aria-valuemin={0}
+            aria-valuemax={Math.round(yt.duration)}
+            aria-valuenow={Math.round(yt.currentTime)}
+            aria-valuetext={`${formatTime(yt.currentTime)} of ${formatTime(yt.duration)}`}
+            onKeyDown={(e) => {
+              if (!yt.duration) return;
+              if (e.key === 'ArrowRight') {
+                e.preventDefault();
+                onSeek(Math.min(yt.duration, yt.currentTime + 5));
+              } else if (e.key === 'ArrowLeft') {
+                e.preventDefault();
+                onSeek(Math.max(0, yt.currentTime - 5));
+              } else if (e.key === 'Home') {
+                e.preventDefault();
+                onSeek(0);
+              } else if (e.key === 'End') {
+                e.preventDefault();
+                onSeek(yt.duration);
+              }
+            }}
+          >
+            <div className="lounge-progress-fill" style={{ width: `${progress}%` } as CSSProperties} />
+          </div>
+          <div className="lounge-times">
+            <span>{formatTime(yt.currentTime)}</span>
+            <span>{formatTime(yt.duration)}</span>
+          </div>
+        </div>
+
+        {/* Bottom center: playback controls */}
+        <div className="player-transport">
+          <PlaybackControls
+            onRewind5={onRewind5}
+            onPrevious={onPrevious}
+            onTogglePlayback={onTogglePlayback}
+            onNext={onNext}
+            onForward5={onForward5}
+            onToggleLike={onToggleLike}
+            playing={playing}
+            ready={yt.ready}
+            hasTrack={hasTrack}
+            isLiked={isLiked}
+            hasPrevious={hasPrevious}
+            hasNext={hasNext}
+          />
+        </div>
+      </section>
 
       {showDedication && (
-        <DedicationCard
-          dedication={showDedication.dedication}
-          isAuthor={showDedication.dedication.authorId === clientId}
-          onDismiss={onDismissDedication}
-          onSave={onSaveDedication}
-          onRemove={onRemoveDedication}
-        />
-      )}
-
-      <div className="scrubber">
-        <input
-          type="range"
-          min={0}
-          max={yt.duration || 0}
-          value={yt.currentTime}
-          aria-label="Seek position"
-          aria-valuetext={`${formatTime(yt.currentTime)} of ${formatTime(yt.duration)}`}
-          style={{ '--progress': `${progress}%` } as CSSProperties}
-          onChange={(e) => onSeek(Number(e.target.value))}
-        />
-        <div className="scrub-times">
-          <span>{formatTime(yt.currentTime)}</span>
-          <span>{formatTime(yt.duration)}</span>
+        <div className="lounge-dedication-wrap">
+          <DedicationCard
+            dedication={showDedication.dedication}
+            isAuthor={showDedication.dedication.authorId === clientId}
+            onDismiss={onDismissDedication}
+            onSave={onSaveDedication}
+            onRemove={onRemoveDedication}
+          />
         </div>
-      </div>
-
-      <PlaybackControls
-        onRewind5={onRewind5}
-        onPrevious={onPrevious}
-        onTogglePlayback={onTogglePlayback}
-        onNext={onNext}
-        onForward5={onForward5}
-        onToggleLike={onToggleLike}
-        playing={playing}
-        ready={yt.ready}
-        hasTrack={hasTrack}
-        isLiked={isLiked}
-        hasPrevious={hasPrevious}
-        hasNext={hasNext}
-      />
-
-      <div className="quick-actions">
-        <button className="quick-action" onClick={onInvite} title="Invite a friend to this room">
-          <span className="qa-icon qa-icon--orange" aria-hidden="true">
-            <UserPlus size={18} />
-          </span>
-          <span className="quick-action-label">Invite Friend</span>
-        </button>
-        <button className="quick-action" onClick={onVideoCall} title="Start a video call">
-          <span className="qa-icon qa-icon--blue" aria-hidden="true">
-            <Video size={18} />
-          </span>
-          <span className="quick-action-label">Video Call</span>
-        </button>
-        <button
-          className="quick-action quick-action--primary"
-          onClick={onFocusQueueInput}
-          title="Search for a song"
-        >
-          <span className="qa-icon qa-icon--yellow" aria-hidden="true">
-            <Plus size={18} />
-          </span>
-          <span className="quick-action-label">Add Song</span>
-        </button>
-      </div>
+      )}
 
       <AddToQueueForm
         term={search.term}
@@ -352,6 +368,6 @@ export default function MainPlayer({
         clientId={clientId}
         editDedication={editDedication}
       />
-    </section>
+    </div>
   );
 }

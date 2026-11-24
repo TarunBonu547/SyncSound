@@ -1,57 +1,40 @@
-import { Copy, Check, Video, Users, Radio } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { Headphones, Users, Video, Link2 } from 'lucide-react';
 import type { RoomMember } from '../../types/music';
 import { avatarFor } from '../../utils/avatar';
 import StatusIndicator from '../common/StatusIndicator';
+import { useState, useEffect } from 'react';
 
 type RoomHeaderProps = {
   roomCode: string | null;
   roomName: string | null;
   members: RoomMember[];
   connected: boolean;
-  /** True when the invite link really made it into the clipboard. */
-  linkCopied: boolean;
-  onCopyInvite: () => void;
-  onVideoCall: () => void;
+  onOpenCall: () => void;
+  onCopyLink: () => void;
 };
 
-/**
- * The editorial masthead of the room.
- *
- * It reads like the header of a Sunday Radio broadcast: a small technical
- * label, the room name as a bold headline, the room code as a badge and the
- * connection/listener metadata, with the two sharing actions set apart.
- */
-export default function RoomHeader({
-  roomCode,
-  roomName,
-  members,
-  connected,
-  linkCopied,
-  onCopyInvite,
-  onVideoCall,
-}: RoomHeaderProps) {
+export default function RoomHeader({ roomCode, roomName, members, connected, onOpenCall, onCopyLink }: RoomHeaderProps) {
   const count = Math.max(1, members.length);
-  const [pulse, setPulse] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
-    if (!linkCopied) return;
-    setPulse(true);
-    const t = window.setTimeout(() => setPulse(false), 700);
-    return () => window.clearTimeout(t);
-  }, [linkCopied]);
+    if (copied) {
+      const timer = window.setTimeout(() => setCopied(false), 1800);
+      return () => window.clearTimeout(timer);
+    }
+  }, [copied]);
 
   return (
-    <header className="room-header sr-surface">
-      <div className="room-header-main">
-        <div className="room-header-text">
-          <p className="sr-label sr-label--orange">
-            <Radio size={13} aria-hidden="true" />
+    <section className="lounge-room-header">
+      <div className="lounge-room-header-main">
+        <div className="lounge-room-header-text">
+          <p className="lounge-eyebrow">
+            <span className={`lounge-live-dot ${connected ? 'is-live' : 'is-offline'}`} aria-hidden="true" />
             Now Playing Together
           </p>
-          <h1 className="room-title">{roomName || 'Your room'}</h1>
-          <div className="room-header-meta">
-            <span className={`room-code-chip ${pulse ? 'is-copied' : ''}`} title="The code of the room">
+          <h1 className="lounge-room-title">{roomName || 'Your room'}</h1>
+          <div className="lounge-room-meta">
+            <span className="lounge-room-code" title="The code of the room">
               {roomCode || '—'}
             </span>
             <StatusIndicator
@@ -59,21 +42,46 @@ export default function RoomHeader({
               label={connected ? 'On Air' : 'Reconnecting…'}
               live={!!roomCode}
             />
-            <span className="room-member-count" key={count}>
+            <span className="lounge-room-listeners" key={count}>
               <Users size={14} aria-hidden="true" />
               {count} {count === 1 ? 'listener' : 'listeners'}
             </span>
           </div>
         </div>
 
-        <div className="room-header-actions">
-          <div className="room-avatars" aria-label="Members of the room">
+        <div className="lounge-room-header-right">
+          <button
+            className="lounge-header-btn lounge-header-btn--video"
+            onClick={onOpenCall}
+            title="Start a video call"
+            aria-label="Start a video call"
+            disabled={!roomCode}
+          >
+            <Video size={16} aria-hidden="true" />
+            <span>Video Call</span>
+          </button>
+          <button
+            className={`lounge-header-btn lounge-header-btn--share ${copied ? 'is-copied' : ''}`}
+            onClick={onCopyLink}
+            title={copied ? 'Link copied!' : 'Copy room link'}
+            aria-label={copied ? 'Link copied!' : 'Copy room link'}
+            disabled={!roomCode}
+          >
+            <Link2 size={16} aria-hidden="true" />
+            <span>{copied ? 'Copied!' : 'Share Link'}</span>
+          </button>
+
+          <span className="lounge-listening-label">
+            <Headphones size={15} aria-hidden="true" />
+            Listening together
+          </span>
+          <div className="lounge-room-avatars" aria-label="Members of the room">
             {members.slice(0, 5).map((member) => {
               const avatar = avatarFor(member.name, member.clientId);
               return (
                 <span
                   key={member.clientId}
-                  className="room-avatar"
+                  className="lounge-room-avatar"
                   style={{ background: avatar.color }}
                   title={member.isHost ? `${member.name} (host)` : member.name}
                 >
@@ -81,18 +89,10 @@ export default function RoomHeader({
                 </span>
               );
             })}
-            {members.length > 5 && <span className="room-avatar is-more">+{members.length - 5}</span>}
+            {members.length > 5 && <span className="lounge-room-avatar is-more">+{members.length - 5}</span>}
           </div>
-          <button className={`sr-btn ${pulse ? 'is-copied' : ''}`} onClick={onCopyInvite} title="Copy the invite link">
-            {linkCopied ? <Check size={15} /> : <Copy size={15} />}
-            {linkCopied ? 'Link copied' : 'Invite'}
-          </button>
-          <button className="sr-btn sr-btn--primary" onClick={onVideoCall} title="Start a video call">
-            <Video size={15} aria-hidden="true" />
-            <span>Video Call</span>
-          </button>
         </div>
       </div>
-    </header>
+    </section>
   );
 }

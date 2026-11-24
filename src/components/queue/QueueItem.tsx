@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react';
-import { Play, ArrowUp, ArrowDown, X, Pencil, Heart, Send } from 'lucide-react';
+import { Play, ArrowUp, ArrowDown, X, Pencil, Heart, Send, Grab } from 'lucide-react';
 import { formatDuration } from '../../utils/youtubeSearch';
 import type { QueueEntry } from '../../types/music';
 
@@ -44,75 +44,85 @@ export default function QueueItem({
   }, [draft, editDedication, item.id]);
 
   return (
-    <li className={`queue-row queue-item ${isCurrent ? 'is-current' : ''}`}>
-      <span className="queue-index" aria-hidden="true">
-        {isCurrent ? <span className="queue-equalizer" /> : null}
+    <li className={`lounge-queue-item ${isCurrent ? 'is-current' : ''}`}>
+      <span className="lounge-queue-drag-handle" aria-label="Reorder track" role="button" tabIndex={0}>
+        <Grab size={14} aria-hidden="true" />
       </span>
-      <img className="queue-thumb" src={item.thumbnail} alt="" />
-      <div className="queue-text">
-        <p className="queue-title">
+      {isCurrent ? (
+        <span className="lounge-queue-art is-current" aria-hidden="true">
+          <span className="lounge-queue-eq">
+            <span />
+            <span />
+            <span />
+          </span>
+        </span>
+      ) : (
+        <img className="lounge-queue-art" src={item.thumbnail} alt="" />
+      )}
+      <div className="lounge-queue-details">
+        <strong>
           {item.title}
-          {isCurrent && <span className="now-badge">Now playing</span>}
+          {isCurrent && <span className="lounge-now-badge">Now playing</span>}
           {hasDedication && (
-            <span className="queue-dedication" aria-label="This song has a dedication">
-              <Heart size={12} aria-hidden="true" />
+            <span className="lounge-queue-dedication" aria-label="This song has a dedication">
+              <Heart size={11} aria-hidden="true" />
             </span>
           )}
-        </p>
-        <p className="queue-channel">
+        </strong>
+        <small>
           {item.channel}
           {duration ? ` · ${duration}` : ''}
-        </p>
+        </small>
       </div>
-      <div className="queue-actions">
+      <div className="lounge-queue-actions">
         <button
-          className="music-icon-btn primary"
+          className="lounge-queue-icon-btn is-primary"
           onClick={onPlay}
           title="Play now"
           aria-label={`Play ${item.title}`}
         >
-          <Play size={20} />
+          <Play size={16} />
         </button>
         {hasDedication && isAuthor && (
           <button
             type="button"
-            className="music-icon-btn"
+            className="lounge-queue-icon-btn"
             onClick={() => { setDraft(item.dedication!.text); setEditing(true); }}
             title="Edit dedication"
             aria-label={`Edit dedication for ${item.title}`}
           >
-            <Pencil size={16} aria-hidden="true" />
+            <Pencil size={14} aria-hidden="true" />
           </button>
         )}
         <button
-          className="music-icon-btn"
+          className="lounge-queue-icon-btn"
           onClick={onMoveUp}
           title="Move up"
           aria-label={`Move ${item.title} up`}
         >
-          <ArrowUp size={18} />
+          <ArrowUp size={14} />
         </button>
         <button
-          className="music-icon-btn"
+          className="lounge-queue-icon-btn"
           onClick={onMoveDown}
           title="Move down"
           aria-label={`Move ${item.title} down`}
         >
-          <ArrowDown size={18} />
+          <ArrowDown size={14} />
         </button>
         <button
-          className="music-icon-btn danger"
+          className="lounge-queue-icon-btn is-danger"
           onClick={onRemove}
           title="Remove from queue"
           aria-label={`Remove ${item.title} from queue`}
         >
-          <X size={18} />
+          <X size={15} />
         </button>
       </div>
       {editing && hasDedication && isAuthor && (
-        <div className="queue-dedication-editor">
+        <div className="lounge-dedication-editor lounge-queue-dedication-editor">
           <textarea
-            className="input dedication-textarea"
+            className="lounge-dedication-textarea"
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
             onKeyDown={(e) => {
@@ -130,14 +140,12 @@ export default function QueueItem({
             rows={2}
             aria-label="Edit dedication"
           />
-          <span className="dedication-counter">
-            {draft.length} / 200
-          </span>
-          <div className="queue-dedication-editor-actions">
-            <button type="button" className="btn icon sm" onClick={() => { setDraft(item.dedication!.text); setEditing(false); }} aria-label="Cancel">
+          <span className="lounge-dedication-counter">{draft.length} / 200</span>
+          <div className="lounge-dedication-editor-actions">
+            <button type="button" className="lounge-icon-btn" onClick={() => { setDraft(item.dedication!.text); setEditing(false); }} aria-label="Cancel">
               <X size={14} aria-hidden="true" />
             </button>
-            <button type="button" className="btn icon sm primary" onClick={handleSave} aria-label="Save dedication">
+            <button type="button" className="lounge-icon-btn is-primary" onClick={handleSave} aria-label="Save dedication">
               <Send size={14} aria-hidden="true" />
             </button>
           </div>

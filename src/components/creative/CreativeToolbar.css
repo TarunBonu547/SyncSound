@@ -1,0 +1,96 @@
+/* Creative Space toolbar styles */
+.creative-toolbar {
+  flex: none;
+  padding: 10px 12px;
+  background: var(--surface-strong);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-sm), var(--shadow-inset);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+
+.creative-toolbar-inner {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: center;
+}
+
+.creative-tool-btn {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  min-width: 56px;
+  padding: 8px 6px;
+  border-radius: var(--r-md);
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--text-muted);
+  font-family: var(--font-sans);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  transition:
+    background-color var(--t-fast) var(--ease-out),
+    color var(--t-fast) var(--ease-out),
+    border-color var(--t-fast) var(--ease-out),
+    transform var(--t-fast) var(--ease-out);
+}
+
+.creative-tool-btn:hover:not(:disabled) {
+  background: var(--lavender-wash);
+  color: var(--text);
+  transform: translateY(-1px);
+}
+
+.creative-tool-btn:active:not(:disabled) {
+  transform: translateY(0) scale(0.96);
+}
+
+.creative-tool-btn.is-active {
+  background: var(--lavender-wash);
+  color: var(--accent-strong);
+  border-color: rgba(184, 172, 222, 0.5);
+}
+
+.creative-tool-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  background: var(--surface-strong);
+  transition: background-color var(--t-fast) var(--ease-out);
+}
+
+.creative-tool-btn.is-active .creative-tool-icon {
+  background: rgba(184, 172, 222, 0.3);
+  color: var(--accent-strong);
+}
+
+.creative-tool-btn:focus-visible {
+  outline: 2px solid var(--accent-strong);
+  outline-offset: 2px;
+}
+
+.creative-tool-btn svg {
+  width: 18px;
+  height: 18px;
+  flex: none;
+}
+
+@media (max-width: 720px) {
+  .creative-tool-btn {
+    min-width: 48px;
+    padding: 6px 4px;
+    font-size: 9px;
+  }
+  .creative-tool-icon {
+    width: 24px;
+    height: 24px;
+  }
+}

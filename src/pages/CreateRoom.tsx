@@ -1,9 +1,8 @@
 ﻿import { useRef, useState } from 'react';
-import { Copy, Check, ArrowRight } from 'lucide-react';
+import { Copy, Check } from 'lucide-react';
 import { useSocket } from '../hooks/useSocket';
 import { readClientId } from '../utils/clientId';
 import { normalizeDisplayName, saveDisplayName } from '../utils/displayName';
-import DisplayNameField from '../components/common/DisplayNameField';
 
 type CreateRoomProps = {
   /** The name this person wants to be seen under. */
@@ -29,22 +28,14 @@ export default function CreateRoom({
    */
   const clientId = useRef(readClientId());
 
-  /**
-   * A name that is written is not a wrong name any more.
-   *
-   * The field of the lobby and the field of this card share the name, so the
-   * error of the last attempt goes away as soon as there is a name, no matter
-   * where it was typed.
-   */
   const visibleNameError = nameError && !normalizeDisplayName(displayName) ? nameError : '';
 
-  const generate = () => {
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
     if (!name.trim()) {
       setError('Room name is required');
       return;
     }
-    // The name of the person is asked for before the room is entered, so the
-    // other listeners see a name and not a number.
     const who = normalizeDisplayName(displayName);
     if (!who) {
       setNameError('Please enter the name the others will see');
@@ -80,55 +71,79 @@ export default function CreateRoom({
   };
 
   return (
-    <div className="panel-content">
-      <DisplayNameField
-        id="create-room-display-name"
-        value={displayName}
-        onChange={onDisplayNameChange}
-        error={visibleNameError}
-      />
+    <form className="ss-card-body" onSubmit={handleSubmit}>
+      <div className="ss-field">
+        <label className="ss-label" htmlFor="create-room-display-name">
+          Your name
+        </label>
+        <input
+          id="create-room-display-name"
+          className="ss-input"
+          placeholder="Enter your name"
+          value={displayName}
+          onChange={(e) => onDisplayNameChange(e.target.value)}
+          maxLength={24}
+          aria-invalid={visibleNameError ? true : undefined}
+          aria-describedby={visibleNameError ? 'create-room-name-error' : undefined}
+        />
+        <div className="ss-helper">
+          <span>The other listeners will see this name.</span>
+          <span className="ss-counter" aria-hidden="true">{displayName.length}/24</span>
+        </div>
+        {visibleNameError && (
+          <p className="ss-error" id="create-room-name-error" role="alert">
+            {visibleNameError}
+          </p>
+        )}
+      </div>
 
-      <label className="field-label" htmlFor="create-room-name">
-        Room name
-      </label>
-      <input
-        id="create-room-name"
-        className="input"
-        placeholder="e.g. Sunday morning"
-        value={name}
-        onChange={(e) => setName(e.target.value)}
-      />
+      <div className="ss-field">
+        <label className="ss-label" htmlFor="create-room-name">
+          Room name
+        </label>
+        <input
+          id="create-room-name"
+          className="ss-input"
+          placeholder="e.g. Late night listening"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          maxLength={40}
+        />
+      </div>
+
       {error && (
-        <p className="error-text" role="alert" style={{ marginTop: 8 }}>
+        <p className="ss-error" role="alert">
           {error}
         </p>
       )}
-      <button className="btn primary" onClick={generate}>
-        CREATE YOUR ROOM ↗
-        <ArrowRight size={16} className="btn-arrow" aria-hidden="true" />
+
+      <button className="ss-action-btn ss-action-btn--host" type="submit">
+        CREATE YOUR ROOM <span className="ss-arrow">→</span>
       </button>
 
       {room && (
-        <div className="room-result">
-          <span className="field-label">Room code</span>
-          <div className="copy-row">
-            <input className="input room-code" readOnly value={room.code} />
-            <button className="btn" onClick={() => copy(room.code, 'code')}>
-              {copied === 'code' ? <Check size={16} /> : <Copy size={16} />} {copied === 'code' ? 'Copied' : 'Copy'}
+        <div className="ss-result">
+          <span className="ss-label">Room code</span>
+          <div className="ss-code-row">
+            <input className="ss-input ss-room-code" readOnly value={room.code} />
+            <button className="ss-copy-btn" onClick={() => copy(room.code, 'code')}>
+              {copied === 'code' ? <Check size={16} /> : <Copy size={16} />}
+              {copied === 'code' ? 'Copied' : 'Copy'}
             </button>
           </div>
 
-          <span className="field-label" style={{ marginTop: 16, display: 'block' }}>
+          <span className="ss-label" style={{ marginTop: 16, display: 'block' }}>
             Invite link
           </span>
-          <div className="copy-row">
-            <input className="input" readOnly value={room.link} />
-            <button className="btn" onClick={() => copy(room.link, 'link')}>
-              {copied === 'link' ? <Check size={16} /> : <Copy size={16} />} {copied === 'link' ? 'Copied' : 'Copy'}
+          <div className="ss-code-row">
+            <input className="ss-input" readOnly value={room.link} />
+            <button className="ss-copy-btn" onClick={() => copy(room.link, 'link')}>
+              {copied === 'link' ? <Check size={16} /> : <Copy size={16} />}
+              {copied === 'link' ? 'Copied' : 'Copy'}
             </button>
           </div>
         </div>
       )}
-    </div>
+    </form>
   );
 }

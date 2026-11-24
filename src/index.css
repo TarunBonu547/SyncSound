@@ -105,6 +105,24 @@
   --t-fast: 160ms;
   --t-base: 260ms;
   --t-slow: 520ms;
+
+  /* --- SyncSound homepage palette (warm, minimal, premium) ---------------- */
+  --ss-bg: #F5EFE6;
+  --ss-surface: #FCF9F4;
+  --ss-text: #332B27;
+  --ss-muted: #8D8177;
+  --ss-line: #E4D9CC;
+  --ss-terracotta: #B87358;
+  --ss-terracotta-dark: #92583F;
+  --ss-olive: #858A70;
+  --ss-olive-dark: #6E745C;
+  --ss-input: #F8F4ED;
+  --ss-white: #FFFDF9;
+  --ss-font: "Manrope", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+  --ss-font-mono: "Space Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  /* Typography system */
+  --ss-serif: "Playfair Display", "Cormorant Garamond", Georgia, serif;
+  --ss-ui: "Manrope", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
 }
 
 *,
@@ -591,6 +609,37 @@ img {
   .sunday-room .sr-float-shape {
     animation: none !important;
   }
+}
+
+/* ==========================================================================
+   Listening Lounge — design tokens (room-demo.html reference)
+
+   Everything here is namespaced under .lounge so the lobby, search and
+   library are never affected. The lounge shell carries these tokens down to
+   every room component.
+   ========================================================================== */
+.lounge {
+  --lg-bg: #f4ece2;
+  --lg-surface: #fffaf4;
+  --lg-surface-soft: #fbf7f2;
+  --lg-text: #332b35;
+  --lg-muted: #96877f;
+  --lg-border: #e7d9cb;
+  --lg-border-soft: #eee5dc;
+  --lg-terracotta: #bd765c;
+  --lg-terracotta-dark: #a9634d;
+  --lg-terracotta-light: #f2dfd4;
+  --lg-olive: #898d73;
+  --lg-lavender: #b9acd9;
+  --lg-pink: #e7b1ac;
+  --lg-lavender-wash: #eee7f5;
+  --lg-lavender-border: #ded2eb;
+  --lg-lavender-ink: #75648c;
+  --lg-shadow: 0 16px 45px rgba(75, 55, 43, 0.07);
+  --lg-font-body: "DM Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --lg-font-display: "Playfair Display", Georgia, serif;
+  --lg-font-mono: "DM Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  --lg-ease: cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
 /* --- Surfaces ------------------------------------------------------------ */

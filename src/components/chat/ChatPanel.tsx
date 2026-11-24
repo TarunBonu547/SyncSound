@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Send, Reply, Users, MessageCircle, X, Volume2, VolumeX } from 'lucide-react';
+import { Send, Reply, Users, MessageCircle, X } from 'lucide-react';
 import type { ChatEntry, RoomMember } from '../../types/music';
-import { avatarFor, formatTime } from '../../utils/avatar';
+import { formatTime } from '../../utils/avatar';
 import { MAX_CHAT_LENGTH } from '../../hooks/useRoom';
 import StatusIndicator from '../common/StatusIndicator';
 import ChatEmojiPicker from './EmojiPicker';
@@ -29,10 +29,6 @@ type ChatPanelProps = {
   onSelectReply: (message: { messageId: string; senderId: string; senderName: string; text: string }) => void;
   /** Cancels the reply that is being composed. */
   onCancelReply: () => void;
-  /** True when incoming message notifications are muted. */
-  muted: boolean;
-  /** Toggles the mute state of incoming message notifications. */
-  onToggleMute: () => void;
   /** Shown when the panel is used outside of the room, e.g. in a drawer. */
   onClose?: () => void;
 };
@@ -98,8 +94,6 @@ export default function ChatPanel({
   sendTyping,
   onSelectReply,
   onCancelReply,
-  muted,
-  onToggleMute,
   onClose,
 }: ChatPanelProps) {
   const scrollRef = useRef<HTMLDivElement | null>(null);
@@ -226,72 +220,41 @@ export default function ChatPanel({
   const inRoom = !!roomCode;
 
   return (
-    <section className="card chat-card" aria-labelledby="chat-title">
-      <div className="chat-head">
-        <div className="chat-head-text">
-          <p className="eyebrow">
-            <span className="chat-live-dot" aria-hidden="true" />
-            On Air / Live Chat
-          </p>
-          <h2 className="section-title" id="chat-title">
-            {roomName || 'Your room'}
-          </h2>
-          <div className="chat-head-meta">
-            <StatusIndicator
-              connected={connected}
-              label={connected ? 'Connected' : 'Reconnecting…'}
-              live={inRoom}
-            />
-            <span className="room-member-count">
-              <Users size={14} aria-hidden="true" />
-              {count} {count === 1 ? 'listener' : 'listeners'}
-            </span>
-          </div>
+    <section className="lounge-chat-panel" aria-labelledby="chat-title">
+      <div className="lounge-chat-heading">
+        <p className="lounge-eyebrow">
+          <span className="lounge-live-dot is-live" aria-hidden="true" />
+          On Air / Live Chat
+        </p>
+        <h2 className="lounge-section-title" id="chat-title">
+          {roomName || 'Room conversation'}
+        </h2>
+        <div className="lounge-chat-status">
+          <StatusIndicator
+            connected={connected}
+            label={connected ? 'Connected' : 'Reconnecting…'}
+            live={inRoom}
+          />
+          <span className="lounge-chat-listeners">
+            <Users size={12} aria-hidden="true" />
+            {count} {count === 1 ? 'listener' : 'listeners'}
+          </span>
         </div>
         {onClose && (
-          <button className="btn icon chat-drawer-close" onClick={onClose} title="Close the chat" aria-label="Close the chat">
+          <button className="lounge-icon-btn lounge-chat-close" onClick={onClose} title="Close the chat" aria-label="Close the chat">
             <span aria-hidden="true">×</span>
           </button>
         )}
-        <button
-          className="btn icon sm chat-mute"
-          onClick={onToggleMute}
-          title={muted ? 'Unmute message notifications' : 'Mute message notifications'}
-          aria-label={muted ? 'Unmute message notifications' : 'Mute message notifications'}
-          aria-pressed={muted}
-        >
-          {muted ? <VolumeX size={18} aria-hidden="true" /> : <Volume2 size={18} aria-hidden="true" />}
-          <span className="sr-only">{muted ? 'Unmute' : 'Mute'}</span>
-        </button>
       </div>
 
-      {members.length > 0 && (
-        <ul className="chat-members" aria-label="Members of the room">
-          {members.map((member) => {
-            const avatar = avatarFor(member.name, member.clientId);
-            const isSelf = member.clientId === clientId;
-            return (
-              <li className="chat-member" key={member.clientId} title={isSelf ? `${member.name} (you)` : member.name}>
-                <span className="chat-member-avatar" style={{ background: avatar.color }} aria-hidden="true">
-                  {avatar.initials}
-                </span>
-                <span className="chat-member-name">{member.name}</span>
-                {isSelf && <span className="chat-member-you">you</span>}
-                <span className="presence is-online" aria-hidden="true" />
-              </li>
-            );
-          })}
-        </ul>
-      )}
-
-      <div className="chat-scroll" ref={scrollRef} role="log" aria-live="polite" aria-label="Messages of the room">
+      <div className="lounge-chat-messages" ref={scrollRef} role="log" aria-live="polite" aria-label="Messages of the room">
         {messages.length === 0 ? (
-          <div className="chat-empty">
-            <span className="chat-empty-icon" aria-hidden="true">
-              <MessageCircle size={20} />
+          <div className="lounge-chat-empty">
+            <span className="lounge-chat-empty-icon" aria-hidden="true">
+              <MessageCircle size={32} />
             </span>
-            <p className="chat-empty-title">No messages yet</p>
-            <p className="chat-empty-hint">Say hello to the people in the room.</p>
+            <h3 className="lounge-chat-empty-title">No messages yet</h3>
+            <p className="lounge-chat-empty-hint">Say hello to the people in the room.</p>
           </div>
         ) : (
           messages.map((m, i) => {
@@ -300,13 +263,9 @@ export default function ChatPanel({
             const prev = messages[i - 1];
             const prevSender = prev ? (prev.isSelf ? clientId : prev.userId) : null;
             const thisSender = m.isSelf ? clientId : m.userId;
-            /** Shows the sender name only for the first message of a run
-               from the same person, keeping consecutive messages tight. */
             const showHeader = prevSender !== thisSender;
-            /** Only newly arrived messages animate; history never replays. */
             const isNew = mounted && !animatedRef.current.has(m.id);
             const trimmed = m.text.trim();
-            /** Emoji-only messages get a subtler scale-in; text+emoji messages do not. */
             const isEmojiOnly =
               trimmed.length > 0 &&
               [...trimmed].every(
@@ -314,28 +273,28 @@ export default function ChatPanel({
               );
             const animClass = isNew
               ? isEmojiOnly
-                ? 'chat-msg--emoji-in'
+                ? 'lounge-chat-msg--emoji-in'
                 : m.isSelf
-                  ? 'chat-msg--scale-in'
-                  : 'chat-msg--fade-in'
+                  ? 'lounge-chat-msg--scale-in'
+                  : 'lounge-chat-msg--fade-in'
               : '';
             return (
               <div
                 id={`msg-${m.id}`}
                 key={m.id}
-                className={`chat-msg ${m.isSelf ? 'is-self' : ''} ${isReplyingToMe ? 'is-replied-to' : ''} ${animClass}`}
+                className={`lounge-chat-msg ${m.isSelf ? 'is-self' : ''} ${isReplyingToMe ? 'is-replied-to' : ''} ${animClass}`}
                 style={{ alignSelf: m.isSelf ? 'flex-end' : 'flex-start' }}
               >
                 {!m.isSelf && (
-                  <span className="chat-avatar" style={{ background: m.color }} aria-hidden="true">
+                  <span className="lounge-chat-avatar" style={{ background: m.color }} aria-hidden="true">
                     {m.initials}
                   </span>
                 )}
-                <div className={`chat-bubble ${m.isSelf ? 'is-self' : ''} ${isEmojiOnly ? 'is-emoji-only' : ''}`}>
-                  <div className="chat-actions">
+                <div className={`lounge-chat-bubble ${m.isSelf ? 'is-self' : ''} ${isEmojiOnly ? 'is-emoji-only' : ''}`}>
+                  <div className="lounge-chat-actions">
                     <button
                       type="button"
-                      className="chat-reply-btn"
+                      className="lounge-chat-reply-btn"
                       onClick={() =>
                         onSelectReply({
                           messageId: m.id,
@@ -359,19 +318,18 @@ export default function ChatPanel({
                       aria-label={`Reply to ${m.userName}`}
                       aria-controls={`msg-${m.id}`}
                     >
-                      <Reply size={16} aria-hidden="true" />
-                      <span className="sr-only">Reply</span>
+                      <Reply size={14} aria-hidden="true" />
                     </button>
                   </div>
                   {showHeader && (
-                    <div className="chat-bubble-head">
-                      <span className="chat-author">{m.userName}</span>
-                      <time className="chat-time">{formatTime(m.timestamp)}</time>
+                    <div className="lounge-chat-bubble-head">
+                      <span className="lounge-chat-author">{m.userName}</span>
+                      <time className="lounge-chat-time">{formatTime(m.timestamp)}</time>
                     </div>
                   )}
                   {quote && (
                     <div
-                      className="chat-quote"
+                      className="lounge-chat-quote"
                       onClick={() => scrollToMessage(quote.messageId)}
                       onKeyDown={(e) => {
                         if (e.key === 'Enter' || e.key === ' ') {
@@ -383,11 +341,11 @@ export default function ChatPanel({
                       tabIndex={0}
                       aria-label={`Reply to ${quote.senderName}`}
                     >
-                      <span className="chat-quote-sender">{quote.senderName}</span>
-                      <p className="chat-quote-text">{previewOf(quote.text)}</p>
+                      <span className="lounge-chat-quote-sender">{quote.senderName}</span>
+                      <p className="lounge-chat-quote-text">{previewOf(quote.text)}</p>
                     </div>
                   )}
-                  <p>{renderChatText(m.text, isEmojiOnly)}</p>
+                  <p className="lounge-chat-text">{renderChatText(m.text, isEmojiOnly)}</p>
                 </div>
               </div>
             );
@@ -396,11 +354,11 @@ export default function ChatPanel({
       </div>
 
       {Object.values(typing).length > 0 && (
-        <div className="chat-typing" role="status" aria-live="polite">
-          <span className="chat-typing-dot" aria-hidden="true" />
-          <span className="chat-typing-dot" aria-hidden="true" />
-          <span className="chat-typing-dot" aria-hidden="true" />
-          <span className="chat-typing-text">
+        <div className="lounge-chat-typing" role="status" aria-live="polite">
+          <span className="lounge-chat-typing-dot" aria-hidden="true" />
+          <span className="lounge-chat-typing-dot" aria-hidden="true" />
+          <span className="lounge-chat-typing-dot" aria-hidden="true" />
+          <span className="lounge-chat-typing-text">
             {Object.values(typing).length === 1
               ? `${Object.values(typing)[0].name} is typing…`
               : `${Object.values(typing)
@@ -420,37 +378,36 @@ export default function ChatPanel({
       />
 
       {replyTo && (
-        <div className="chat-reply-preview" role="status" aria-live="polite">
+        <div className="lounge-chat-reply-preview" role="status" aria-live="polite">
           <button
             type="button"
-            className="chat-reply-cancel"
+            className="lounge-chat-reply-cancel"
             onClick={onCancelReply}
             title="Cancel reply"
             aria-label="Cancel reply"
           >
-            <X size={18} aria-hidden="true" />
-            <span className="sr-only">Cancel reply</span>
+            <X size={16} aria-hidden="true" />
           </button>
-          <div className="chat-reply-info">
-            <span className="chat-reply-label">Replying to {replyTo.senderName}</span>
-            <p className="chat-reply-text">{previewOf(replyTo.text)}</p>
+          <div className="lounge-chat-reply-info">
+            <span className="lounge-chat-reply-label">Replying to {replyTo.senderName}</span>
+            <p className="lounge-chat-reply-text">{previewOf(replyTo.text)}</p>
           </div>
         </div>
       )}
 
       {chatError && (
-        <p className="error-text chat-error" role="alert">
+        <p className="lounge-error-text lounge-chat-error" role="alert">
           {chatError}
         </p>
       )}
       {!connected && (
-        <p className="hint chat-error" role="status">
+        <p className="lounge-empty-hint lounge-chat-error" role="status">
           The connection is broken. Messages are sent again once it is back.
         </p>
       )}
 
       <form
-        className="chat-form"
+        className="lounge-chat-form"
         onSubmit={(e) => {
           e.preventDefault();
           setShowEmoji(false);
@@ -464,7 +421,7 @@ export default function ChatPanel({
         <button
           ref={anchorRef}
           type="button"
-          className="btn icon sm chat-smiley"
+          className="lounge-chat-smiley"
           onClick={() => setShowEmoji((show) => !show)}
           title="Add a smiley"
           aria-label="Add a smiley"
@@ -473,7 +430,7 @@ export default function ChatPanel({
         </button>
         <input
           ref={inputRef}
-          className="input"
+          className="lounge-chat-input"
           value={draft}
           aria-label="Message"
           maxLength={MAX_CHAT_LENGTH}
@@ -482,13 +439,13 @@ export default function ChatPanel({
           onChange={(e) => onDraftChangeWithTyping(e.target.value)}
         />
         <button
-          className="btn icon primary"
+          className="lounge-chat-send"
           type="submit"
           disabled={!inRoom || chatSending}
           title="Send message"
           aria-label="Send message"
         >
-          <Send size={18} />
+          <Send size={16} />
         </button>
       </form>
     </section>

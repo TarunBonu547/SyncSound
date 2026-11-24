@@ -1,4 +1,3 @@
-import { ListMusic } from 'lucide-react';
 import type { QueueEntry } from '../../types/music';
 import QueueItem from './QueueItem';
 
@@ -27,31 +26,29 @@ export default function QueuePanel({
   editDedication,
 }: QueuePanelProps) {
   return (
-    <section className="card queue-card" aria-labelledby="queue-title">
-      <div className="panel-head">
+    <section className="lounge-queue-panel lounge-queue-card" aria-labelledby="queue-title">
+      <div className="lounge-section-heading">
         <div>
-          <p className="eyebrow">Up next</p>
-          <h2 className="section-title" id="queue-title">
+          <p className="lounge-eyebrow">Up Next</p>
+          <h2 className="lounge-section-title" id="queue-title">
             Song Queue
           </h2>
         </div>
-        <p className="hint">
-          {queue.length} {queue.length === 1 ? 'song' : 'songs'} lined up
-        </p>
+        <span className="lounge-section-count">
+          {queue.length} {queue.length === 1 ? 'song' : 'songs'}
+        </span>
       </div>
 
       {queue.length === 0 ? (
-        <div className="queue-empty">
-          <span className="queue-empty-icon" aria-hidden="true">
-            <ListMusic size={20} />
+        <div className="lounge-empty-queue">
+          <span className="lounge-empty-queue-icon" aria-hidden="true">
+            ♪
           </span>
-          <p className="queue-empty-title">The station is quiet</p>
-          <p className="queue-empty-hint">
-            Search for a track above and add it to the queue.
-          </p>
+          <h3 className="lounge-empty-queue-title">Your queue is waiting.</h3>
+          <p className="lounge-empty-queue-hint">Search for a track above and add it here.</p>
         </div>
       ) : (
-        <ul className="queue-list">
+        <ul className="lounge-queue-list">
           {queue.map((item) => {
             const isCurrent = activeQueueItemId === item.id;
             return (

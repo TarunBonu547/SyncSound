@@ -1,0 +1,438 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SyncSound — Listening Lounge</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+<style>
+:root {
+  --bg:#f4ece2;
+  --surface:#fffaf4;
+  --text:#332b35;
+  --muted:#96877f;
+  --border:#e7d9cb;
+  --terracotta:#bd765c;
+  --terracotta-light:#f2dfd4;
+  --olive:#898d73;
+  --lavender:#b9acd9;
+  --pink:#e7b1ac;
+  --shadow:0 16px 45px rgba(75,55,43,.07);
+}
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;overflow-x:hidden}
+button,input{font:inherit}
+button{cursor:pointer}
+.app{max-width:1700px;margin:auto;min-height:100vh;padding:0 38px 115px}
+
+/* HEADER */
+.topbar{height:82px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);animation:slideDown .8s both}
+.brand{display:flex;align-items:center;gap:11px;font-size:25px;font-weight:700;letter-spacing:-1.5px}
+.brand-icon{font-size:23px;color:var(--terracotta)}
+.brand span{color:var(--lavender)}
+.brand b{color:var(--text)}
+.nav{display:flex;gap:34px}
+.nav a{color:#766970;text-decoration:none;font-size:13px;transition:.25s}
+.nav a:hover{color:var(--terracotta)}
+.avatar{width:37px;height:37px;border-radius:50%;display:grid;place-items:center;background:var(--pink);border:3px solid white;font-weight:700;font-size:12px}
+
+/* ROOM HEADER */
+.room-header{margin-top:25px;padding:22px 26px;background:rgba(255,250,244,.78);border:1px solid var(--border);border-radius:18px;display:flex;align-items:center;justify-content:space-between;animation:fadeUp .8s .1s both}
+.eyebrow{font:11px 'DM Mono',monospace;letter-spacing:2px;color:var(--terracotta);text-transform:uppercase}
+.live-dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:#8b9b75;margin-right:7px;box-shadow:0 0 0 4px #8b9b7522;animation:pulse 2s infinite}
+.room-title{font:700 28px 'Playfair Display',serif;margin:7px 0 12px}
+.room-meta{display:flex;align-items:center;gap:10px;color:var(--muted);font-size:12px}
+.room-code{padding:7px 12px;background:#eee7f5;border:1px solid #ded2eb;color:#75648c;border-radius:30px;font:11px 'DM Mono',monospace;letter-spacing:1px}
+.status{padding:7px 12px;background:white;border-radius:30px}
+.header-right{display:flex;align-items:center;gap:12px}
+.listener-label{font-size:12px;color:var(--muted)}
+
+/* MAIN */
+.lounge{display:grid;grid-template-columns:minmax(0,1fr) 315px;gap:22px;margin-top:22px;align-items:stretch}
+.main-column{min-width:0;display:flex;flex-direction:column;gap:20px}
+.player-stage{min-height:390px;background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:28px;box-shadow:var(--shadow);display:grid;grid-template-columns:minmax(230px,.9fr) 1.1fr;gap:35px;align-items:center;animation:fadeUp .8s .2s both}
+.artwork{width:100%;aspect-ratio:1.15/1;border-radius:18px;background:radial-gradient(circle at 70% 25%,#fff5ce 0,transparent 28%),radial-gradient(circle at 20% 80%,#e7b2bc 0,transparent 35%),linear-gradient(135deg,#e9d9ee,#d6dff5 55%,#f1d7c8);display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;box-shadow:0 20px 40px #6d53641c;transition:transform .5s}
+.artwork:hover{transform:scale(1.015)}
+.artwork:before,.artwork:after{content:"";position:absolute;border:1px solid #ffffff77;width:230px;height:230px;border-radius:50%;animation:rotate 20s linear infinite}
+.artwork:after{width:310px;height:310px;animation-direction:reverse}
+.artwork-content{position:relative;z-index:2;text-align:center}
+.artwork-icon{font-size:42px;color:#fffaf4;text-shadow:0 5px 20px #8c668e77;margin-bottom:15px}
+.artwork-label{font:10px 'DM Mono',monospace;letter-spacing:3px;color:#554454}
+.stage-info{display:flex;flex-direction:column;gap:12px}
+.stage-topline{font-size:12px;color:var(--muted)}
+.song-title{font:700 clamp(25px,3vw,39px) 'Playfair Display',serif;line-height:1.15;margin:0}
+.artist{color:var(--muted);font-size:14px}
+.stage-footer{display:flex;align-items:center;justify-content:space-between;margin-top:20px}
+.sync-indicator{display:flex;align-items:center;gap:9px;color:var(--olive);font:10px 'DM Mono',monospace;letter-spacing:1px}
+.mini-wave{display:flex;align-items:center;gap:3px;height:30px}
+.mini-wave span{width:4px;height:9px;background:var(--terracotta);border-radius:8px;animation:wave .8s ease-in-out infinite alternate}
+.mini-wave span:nth-child(2n){animation-delay:.2s;background:var(--olive)}
+.mini-wave span:nth-child(3n){animation-delay:.4s;height:20px}
+.mini-wave span:nth-child(4n){animation-delay:.1s;height:15px}
+.paused .mini-wave span{animation-play-state:paused}
+.heart-btn{width:42px;height:42px;border:1px solid var(--border);border-radius:50%;background:transparent;color:var(--muted);transition:.25s}
+.heart-btn:hover,.heart-btn.active{color:var(--terracotta);background:var(--terracotta-light)}
+
+/* PROGRESS AND CONTROLS */
+.progress-section{margin-top:8px}
+.progress{height:6px;width:100%;background:#e8dfd7;border-radius:10px;overflow:hidden;cursor:pointer}
+.progress-fill{width:0%;height:100%;background:var(--terracotta);border-radius:10px;transition:width .3s linear}
+.times{display:flex;justify-content:space-between;margin-top:9px;color:var(--muted);font:10px 'DM Mono',monospace}
+.controls{display:flex;align-items:center;justify-content:center;gap:17px;margin-top:12px}
+.control{width:42px;height:42px;border:1px solid #d7c9bc;background:transparent;color:#6c5d60;border-radius:50%;transition:.25s}
+.control:hover{background:var(--terracotta-light);transform:translateY(-3px)}
+.control.play{width:62px;height:62px;border:none;background:#f0d2c5;color:#a85e4c;font-size:19px}
+.control.play:hover{background:var(--terracotta);color:white}
+
+/* QUEUE */
+.queue-panel{background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:22px;animation:fadeUp .8s .3s both}
+.section-heading{display:flex;align-items:center;justify-content:space-between;margin-bottom:17px}
+.section-heading h3{margin:5px 0 0;font:700 22px 'Playfair Display',serif}
+.section-count{font:10px 'DM Mono',monospace;color:var(--muted)}
+.search-row{display:flex;gap:9px}
+.search-row input{min-width:0;flex:1;border:1px solid var(--border);background:#fcf9f5;border-radius:10px;padding:13px 15px;outline:none;color:var(--text);font-size:13px;transition:.25s}
+.search-row input:focus{border-color:var(--terracotta);box-shadow:0 0 0 3px #bd765c18}
+.search-row input::placeholder{color:#b5a79c}
+.add-btn{border:none;border-radius:10px;padding:0 19px;color:white;background:var(--terracotta);font-size:12px;font-weight:700;transition:.25s}
+.add-btn:hover{background:#a9634d;transform:translateY(-2px)}
+.queue-list{display:flex;flex-direction:column;gap:9px;margin-top:17px}
+.queue-item{display:flex;align-items:center;gap:13px;background:#fbf7f2;border:1px solid #eee5dc;border-radius:11px;padding:10px 12px;animation:fadeUp .35s both}
+.queue-art{width:43px;height:43px;border-radius:8px;background:linear-gradient(135deg,#e6c5ca,#d5d8ec);display:grid;place-items:center;color:white}
+.queue-details{flex:1;min-width:0}
+.queue-details strong{display:block;font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.queue-details small{color:var(--muted);font-size:10px}
+.queue-item button{border:0;background:transparent;color:var(--muted)}
+.empty-queue{text-align:center;padding:26px;border:1px dashed var(--border);border-radius:12px;color:var(--muted);font-size:12px}
+.empty-queue i{display:block;font-size:24px;margin-bottom:10px;color:#bca9bc}
+
+/* CHAT */
+.chat-panel{background:rgba(255,250,244,.88);border:1px solid var(--border);border-radius:20px;padding:21px 17px;min-height:610px;display:flex;flex-direction:column;box-shadow:var(--shadow);animation:fadeUp .8s .25s both}
+.chat-heading{padding:2px 3px 15px;border-bottom:1px solid #eee5dc}
+.chat-heading h3{font:700 22px 'Playfair Display',serif;margin:6px 0 10px}
+.chat-status{display:flex;align-items:center;gap:7px;color:var(--muted);font-size:11px}
+.chat-status span{background:white;border:1px solid #eee5dc;border-radius:20px;padding:6px 9px}
+.chat-messages{flex:1;padding:15px 0;overflow-y:auto;display:flex;flex-direction:column;gap:13px;max-height:430px}
+.message{display:flex;align-items:flex-start;gap:9px;animation:fadeUp .3s both}
+.message-avatar{width:29px;height:29px;border-radius:50%;background:var(--pink);display:grid;place-items:center;font-size:10px;font-weight:700;flex-shrink:0}
+.message-content{background:#f5ede6;border-radius:0 12px 12px 12px;padding:9px 11px;font-size:12px;max-width:85%;line-height:1.5}
+.message-content small{display:block;color:var(--muted);font-size:9px;margin-bottom:3px}
+.message.mine{flex-direction:row-reverse}
+.message.mine .message-content{background:#eee6f4;border-radius:12px 0 12px 12px}
+.chat-input{display:flex;align-items:center;gap:7px;padding-top:12px;border-top:1px solid #eee5dc}
+.chat-input input{flex:1;min-width:0;border:1px solid var(--border);border-radius:9px;padding:11px;background:white;outline:none;font-size:11px}
+.chat-input button{border:none;background:var(--pink);color:#5a3946;border-radius:50%;width:37px;height:37px}
+
+/* BOTTOM PLAYER */
+.bottom-player{position:fixed;bottom:0;left:0;right:0;z-index:20;min-height:84px;padding:12px 28px;background:rgba(255,249,243,.94);backdrop-filter:blur(18px);border-top:1px solid var(--border);display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:20px;box-shadow:0 -10px 35px #5d47300a}
+.bottom-song{display:flex;align-items:center;gap:12px;min-width:0}
+.bottom-art{width:47px;height:47px;flex-shrink:0;border-radius:9px;background:linear-gradient(135deg,#e9d6e8,#d9e1f2);display:grid;place-items:center;color:#fff}
+.bottom-song strong{display:block;font-size:12px}
+.bottom-song small{color:var(--muted);font-size:10px}
+.bottom-controls{display:flex;align-items:center;gap:18px}
+.bottom-controls button{background:none;border:none;color:#665b60;font-size:15px}
+.bottom-controls .bottom-play{width:39px;height:39px;border-radius:50%;background:#efd4c9;color:var(--terracotta)}
+.bottom-right{display:flex;align-items:center;justify-content:flex-end;gap:14px}
+.volume{width:85px;accent-color:var(--lavender)}
+.queue-shortcut{border:1px solid var(--border);background:#f1e7ef;padding:10px 13px;border-radius:30px;font-size:11px;color:var(--text)}
+.toast{position:fixed;left:50%;bottom:105px;transform:translate(-50%,20px);opacity:0;pointer-events:none;padding:12px 18px;border-radius:30px;background:var(--text);color:white;font-size:12px;transition:.3s;z-index:50}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+
+/* ANIMATIONS */
+@keyframes fadeUp{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:translateY(0)}}
+@keyframes slideDown{from{opacity:0;transform:translateY(-15px)}to{opacity:1;transform:translateY(0)}}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 4px #8b9b7522}50%{box-shadow:0 0 0 8px #8b9b750a}}
+@keyframes wave{from{transform:scaleY(.5)}to{transform:scaleY(1.6)}}
+@keyframes rotate{to{transform:rotate(360deg)}}
+
+/* RESPONSIVE */
+@media(min-width:1450px){.lounge{grid-template-columns:minmax(0,1fr) 350px}.player-stage{min-height:430px}}
+@media(max-width:1050px){.app{padding:0 22px 115px}.lounge{grid-template-columns:minmax(0,1fr) 275px}.player-stage{gap:20px;padding:20px}.nav{gap:18px}}
+@media(max-width:780px){
+  .app{padding:0 14px 125px}
+  .topbar{height:70px}
+  .nav{display:none}
+  .room-header{align-items:flex-start;gap:15px;flex-direction:column}
+  .lounge{grid-template-columns:1fr}
+  .player-stage{grid-template-columns:1fr}
+  .artwork{max-width:390px;margin:auto}
+  .chat-panel{min-height:420px}
+  .chat-messages{max-height:280px}
+  .bottom-player{grid-template-columns:1fr auto;padding:10px 14px}
+  .bottom-controls{display:none}
+  .bottom-right{gap:8px}
+  .volume,.queue-shortcut{display:none}
+}
+@media(max-width:450px){
+  .brand{font-size:21px}
+  .search-row{flex-wrap:wrap}
+  .search-row input{flex-basis:100%}
+  .add-btn{padding:12px}
+  .bottom-song{gap:8px}
+  .bottom-art{width:39px;height:39px}
+}
+</style>
+</head>
+
+<body>
+<div class="app">
+
+<header class="topbar">
+  <div class="brand">
+    <i class="fa-solid fa-wave-square brand-icon"></i>
+    <div><span>Sync</span><b>Sound</b></div>
+  </div>
+  <nav class="nav">
+    <a href="#"><i class="fa-solid fa-house"></i> &nbsp;Home</a>
+    <a href="#"><i class="fa-solid fa-magnifying-glass"></i> &nbsp;Search</a>
+    <a href="#"><i class="fa-solid fa-music"></i> &nbsp;Your Library</a>
+  </nav>
+  <div class="avatar">H</div>
+</header>
+
+<section class="room-header">
+  <div>
+    <div class="eyebrow"><span class="live-dot"></span> NOW PLAYING TOGETHER</div>
+    <h1 class="room-title">Late night listening.</h1>
+    <div class="room-meta">
+      <span class="room-code">SS-TGBVG8</span>
+      <span class="status"><span class="live-dot"></span>On Air</span>
+      <span><i class="fa-solid fa-users"></i> &nbsp;2 listeners</span>
+    </div>
+  </div>
+  <div class="header-right">
+    <span class="listener-label"><i class="fa-solid fa-headphones"></i> Listening together</span>
+  </div>
+</section>
+
+<main class="lounge">
+<section class="main-column">
+
+<section class="player-stage" id="playerStage">
+  <div class="artwork">
+    <div class="artwork-content">
+      <div class="artwork-icon"><i class="fa-solid fa-compact-disc"></i></div>
+      <div class="artwork-label">OUR LITTLE MUSIC SPACE</div>
+    </div>
+  </div>
+
+  <div class="stage-info">
+    <div class="stage-topline">NOW PLAYING · TOGETHER</div>
+    <div>
+      <h2 class="song-title" id="songTitle">A little more time</h2>
+      <div class="artist" id="artistName">The Midnight · Demo Artist</div>
+    </div>
+    <div class="stage-footer">
+      <div class="sync-indicator">
+        <div class="mini-wave">
+          <span></span><span></span><span></span><span></span><span></span>
+          <span></span><span></span><span></span><span></span><span></span>
+        </div>
+        <span>IN PERFECT SYNC</span>
+      </div>
+      <button class="heart-btn" id="heartBtn" onclick="toggleHeart()"><i class="fa-regular fa-heart"></i></button>
+    </div>
+    <div class="progress-section">
+      <div class="progress" id="progressTrack"><div class="progress-fill" id="progressFill"></div></div>
+      <div class="times"><span id="currentTime">0:00</span><span id="duration">3:42</span></div>
+    </div>
+    <div class="controls">
+      <button class="control" onclick="restartSong()"><i class="fa-solid fa-rotate-left"></i></button>
+      <button class="control" onclick="previousSong()"><i class="fa-solid fa-backward-step"></i></button>
+      <button class="control play" id="mainPlay" onclick="togglePlay()"><i class="fa-solid fa-play"></i></button>
+      <button class="control" onclick="nextSong()"><i class="fa-solid fa-forward-step"></i></button>
+      <button class="control" onclick="notify('Repeat enabled')"><i class="fa-solid fa-repeat"></i></button>
+    </div>
+  </div>
+</section>
+
+<section class="queue-panel" id="queuePanel">
+  <div class="section-heading">
+    <div>
+      <div class="eyebrow">STATION REQUESTS</div>
+      <h3>Song Queue</h3>
+    </div>
+    <span class="section-count">SEARCH & DISCOVER</span>
+  </div>
+  <div class="search-row">
+    <input id="songSearch" placeholder="Song, artist, title or YouTube link">
+    <button class="add-btn" onclick="addSong()">+ Add to Queue</button>
+  </div>
+  <div class="queue-list" id="queueList">
+    <div class="empty-queue"><i class="fa-solid fa-music"></i>Your queue is waiting.<br>Search for a track and add it here.</div>
+  </div>
+</section>
+
+</section>
+
+<aside class="chat-panel">
+  <div class="chat-heading">
+    <div class="eyebrow">ON AIR / LIVE CHAT</div>
+    <h3>Room conversation</h3>
+    <div class="chat-status">
+      <span><i class="live-dot"></i>Connected</span>
+      <span><i class="fa-solid fa-users"></i> 2 listeners</span>
+    </div>
+  </div>
+  <div class="chat-messages" id="chatMessages">
+    <div class="message">
+      <div class="message-avatar">H</div>
+      <div class="message-content"><small>Hello · Just now</small>Hey! Ready to listen? 🎧</div>
+    </div>
+    <div class="message mine">
+      <div class="message-avatar">Y</div>
+      <div class="message-content"><small>You · Just now</small>Always ready! ❤️</div>
+    </div>
+  </div>
+  <form class="chat-input" id="chatForm">
+    <input id="chatInput" placeholder="Message the room..." autocomplete="off">
+    <button type="submit"><i class="fa-solid fa-paper-plane"></i></button>
+  </form>
+</aside>
+</main>
+</div>
+
+<footer class="bottom-player">
+  <div class="bottom-song">
+    <div class="bottom-art"><i class="fa-solid fa-compact-disc"></i></div>
+    <div><strong id="bottomTitle">A little more time</strong><small id="bottomArtist">The Midnight · Demo Artist</small></div>
+  </div>
+  <div class="bottom-controls">
+    <button onclick="previousSong()"><i class="fa-solid fa-backward-step"></i></button>
+    <button class="bottom-play" onclick="togglePlay()" id="bottomPlay"><i class="fa-solid fa-play"></i></button>
+    <button onclick="nextSong()"><i class="fa-solid fa-forward-step"></i></button>
+  </div>
+  <div class="bottom-right">
+    <i class="fa-solid fa-volume-high"></i>
+    <input type="range" class="volume" min="0" max="100" value="75">
+    <button class="queue-shortcut" onclick="document.getElementById('queuePanel').scrollIntoView({behavior:'smooth'})"><i class="fa-solid fa-list"></i> Queue</button>
+  </div>
+</footer>
+
+<div class="toast" id="toast"></div>
+
+<script>
+let playing=false,seconds=0,duration=222,songs=[];
+const $=id=>document.getElementById(id);
+
+function formatTime(value){
+  return `${Math.floor(value/60)}:${String(Math.floor(value%60)).padStart(2,"0")}`;
+}
+function togglePlay(){
+  playing=!playing;
+  updatePlayButtons();
+  $("playerStage").classList.toggle("paused",!playing);
+}
+function updatePlayButtons(){
+  const icon=playing?"fa-pause":"fa-play";
+  $("mainPlay").innerHTML=`<i class="fa-solid ${icon}"></i>`;
+  $("bottomPlay").innerHTML=`<i class="fa-solid ${icon}"></i>`;
+}
+function updateProgress(){
+  $("progressFill").style.width=(seconds/duration*100)+"%";
+  $("currentTime").textContent=formatTime(seconds);
+  $("duration").textContent=formatTime(duration);
+}
+setInterval(()=>{
+  if(!playing)return;
+  seconds++;
+  if(seconds>=duration){seconds=0;playing=false;updatePlayButtons();}
+  updateProgress();
+},1000);
+
+$("progressTrack").addEventListener("click",e=>{
+  const rect=e.currentTarget.getBoundingClientRect();
+  seconds=Math.round(((e.clientX-rect.left)/rect.width)*duration);
+  updateProgress();
+});
+
+function toggleHeart(){
+  const btn=$("heartBtn");
+  btn.classList.toggle("active");
+  btn.innerHTML=btn.classList.contains("active")
+    ?'<i class="fa-solid fa-heart"></i>'
+    :'<i class="fa-regular fa-heart"></i>';
+}
+function restartSong(){seconds=0;updateProgress();}
+function previousSong(){restartSong();notify("Previous track");}
+function nextSong(){
+  if(!songs.length){notify("Your queue is empty");return;}
+  playQueued(0);
+}
+function setSong(title,artist){
+  seconds=0;
+  $("songTitle").textContent=title;
+  $("artistName").textContent=artist;
+  $("bottomTitle").textContent=title;
+  $("bottomArtist").textContent=artist;
+  updateProgress();
+  notify("Now playing: "+title);
+}
+function addSong(){
+  const input=$("songSearch"),title=input.value.trim();
+  if(!title){notify("Enter a song name first");input.focus();return;}
+  songs.push({title});
+  input.value="";
+  renderQueue();
+  notify("Added to your queue");
+}
+function renderQueue(){
+  const list=$("queueList");
+  if(!songs.length){
+    list.innerHTML='<div class="empty-queue"><i class="fa-solid fa-music"></i>Your queue is waiting.<br>Search for a track and add it here.</div>';
+    return;
+  }
+  list.innerHTML=songs.map((song,index)=>`
+    <div class="queue-item">
+      <div class="queue-art"><i class="fa-solid fa-music"></i></div>
+      <div class="queue-details"><strong>${escapeHTML(song.title)}</strong><small>Added to queue · Demo</small></div>
+      <button onclick="playQueued(${index})" title="Play"><i class="fa-solid fa-play"></i></button>
+      <button onclick="removeSong(${index})" title="Remove"><i class="fa-solid fa-xmark"></i></button>
+    </div>`).join("");
+}
+function playQueued(index){
+  const song=songs.splice(index,1)[0];
+  setSong(song.title,"Added from your queue");
+  playing=true;
+  updatePlayButtons();
+  renderQueue();
+}
+function removeSong(index){songs.splice(index,1);renderQueue();}
+function escapeHTML(value){
+  return value.replace(/[&<>"']/g,char=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[char]));
+}
+$("chatForm").addEventListener("submit",e=>{
+  e.preventDefault();
+  const input=$("chatInput"),message=input.value.trim();
+  if(!message)return;
+  const node=document.createElement("div");
+  node.className="message mine";
+  const avatar=document.createElement("div");
+  avatar.className="message-avatar";
+  avatar.textContent="Y";
+  const content=document.createElement("div");
+  content.className="message-content";
+  const meta=document.createElement("small");
+  meta.textContent="You · Just now";
+  content.append(meta,document.createTextNode(message));
+  node.append(avatar,content);
+  $("chatMessages").appendChild(node);
+  $("chatMessages").scrollTop=$("chatMessages").scrollHeight;
+  input.value="";
+});
+let toastTimer;
+function notify(message){
+  const toast=$("toast");
+  toast.textContent=message;
+  toast.classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer=setTimeout(()=>toast.classList.remove("show"),2200);
+}
+updateProgress();
+</script>
+</body>
+</html>

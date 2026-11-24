@@ -1,9 +1,7 @@
 ﻿import { useEffect, useRef, useState } from 'react';
-import { LogIn, ArrowRight } from 'lucide-react';
 import { useSocket } from '../hooks/useSocket';
 import { readClientId } from '../utils/clientId';
 import { normalizeDisplayName, saveDisplayName } from '../utils/displayName';
-import DisplayNameField from '../components/common/DisplayNameField';
 
 function detectCode(): string {
   const params = new URLSearchParams(window.location.search);
@@ -37,8 +35,6 @@ export default function JoinRoom({ displayName, onDisplayNameChange, onJoined }:
       setMessage('Room code is required');
       return;
     }
-    // The name of the person is asked for before the room is entered, so the
-    // other listeners see a name and not a number.
     const who = normalizeDisplayName(displayName);
     if (!who) {
       setStatus('error');
@@ -67,13 +63,6 @@ export default function JoinRoom({ displayName, onDisplayNameChange, onJoined }:
     });
   };
 
-  /**
-   * A name that is written is not a wrong name any more.
-   *
-   * The field of the lobby and the field of this card share the name, so the
-   * error of the last attempt goes away as soon as there is a name, no matter
-   * where it was typed.
-   */
   const visibleNameError = nameError && !normalizeDisplayName(displayName) ? nameError : '';
 
   // An invite link joins the room right away, so the other person only has
@@ -83,8 +72,6 @@ export default function JoinRoom({ displayName, onDisplayNameChange, onJoined }:
     if (!linkCode.current || !socket) return;
     const who = normalizeDisplayName(displayName);
     if (!who) {
-      // Without a name the room is not entered: the person chooses one
-      // first, and the room waits for that name.
       setNameError('Please enter the name the others will see');
       return;
     }
@@ -92,43 +79,76 @@ export default function JoinRoom({ displayName, onDisplayNameChange, onJoined }:
     linkJoinStarted = true;
     setNameError('');
     join(linkCode.current);
-    // The join runs once for the link, not on every render.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [socket, displayName]);
 
   return (
-    <div className="panel-content">
-      <DisplayNameField
-        id="join-room-display-name"
-        value={displayName}
-        onChange={onDisplayNameChange}
-        error={visibleNameError}
-      />
+    <form className="ss-card-body">
+      <div className="ss-field">
+        <label className="ss-label" htmlFor="join-room-display-name">
+          Your name
+        </label>
+        <input
+          id="join-room-display-name"
+          className="ss-input"
+          placeholder="Enter your name"
+          value={displayName}
+          onChange={(e) => onDisplayNameChange(e.target.value)}
+          maxLength={24}
+          aria-invalid={visibleNameError ? true : undefined}
+          aria-describedby={visibleNameError ? 'join-room-display-name-error' : undefined}
+        />
+        <div className="ss-helper">
+          <span>The other listeners will see this name.</span>
+          <span className="ss-counter" aria-hidden="true">{displayName.length}/24</span>
+        </div>
+        {visibleNameError && (
+          <p className="ss-error" id="join-room-display-name-error" role="alert">
+            {visibleNameError}
+          </p>
+        )}
+      </div>
 
-      <label className="field-label" htmlFor="join-room-code">
-        Room code
-      </label>
-      <input
-        id="join-room-code"
-        className="input"
-        placeholder="Enter room code"
-        value={code}
-        onChange={(e) => setCode(e.target.value)}
-      />
+      <div className="ss-field">
+        <label className="ss-label" htmlFor="join-room-code">
+          Room code
+        </label>
+        <input
+          id="join-room-code"
+          className="ss-input"
+          placeholder="SS-1234"
+          value={code}
+          onChange={(e) => {
+            let value = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+            if (value.startsWith('SS')) {
+              value = 'SS-' + value.slice(2, 6);
+            } else {
+              value = value.slice(0, 6);
+            }
+            setCode(value);
+          }}
+          maxLength={7}
+        />
+        <div className="ss-helper">
+          <span>Enter the room code shared by the host.</span>
+          <span className="ss-counter" aria-hidden="true">{code.length}/7</span>
+        </div>
+      </div>
+
       {status === 'error' && (
-        <p className="error-text" role="alert" style={{ marginTop: 8 }}>
+        <p className="ss-error" role="alert">
           {message}
         </p>
       )}
       {status === 'joined' && (
-        <p className="success-text" style={{ marginTop: 8 }}>
+        <p className="ss-success" role="alert">
           {message}
         </p>
       )}
-      <button className="btn primary" onClick={() => join()} disabled={status === 'joining'}>
-        <LogIn size={16} /> {status === 'joining' ? 'Joining...' : 'JOIN THE SESSION ↗'}
-        <ArrowRight size={16} className="btn-arrow" aria-hidden="true" />
+
+      <button className="ss-action-btn ss-action-btn--guest" type="submit" onClick={(e) => { e.preventDefault(); join(); }} disabled={status === 'joining'}>
+        ↪ JOIN THE SESSION <span className="ss-arrow">→</span>
       </button>
-    </div>
+    </form>
   );
 }

@@ -1,4 +1,4 @@
-import { RotateCcw, RotateCw, Play, Pause, Heart, SkipBack, SkipForward } from 'lucide-react';
+import { Rewind, SkipBack, SkipForward, FastForward, Play, Pause } from 'lucide-react';
 
 type PlaybackControlsProps = {
   onRewind5: () => void;
@@ -18,7 +18,7 @@ type PlaybackControlsProps = {
 };
 
 /**
- * The transport of the player.
+ * The transport of the lounge player.
  *
  * Previous and next walk through the shared queue of the room, so every
  * member hears the same track change. Rewind and forward jump five seconds.
@@ -29,70 +29,58 @@ export default function PlaybackControls({
   onTogglePlayback,
   onNext,
   onForward5,
-  onToggleLike,
   playing,
   ready,
   hasTrack,
-  isLiked,
   hasPrevious,
   hasNext,
 }: PlaybackControlsProps) {
   return (
-    <div className="transport">
+    <div className="lounge-controls">
       <button
-        className="sr-icon-btn transport-skip"
+        className="lounge-control"
         onClick={onRewind5}
         disabled={!ready}
-        title="Replay 5 seconds"
-        aria-label="Replay 5 seconds"
+        title="Rewind 5 seconds"
+        aria-label="Rewind 5 seconds"
       >
-        <RotateCcw size={18} />
+        <Rewind size={20} />
       </button>
       <button
-        className="sr-icon-btn transport-skip"
+        className="lounge-control"
         onClick={onPrevious}
         disabled={!hasPrevious}
         title="Previous track"
         aria-label="Play the previous track"
       >
-        <SkipBack size={18} />
+        <SkipBack size={20} />
       </button>
       <button
-        className="play-btn"
+        className="lounge-control lounge-control--play"
         onClick={onTogglePlayback}
         disabled={!hasTrack}
         aria-label={playing ? 'Pause' : 'Play'}
         title={playing ? 'Pause' : 'Play'}
       >
-        {playing ? <Pause size={24} /> : <Play size={24} />}
+        {playing ? <Pause size={28} /> : <Play size={28} />}
       </button>
       <button
-        className="sr-icon-btn transport-skip"
+        className="lounge-control"
         onClick={onNext}
         disabled={!hasNext}
         title="Next track"
         aria-label="Play the next track"
       >
-        <SkipForward size={18} />
+        <SkipForward size={20} />
       </button>
       <button
-        className="sr-icon-btn transport-skip"
+        className="lounge-control"
         onClick={onForward5}
         disabled={!ready}
         title="Forward 5 seconds"
         aria-label="Forward 5 seconds"
       >
-        <RotateCw size={18} />
-      </button>
-      <button
-        className={`sr-icon-btn like-btn ${isLiked ? 'is-liked' : ''}`}
-        onClick={onToggleLike}
-        disabled={!hasTrack}
-        title={isLiked ? 'Remove from liked songs' : 'Like this song'}
-        aria-label={isLiked ? 'Remove from liked songs' : 'Like this song'}
-        aria-pressed={isLiked}
-      >
-        <Heart size={18} fill={isLiked ? 'currentColor' : 'none'} />
+        <FastForward size={20} />
       </button>
     </div>
   );

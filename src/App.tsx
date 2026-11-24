@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Menu, X, Copy, ArrowLeft, LogOut, Settings, User, Music, Home, Search, MessageCircle } from 'lucide-react';
+import { Menu, X, ArrowLeft, LogOut, Settings, User, Music, Home, Search, MessageCircle, Heart, Plus, Link2, Users } from 'lucide-react';
+import { useParams, useNavigate } from 'react-router-dom';
 import { useYouTubePlayer, extractVideoId } from './hooks/useYouTubePlayer';
 import { useSocket } from './hooks/useSocket';
 import { useRoom } from './hooks/useRoom';
@@ -19,12 +20,13 @@ import { avatarFor } from './utils/avatar';
 import { normalizeDisplayName, readDisplayName, saveDisplayName } from './utils/displayName';
 import RoomHeader from './components/layout/RoomHeader';
 import MainPlayer from './components/player/MainPlayer';
-import MiniPlayer from './components/player/MiniPlayer';
 import ChatPanel from './components/chat/ChatPanel';
 import Toast from './components/common/Toast';
 import FloatingCallWindow from './features/call/FloatingCallWindow';
 import { useVideoCall } from './features/call/useVideoCall';
 import DrawingOverlay from './components/drawing/DrawingOverlay';
+import type { CreativeTool } from './components/creative/CreativeToolbar';
+import FloatingCreativeMenu from './components/creative/FloatingCreativeMenu';
 import CreateRoom from './pages/CreateRoom';
 import JoinRoom from './pages/JoinRoom';
 import SearchView from './pages/SearchView';
@@ -37,6 +39,7 @@ import type {
   Track,
 } from './types/music';
 import './App.css';
+import './App.lounge.css';
 
 /** Ignore a drift below this many seconds. */
 const DRIFT_THRESHOLD = 1.2;
@@ -55,6 +58,9 @@ type NavTarget =
   | 'settings';
 
 export default function App() {
+  const { code: urlRoomCode } = useParams<{ code?: string }>();
+  const navigate = useNavigate();
+
   /** React owned, always empty container for the YouTube IFrame player. */
   const stageVideoRef = useRef<HTMLDivElement | null>(null);
   const yt = useYouTubePlayer(stageVideoRef);
@@ -126,13 +132,12 @@ export default function App() {
   const [searchTerm, setSearchTerm] = useState('');
 
   const [settingsOpen, setSettingsOpen] = useState(false);
-  const [inviteOpen, setInviteOpen] = useState(false);
-  /** Whether the invite link really made it into the clipboard. */
-  const [linkCopied, setLinkCopied] = useState(false);
   const [mobileNav, setMobileNav] = useState(false);
   const [chatOpen, setChatOpen] = useState(false);
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
   const [callOpen, setCallOpen] = useState(false);
+  /** The active creative space tool. */
+  const [activeCreativeTool, setActiveCreativeTool] = useState<CreativeTool | null>(null);
   /** The dedication card shown when a dedicated song starts playing. */
   const [showDedication, setShowDedication] = useState<{
     dedication: SongDedication;
@@ -140,8 +145,6 @@ export default function App() {
   } | null>(null);
   /** Profile dropdown state. */
   const [profileOpen, setProfileOpen] = useState(false);
-  /** Volume for mini player. */
-  const [volume, setVolume] = useState(1);
   /** Recently played rooms from localStorage. */
   const [recentRooms, setRecentRooms] = useState<Array<{
     code: string;
@@ -230,6 +233,17 @@ export default function App() {
     onRemoteMessage: () => chatNotify.playChime(),
   });
   const { editDedication } = room;
+
+  /* --- Auto-enter room from URL --- */
+  useEffect(() => {
+    if (urlRoomCode && !room.roomCode) {
+      const code = urlRoomCode.toUpperCase();
+      room.enterRoom(code);
+      setView('room');
+      setHomeFocus(null);
+      setMobileNav(false);
+    }
+  }, [urlRoomCode, room]);
 
   /** The two person call. It only uses the socket, never the music protocol. */
   const call = useVideoCall({ socket, roomCode: room.roomCode, clientId });
@@ -674,9 +688,6 @@ export default function App() {
     [room, clientId, displayName],
   );
 
-  /* --- the invite ------------------------------------------------------------ */
-  const inviteLink = room.roomCode ? `${window.location.origin}/?room=${room.roomCode}` : `${window.location.origin}`;
-
   /** Plays a track from the library by finding it in favorites or recent. */
   const playLibraryTrack = useCallback(
     async (id: string): Promise<string | null> => {
@@ -686,19 +697,6 @@ export default function App() {
     },
     [library, room],
   );
-
-  const copyLink = async () => {
-    let copied = false;
-    try {
-      await navigator.clipboard.writeText(inviteLink);
-      copied = true;
-    } catch {
-      // The clipboard is not available (no permission, not a secure
-      // context): the dialog shows the link so it can be copied by hand.
-    }
-    setLinkCopied(copied);
-    setInviteOpen(true);
-  };
 
   /* --- navigation ------------------------------------------------------------ */
   const goHome = useCallback(() => {
@@ -738,13 +736,14 @@ export default function App() {
       goHome();
       return;
     }
+    navigate(`/room/${room.roomCode}`);
     setView('room');
     setHomeFocus(null);
     setMobileNav(false);
-  }, [room.roomCode, goHome]);
+  }, [room.roomCode, goHome, navigate]);
 
   /** The sidebar and the mobile menu open the same screens. */
-  const navigate = useCallback(
+  const navigateTo = useCallback(
     (target: NavTarget) => {
       if (target === 'home') goHome();
       else if (target === 'room') goRoom();
@@ -758,6 +757,7 @@ export default function App() {
   const enterRoom = useCallback(
     (code: string, name?: string | null) => {
       room.enterRoom(code, name);
+      navigate(`/room/${code.toUpperCase()}`);
       setView('room');
       setHomeFocus(null);
       setMobileNav(false);
@@ -768,7 +768,7 @@ export default function App() {
         addRecentRoom(code, room.roomName || code);
       }
     },
-    [room, current, addRecentRoom],
+    [room, current, addRecentRoom, navigate],
   );
 
   /**
@@ -818,18 +818,10 @@ export default function App() {
     } catch {
       // The url cannot be rewritten: the room code is simply forgotten.
     }
+    navigate('/');
     setView('home');
     setHomeFocus(null);
-  }, [room, current, addRecentRoom]);
-
-  const focusQueueInput = () => {
-    const el = document.getElementById('queue-url-input');
-    if (!el) return;
-    const reduce =
-      typeof window.matchMedia === 'function' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    el.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'center' });
-    el.focus({ preventScroll: true });
-  };
+  }, [room, current, addRecentRoom, navigate]);
 
   /* --- derived values -------------------------------------------------------- */
   /** The local player really renders a moving picture. */
@@ -911,6 +903,15 @@ export default function App() {
     }, 150);
   };
 
+  /** Copies the room invitation URL to the clipboard. */
+  const copyRoomLink = useCallback(async () => {
+    if (!room.roomCode) return;
+    const url = `${window.location.origin}/?room=${room.roomCode}`;
+    try {
+      await navigator.clipboard.writeText(url);
+    } catch {}
+  }, [room.roomCode]);
+
   /** Hearts the track that plays, so it shows up in the library. */
   const toggleFavorite = () => {
     if (current) library.toggleLike(current);
@@ -970,7 +971,7 @@ export default function App() {
   return (
     <div className="app-root">
       {/* ------------------------------ Listening room ---------------------- */}
-      <div className={`sunday-room app ${view !== 'room' ? 'is-hidden' : ''}`} inert={view !== 'room'}>
+      <div className={`sunday-room lounge app ${view !== 'room' ? 'is-hidden' : ''}`} inert={view !== 'room'}>
         {/* Floating Sunday Radio background decor, kept behind the interface. */}
         <div className="sr-room-bg" aria-hidden="true">
           {bgMusicNotes.map((note, i) => (
@@ -1098,115 +1099,91 @@ export default function App() {
             roomName={room.roomName}
             members={room.members}
             connected={connected}
-            linkCopied={linkCopied}
-            onCopyInvite={copyLink}
-            onVideoCall={() => setCallOpen(true)}
+            onOpenCall={() => setCallOpen(true)}
+            onCopyLink={copyRoomLink}
           />
 
-          <MainPlayer
-            stageRef={stageVideoRef}
-            current={current}
-            yt={yt}
-            playing={roomPlaying}
-            progress={progress}
-            isLiked={isLiked}
-            ytError={ytError}
-            playerError={yt.error}
-            onSeek={handleSeek}
-            onTogglePlayback={togglePlayback}
-            onRequestPlay={requestPlay}
-            onRewind5={yt.rewind5}
-            onForward5={yt.forward5}
-            onPrevious={playPrevious}
-            onNext={playNext}
-            onToggleLike={toggleFavorite}
-            hasPrevious={hasPrevious}
-            hasNext={hasNext}
-            adding={adding}
-            onAddQueue={addQueue}
-            onLoadVideo={loadVideo}
-            search={{
-              term: searchTerm,
-              setTerm: setSearchTerm,
-              searching: queueSearching,
-              results: queueSearch,
-              nextPageToken: queueSearchNext,
-              error: ytError,
-              notice: ytNotice,
-              setError: setYtError,
-              setNotice: setYtNotice,
-              run: runQueueSearch,
-            }}
-            onAddToQueue={onAddToQueue}
-            onPlayNow={onPlayNow}
-            inRoom={!!room.roomCode}
-            queue={room.queue}
-            activeQueueItemId={activeQueueItemId}
-            onPlayQueue={room.playQueueItem}
-            onMoveUp={(id) => room.moveQueueItem(id, -1)}
-            onMoveDown={(id) => room.moveQueueItem(id, 1)}
-            onRemove={room.removeQueueItem}
-            editDedication={editDedication}
-            clientId={clientId}
-            showDedication={showDedication}
-            onDismissDedication={dismissDedication}
-            onSaveDedication={saveDedication}
-            onRemoveDedication={removeDedication}
-            reactions={room.reactions}
-            reactionClientId={clientId}
-            onInvite={() => setInviteOpen(true)}
-            onVideoCall={() => setCallOpen(true)}
-            onFocusQueueInput={focusQueueInput}
-          />
+          <div className="lounge-grid">
+            <div className="lounge-main-column">
+              <MainPlayer
+                stageRef={stageVideoRef}
+                current={current}
+                yt={yt}
+                playing={roomPlaying}
+                progress={progress}
+                isLiked={isLiked}
+                ytError={ytError}
+                playerError={yt.error}
+                onSeek={handleSeek}
+                onTogglePlayback={togglePlayback}
+                onRequestPlay={requestPlay}
+                onRewind5={yt.rewind5}
+                onForward5={yt.forward5}
+                onPrevious={playPrevious}
+                onNext={playNext}
+                onToggleLike={toggleFavorite}
+                hasPrevious={hasPrevious}
+                hasNext={hasNext}
+                adding={adding}
+                onAddQueue={addQueue}
+                onLoadVideo={loadVideo}
+                search={{
+                  term: searchTerm,
+                  setTerm: setSearchTerm,
+                  searching: queueSearching,
+                  results: queueSearch,
+                  nextPageToken: queueSearchNext,
+                  error: ytError,
+                  notice: ytNotice,
+                  setError: setYtError,
+                  setNotice: setYtNotice,
+                  run: runQueueSearch,
+                }}
+                onAddToQueue={onAddToQueue}
+                onPlayNow={onPlayNow}
+                inRoom={!!room.roomCode}
+                queue={room.queue}
+                activeQueueItemId={activeQueueItemId}
+                onPlayQueue={room.playQueueItem}
+                onMoveUp={(id) => room.moveQueueItem(id, -1)}
+                onMoveDown={(id) => room.moveQueueItem(id, 1)}
+                onRemove={room.removeQueueItem}
+                editDedication={editDedication}
+                clientId={clientId}
+                showDedication={showDedication}
+                onDismissDedication={dismissDedication}
+                onSaveDedication={saveDedication}
+                onRemoveDedication={removeDedication}
+                reactions={room.reactions}
+                reactionClientId={clientId}
+              />
+            </div>
+
+            <div className="lounge-creative-column">
+              {!isNarrow && (
+                <ChatPanel
+                  roomCode={room.roomCode}
+                  roomName={room.roomName}
+                  members={room.members}
+                  clientId={clientId}
+                  connected={connected}
+                  messages={room.messages}
+                  typing={room.typing}
+                  draft={room.draft}
+                  chatError={room.chatError}
+                  chatSending={room.chatSending}
+                  replyTo={room.replyTo}
+                  onDraftChange={room.setDraft}
+                  onSend={room.sendMessage}
+                  sendTyping={room.sendTyping}
+                  onSelectReply={room.selectReply}
+                  onCancelReply={room.cancelReply}
+                />
+              )}
+            </div>
+          </div>
         </main>
-
-        <aside className="right">
-          {!isNarrow && (
-            <ChatPanel
-              roomCode={room.roomCode}
-              roomName={room.roomName}
-              members={room.members}
-              clientId={clientId}
-              connected={connected}
-              messages={room.messages}
-              typing={room.typing}
-              draft={room.draft}
-              chatError={room.chatError}
-              chatSending={room.chatSending}
-              replyTo={room.replyTo}
-              onDraftChange={room.setDraft}
-              onSend={room.sendMessage}
-              sendTyping={room.sendTyping}
-              onSelectReply={room.selectReply}
-              onCancelReply={room.cancelReply}
-              muted={chatNotify.muted}
-              onToggleMute={chatNotify.toggleMute}
-            />
-          )}
-        </aside>
       </div>
-
-      {/* --------------------------- Persistent mini player ------------------ */}
-      {view === 'room' && (
-        <MiniPlayer
-          current={current}
-          playing={roomPlaying}
-          ready={yt.ready}
-          currentTime={yt.currentTime}
-          duration={yt.duration}
-          volume={volume}
-          onPlayPause={togglePlayback}
-          onPrevious={playPrevious}
-          onNext={playNext}
-          hasPrevious={hasPrevious}
-          hasNext={hasNext}
-          onSeek={handleSeek}
-          onVolumeChange={setVolume}
-          onToggleMute={() => setVolume((v) => (v === 0 ? 1 : 0))}
-          onOpenPlayer={goRoom}
-          onOpenQueue={goRoom}
-        />
-      )}
 
       {/*
         The call window lives outside the room shell: it floats above the
@@ -1224,105 +1201,98 @@ export default function App() {
       {/* ------------------------------ Lobby ------------------------------ */}
       {view !== 'room' && (
         <div className="sunday-home">
-          {/* Background animations */}
-          <div className="sunday-home-bg" aria-hidden="true">
-            <div className="ambient-wash" />
-            {bgMusicNotes.map((note, i) => (
-              <span
-                key={`note-${i}`}
-                className="music-note"
-                style={{
-                  left: note.left,
-                  fontSize: note.size,
-                  animationDuration: note.duration,
-                  animationDelay: note.delay,
-                }}
-              >
-                {note.char}
-              </span>
-            ))}
-            {bgGeoShapes.map((shape, i) => (
-              <span
-                key={`geo-${i}`}
-                className={`geo-shape ${shape.type === 0 ? 'circle' : shape.type === 1 ? 'ring' : 'star'}`}
-                style={{
-                  left: shape.left,
-                  width: shape.size,
-                  height: shape.size,
-                  animationDuration: shape.duration,
-                  animationDelay: shape.delay,
-                  '--tx': shape.tx,
-                } as React.CSSProperties}
-              />
-            ))}
-          </div>
-
-          <header className="home-header">
-            <div className="brand">SUNDAY RADIO<span className="reg" aria-hidden="true">®</span></div>
-            <div className="header-right">VOL. 001 &nbsp; / &nbsp; MUSIC CLUB</div>
-          </header>
-
           {view === 'home' && (
-            <>
-              <section className="hero">
-                <div className="hero-copy">
-                  <div className="eyebrow">✳ YOUR PERSONAL BROADCAST STATION</div>
-                  <h1>GOOD<br />MUSIC.<br /><span>GOOD</span><br />MOOD.</h1>
-                  <p>Find your frequency. Share your sound.</p>
-                </div>
-                <div className="record-wrap" aria-hidden="true">
-                  <div className="record">
-                    <div className="record-label">SUNDAY<br />RADIO<br />♫</div>
-                  </div>
-                </div>
-                <div className="decor star one" aria-hidden="true">✳</div>
-                <div className="decor star two" aria-hidden="true">✴</div>
-                <div className="decor circle" aria-hidden="true" />
-                <div className="decor ring" aria-hidden="true" />
-              </section>
+            <div className="ss-home">
+              <div className="ss-wrap">
+                <header className="ss-nav">
+                  <div className="ss-logo">syncsound<span>.</span></div>
+                  <nav className="ss-nav-links">
+                    <a href="#connect">Rooms</a>
+                    <a href="#about">About</a>
+                  </nav>
+                  <button className="ss-nav-cta" onClick={goCreate}>
+                    Get Started
+                  </button>
+                </header>
 
-              <div className="wave-section" id="wave" aria-hidden="true" />
+                <div className="ss-split">
+                  <section className="ss-hero" id="about">
+                    <div className="ss-eyebrow">
+                      <span className="ss-dot" aria-hidden="true" />
+                      YOUR SPACE. YOUR SOUND.
+                    </div>
+                    <h1>
+                      <span className="ss-line">Music brings us</span>
+                      <span className="ss-line ss-highlight">closer.</span>
+                    </h1>
+                    <p className="ss-description">
+                      Create a room, invite someone and listen together. Every song, every moment, in sync.
+                    </p>
+                    <div className="ss-wave-area">
+                      <div className="ss-wave" aria-hidden="true">
+                        {[13, 22, 34, 25, 43, 27, 17, 37, 47, 23, 34, 18, 29, 12].map((h, i) => {
+                          const colors = ['#C58B71', '#B87358', '#A5A68A'];
+                          const durations = ['.8s', '1s', '.9s', '1.1s', '.8s', '1.2s', '.9s', '1s', '.8s', '1.1s', '.9s', '1s', '.8s', '1.1s'];
+                          const style: Record<string, string> = {
+                            '--height': `${h}px`,
+                            '--color': colors[i % 3],
+                            '--delay': `${i * 0.1}s`,
+                            '--duration': durations[i],
+                          };
+                          return <span key={`w-${i}`} style={style as unknown as React.CSSProperties} />;
+                        })}
+                      </div>
+                      <span className="ss-wave-caption">IN PERFECT SYNC</span>
+                    </div>
+                  </section>
 
-              <div className="section-heading">
-                <h2>Pick your station.</h2>
-                <span>SELECT / 01—02</span>
+                  <section className="ss-rooms" id="connect">
+                    <div className="ss-section-head">
+                      <h2>How would you like to listen?</h2>
+                      <span className="ss-section-index">01 — 02 / CONNECT</span>
+                    </div>
+                    <div className="ss-cards">
+                      <article className="ss-card ss-card--host">
+                        <div className="ss-card-top">
+                          <span className="ss-card-number">01 / HOST</span>
+                          <div className="ss-card-icon">↗</div>
+                        </div>
+                        <h3>Create a room.</h3>
+                        <p className="ss-card-description">
+                          Start a new listening session and bring someone along.
+                        </p>
+                        <CreateRoom
+                          displayName={displayNameInput}
+                          onDisplayNameChange={setDisplayNameInput}
+                          onCreated={handleEnterRoom}
+                        />
+                      </article>
+
+                      <article className="ss-card ss-card--guest">
+                        <div className="ss-card-top">
+                          <span className="ss-card-number">02 / GUEST</span>
+                          <div className="ss-card-icon">⌁</div>
+                        </div>
+                        <h3>Join a room.</h3>
+                        <p className="ss-card-description">
+                          Have a room code already? Enter it and tune in.
+                        </p>
+                        <JoinRoom
+                          displayName={displayNameInput}
+                          onDisplayNameChange={setDisplayNameInput}
+                          onJoined={handleEnterRoom}
+                        />
+                      </article>
+                    </div>
+                  </section>
+                </div>
+
+                <footer className="ss-footer" id="about">
+                  <span>© 2026 SYNCSOUND</span>
+                  <span>MADE FOR SHARED LISTENING.</span>
+                </footer>
               </div>
-
-              <section className="panels">
-                <div className="panel create">
-                  <div className="panel-top">
-                    <span className="number">STATION 01 / HOST</span>
-                    <span className="panel-icon">◉</span>
-                  </div>
-                  <h3>Go On Air.</h3>
-                  <p>Start a new listening session.</p>
-                  <CreateRoom
-                    displayName={displayNameInput}
-                    onDisplayNameChange={setDisplayNameInput}
-                    onCreated={handleEnterRoom}
-                  />
-                </div>
-
-                <div className="panel join">
-                  <div className="panel-top">
-                    <span className="number">STATION 02 / GUEST</span>
-                    <span className="panel-icon">✳</span>
-                  </div>
-                  <h3>Tune In.</h3>
-                  <p>Enter a room code to join the session.</p>
-                  <JoinRoom
-                    displayName={displayNameInput}
-                    onDisplayNameChange={setDisplayNameInput}
-                    onJoined={handleEnterRoom}
-                  />
-                </div>
-              </section>
-
-              <footer className="home-footer">
-                <span>NO ALGORITHMS. JUST GOOD TUNES.</span>
-                <span>MADE FOR MUSIC LOVERS ✳</span>
-              </footer>
-            </>
+            </div>
           )}
 
           {view === 'search' && (
@@ -1398,8 +1368,6 @@ export default function App() {
               sendTyping={room.sendTyping}
               onSelectReply={room.selectReply}
               onCancelReply={room.cancelReply}
-              muted={chatNotify.muted}
-              onToggleMute={chatNotify.toggleMute}
               onClose={() => setChatOpen(false)}
             />
           )}
@@ -1420,40 +1388,6 @@ export default function App() {
               </button>
               <button className="btn danger" onClick={() => { if (window.confirm("Leave this room?")) leaveRoom(); }}>
                 <LogOut size={18} aria-hidden="true" /> Leave room
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {inviteOpen && (
-        <div className="overlay" onClick={() => setInviteOpen(false)}>
-          <div className="card modal" onClick={(e) => e.stopPropagation()}>
-            <h3>{linkCopied ? 'Invite Link Copied' : 'Invite Link'}</h3>
-            <p className="hint">
-              {linkCopied
-                ? 'Send this link to the person you want to listen with.'
-                : 'Copy this link to invite somebody:'}
-            </p>
-            <p className="hint invite-link">{inviteLink}</p>
-            <div className="modal-actions">
-              <button className="btn" onClick={() => setInviteOpen(false)}>
-                Close
-              </button>
-              <button
-                className="btn primary"
-                onClick={async () => {
-                  try {
-                    await navigator.clipboard.writeText(inviteLink);
-                    setLinkCopied(true);
-                    pushToast('The invite link is on the clipboard.', 'success');
-                  } catch {
-                    // The clipboard is not available: the link above can be
-                    // copied by hand.
-                  }
-                }}
-              >
-                <Copy size={18} aria-hidden="true" /> Copy link
               </button>
             </div>
           </div>
@@ -1484,7 +1418,7 @@ export default function App() {
                 <em>Sync</em>Sound
               </span>
               <button
-                className="btn icon"
+                className="drawer-close"
                 onClick={() => setMobileNav(false)}
                 title="Close the menu"
                 aria-label="Close the menu"
@@ -1492,75 +1426,94 @@ export default function App() {
                 <X size={20} aria-hidden="true" />
               </button>
             </div>
-            <div className="side-section">
+
+            <div className="nav-section">
               {[
-                { id: 'home', label: 'Home' },
-                { id: 'search', label: 'Search Music' },
-                { id: 'liked-songs', label: 'Liked Songs' },
-                { id: 'playlists', label: 'Your Library' },
+                { id: 'home', label: 'Home', icon: <Home size={18} /> },
+                { id: 'search', label: 'Search Music', icon: <Search size={18} /> },
+                { id: 'liked-songs', label: 'Liked Songs', icon: <Heart size={18} /> },
+                { id: 'playlists', label: 'Your Library', icon: <User size={18} /> },
               ].map((item) => (
                 <button
                   key={item.id}
-                  className={`side-link ${activeNav === item.id ? 'is-active' : ''}`}
+                  className={`nav-link ${activeNav === item.id ? 'is-active' : ''}`}
                   onClick={() => {
+                    setMobileNav(false);
                     if (item.id === 'liked-songs') goLibrary('liked');
                     else if (item.id === 'playlists') goLibrary('playlists');
-                    else navigate(item.id as NavTarget);
+                    else navigateTo(item.id as NavTarget);
                   }}
                 >
-                  {item.label}
+                  {item.icon}
+                  <span className="nav-label">{item.label}</span>
                 </button>
               ))}
             </div>
-            <div className="side-divider" />
-            <div className="side-section">
-              <span className="side-section-title">Listen Together</span>
+
+            <div className="nav-section">
+              <span className="nav-section-title">Listen Together</span>
               {[
-                { id: 'room', label: 'Your Room' },
-                { id: 'create-room', label: 'Create Room' },
-                { id: 'join-room', label: 'Join Room' },
+                { id: 'room', label: 'Your Room', icon: <Users size={18} /> },
+                { id: 'create-room', label: 'Create Room', icon: <Plus size={18} /> },
+                { id: 'join-room', label: 'Join Room', icon: <Link2 size={18} /> },
               ].map((item) => (
                 <button
                   key={item.id}
-                  className={`side-link ${activeNav === item.id ? 'is-active' : ''} ${item.id === 'room' && room.roomCode ? 'is-room-active' : ''}`}
-                  onClick={() => navigate(item.id as NavTarget)}
+                  className={`nav-link ${activeNav === item.id ? 'is-active' : ''} ${item.id === 'room' && room.roomCode ? 'is-room-active' : ''}`}
+                  onClick={() => {
+                    setMobileNav(false);
+                    navigate(item.id as NavTarget);
+                  }}
                 >
-                  {item.label}
-                  {item.id === 'room' && room.roomCode && <span className="side-room-badge">Active</span>}
+                  {item.icon}
+                  <span className="nav-label">{item.label}</span>
+                  {item.id === 'room' && room.roomCode && (
+                    <span className="nav-room-badge">Active</span>
+                  )}
                 </button>
               ))}
             </div>
-            <div className="side-divider" />
-            <div className="side-section side-section-bottom">
+
+            <div className="nav-section nav-section-bottom">
               {room.roomCode && (
                 <button
-                  className="side-link"
+                  className="nav-link"
                   onClick={() => {
                     setMobileNav(false);
                     setChatOpen(true);
                   }}
                 >
-                  On Air Chat
+                  <MessageCircle size={18} />
+                  <span className="nav-label">On Air Chat</span>
                 </button>
               )}
               <button
-                className="side-link"
+                className="nav-link"
                 onClick={() => {
                   setMobileNav(false);
                   setSettingsOpen(true);
                 }}
               >
-                Settings
+                <Settings size={18} />
+                <span className="nav-label">Settings</span>
               </button>
             </div>
+
             {room.roomCode && (
-              <button className="side-link" onClick={leaveRoom}>
-                <LogOut size={18} aria-hidden="true" /> Leave room
+              <button className="nav-link nav-leave" onClick={leaveRoom}>
+                <LogOut size={18} aria-hidden="true" />
+                <span className="nav-label">Leave room</span>
               </button>
             )}
           </div>
         </div>
       )}
+
+      <FloatingCreativeMenu
+        activeTool={activeCreativeTool}
+        onToolChange={setActiveCreativeTool}
+      />
+
     </div>
   );
 }

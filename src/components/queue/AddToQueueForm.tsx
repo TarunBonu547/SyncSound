@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react';
-import { Play, Plus, Search, Loader2, Link2, Heart, Send, X } from 'lucide-react';
+import { Play, Plus, Loader2, Link2, Heart, Send, X, Search } from 'lucide-react';
 import { extractVideoId } from '../../hooks/useYouTubePlayer';
 import { formatDuration } from '../../utils/youtubeSearch';
 import type { SearchResult } from '../../utils/youtubeSearch';
@@ -127,63 +127,66 @@ export default function AddToQueueForm({
   };
 
   return (
-    <section className="panel add-queue" aria-labelledby="add-queue-title">
-      <div className="panel-head">
+    <section className="lounge-queue-panel lounge-add-queue" aria-labelledby="add-queue-title">
+      <div className="lounge-section-heading">
         <div>
-          <p className="eyebrow">Station Requests</p>
-          <h2 className="section-title" id="add-queue-title">
-            Add to Queue
+          <p className="lounge-eyebrow">Station Requests</p>
+          <h2 className="lounge-section-title" id="add-queue-title">
+            Song Queue
           </h2>
         </div>
-        <p className="hint">Search by song, artist or title, or paste a YouTube link</p>
+        <span className="lounge-section-count">Search &amp; Discover</span>
       </div>
 
-      <div className="queue-form">
-        <span className="search-icon" aria-hidden="true">
-          <Search size={16} />
-        </span>
-        <input
-          className="input"
-          id="queue-url-input"
-          type="search"
-          placeholder="Song, artist, title or YouTube link"
-          aria-label="Song, artist, title or YouTube link"
-          value={term}
-          onChange={(e) => setTerm(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key !== 'Enter') return;
-            e.preventDefault();
-            runSearch();
-          }}
-        />
-        <button className="btn" onClick={() => runSearch()} disabled={searching}>
-          {searching ? <Loader2 size={16} className="spin" /> : null}
-          {searching ? 'Searching…' : 'Search'}
-        </button>
-        <button
-          className="btn"
-          onClick={() => {
-            if (!pastedId) {
-              setError('Search for a track or paste a YouTube link');
-              return;
-            }
-            setError(null);
-            loadVideo(pastedId, pastedDedication || undefined);
-          }}
-          disabled={!pastedId || !inRoom}
-          title={inRoom ? 'Play the pasted link for everybody' : 'Join a room first'}
-        >
-          <Link2 size={16} aria-hidden="true" /> Load
-        </button>
-        <button className="btn primary" onClick={addQueue} disabled={adding || !inRoom}>
-          {adding ? 'Adding…' : 'Add to Queue'}
-        </button>
+      <div className="lounge-search-row">
+        <div className="lounge-search-wrap">
+          <Search className="lounge-search-icon" size={18} aria-hidden="true" />
+          <input
+            className="lounge-search-input"
+            id="queue-url-input"
+            type="search"
+            placeholder="Song, artist, title or YouTube link"
+            aria-label="Song, artist, title or YouTube link"
+            value={term}
+            onChange={(e) => setTerm(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key !== 'Enter') return;
+              e.preventDefault();
+              runSearch();
+            }}
+          />
+        </div>
+
+        <div className="lounge-search-actions">
+          <button className="lounge-btn lounge-btn--primary lounge-action-search" onClick={() => runSearch()} disabled={searching}>
+            {searching ? <Loader2 size={16} className="spin" /> : <Search size={16} aria-hidden="true" />}
+            {searching ? 'Searching…' : 'Search'}
+          </button>
+          <button className="lounge-btn lounge-action-add" onClick={addQueue} disabled={adding || !inRoom}>
+            {adding ? 'Adding…' : '+ Add to Queue'}
+          </button>
+          <button
+            className="lounge-btn lounge-action-load"
+            onClick={() => {
+              if (!pastedId) {
+                setError('Search for a track or paste a YouTube link');
+                return;
+              }
+              setError(null);
+              loadVideo(pastedId, pastedDedication || undefined);
+            }}
+            disabled={!pastedId || !inRoom}
+            title={inRoom ? 'Play the pasted link for everybody' : 'Join a room first'}
+          >
+            <Link2 size={16} aria-hidden="true" /> Load
+          </button>
+        </div>
 
         {pastedId && (
-          <div className="dedication-input-group">
+          <div className="lounge-dedication-input-group">
             <button
               type="button"
-              className="dedication-toggle"
+              className="lounge-dedication-toggle"
               onClick={() => {
                 setIsPastedDedicationEditing((prev) => !prev);
                 if (!isPastedDedicationEditing) setPastedDedication('');
@@ -191,14 +194,12 @@ export default function AddToQueueForm({
               aria-expanded={isPastedDedicationEditing}
             >
               <Heart size={14} aria-hidden="true" />
-              <span>
-                {isPastedDedicationEditing ? 'Cancel note' : 'Add a note ❤️'}
-              </span>
+              <span>{isPastedDedicationEditing ? 'Cancel note' : 'Add a note'}</span>
             </button>
             {isPastedDedicationEditing && (
-              <div className="dedication-editor">
+              <div className="lounge-dedication-editor">
                 <textarea
-                  className="input dedication-textarea"
+                  className="lounge-dedication-textarea"
                   value={pastedDedication}
                   onChange={(e) => setPastedDedication(e.target.value)}
                   placeholder="This song reminds me of you…"
@@ -206,13 +207,13 @@ export default function AddToQueueForm({
                   rows={2}
                   aria-label="Dedication"
                 />
-                <span className="dedication-counter">
+                <span className="lounge-dedication-counter">
                   {pastedDedication.length} / {MAX_DEDICATION_LENGTH}
                 </span>
-                <div className="dedication-editor-actions">
+                <div className="lounge-dedication-editor-actions">
                   <button
                     type="button"
-                    className="btn icon sm"
+                    className="lounge-icon-btn"
                     onClick={() => {
                       setPastedDedication('');
                       setIsPastedDedicationEditing(false);
@@ -223,7 +224,7 @@ export default function AddToQueueForm({
                   </button>
                   <button
                     type="button"
-                    className="btn icon sm primary"
+                    className="lounge-icon-btn is-primary"
                     onClick={() => setIsPastedDedicationEditing(false)}
                     aria-label="Save note"
                   >
@@ -237,45 +238,44 @@ export default function AddToQueueForm({
       </div>
 
       {error && (
-        <p className="error-text" role="alert" style={{ marginTop: 8 }}>
+        <p className="lounge-error-text" role="alert" style={{ marginTop: 8 }}>
           {error}
         </p>
       )}
       {notice && (
-        <p className="hint notice-text" role="status" style={{ marginTop: 8 }}>
+        <p className="lounge-notice-text" role="status" style={{ marginTop: 8 }}>
           {notice}
         </p>
       )}
 
       {results.length > 0 && (
-        <ul className="queue-list" style={{ marginTop: 12 }}>
+        <ul className="lounge-queue-list" style={{ marginTop: 12 }}>
           {results.map((track) => {
             return (
-              <li className="queue-row" key={track.id}>
-                <img className="queue-thumb" src={track.thumbnail} alt="" />
-                <div className="queue-text">
-                  <p className="queue-title">{track.title}</p>
-                  <p className="queue-channel">
+              <li className="lounge-queue-item" key={track.id}>
+                <img className="lounge-queue-thumb" src={track.thumbnail} alt="" />
+                <div className="lounge-queue-details">
+                  <strong>{track.title}</strong>
+                  <small>
                     {track.channel}
                     {duration(track) ? ` · ${duration(track)}` : ''}
-                  </p>
+                  </small>
                 </div>
-                <div className="queue-actions">
+                <div className="lounge-queue-actions">
                   <button
                     type="button"
-                    className="dedication-toggle"
+                    className="lounge-queue-icon-btn lounge-dedication-toggle"
                     onClick={() => toggleDedicationEditing(track)}
                     aria-expanded={isEditing(track)}
                     title={isEditing(track) ? 'Cancel note' : 'Add a note'}
                     aria-label={`Add a note to ${track.title}`}
                   >
                     <Heart size={14} aria-hidden="true" />
-                    <span>{isEditing(track) ? 'Cancel note' : 'Add a note ❤️'}</span>
                   </button>
                   {isEditing(track) && (
-                    <div className="dedication-editor">
+                    <div className="lounge-dedication-editor">
                       <textarea
-                        className="input dedication-textarea"
+                        className="lounge-dedication-textarea"
                         value={dedicationFor(track)}
                         onChange={(e) => setDedicationFor(track, e.target.value)}
                         placeholder="This song reminds me of you…"
@@ -283,13 +283,13 @@ export default function AddToQueueForm({
                         rows={2}
                         aria-label={`Dedication for ${track.title}`}
                       />
-                      <span className="dedication-counter">
+                      <span className="lounge-dedication-counter">
                         {dedicationFor(track).length} / {MAX_DEDICATION_LENGTH}
                       </span>
-                      <div className="dedication-editor-actions">
+                      <div className="lounge-dedication-editor-actions">
                         <button
                           type="button"
-                          className="btn icon sm"
+                          className="lounge-icon-btn"
                           onClick={() => cancelDedicationFor(track)}
                           aria-label="Cancel note"
                         >
@@ -297,7 +297,7 @@ export default function AddToQueueForm({
                         </button>
                         <button
                           type="button"
-                          className="btn icon sm primary"
+                          className="lounge-icon-btn is-primary"
                           onClick={() => saveDedicationFor(track)}
                           aria-label="Save note"
                         >
@@ -307,7 +307,7 @@ export default function AddToQueueForm({
                     </div>
                   )}
                   <button
-                    className="music-icon-btn"
+                    className="lounge-queue-icon-btn"
                     onClick={() =>
                       send(onAddToQueue, track, 'Added to the queue', dedicationFor(track) || undefined)
                     }
@@ -315,10 +315,10 @@ export default function AddToQueueForm({
                     title={inRoom ? 'Add to queue' : 'Join a room first'}
                     aria-label={`Add ${track.title} to the queue`}
                   >
-                    <Plus size={20} />
+                    <Plus size={18} />
                   </button>
                   <button
-                    className="music-icon-btn primary"
+                    className="lounge-queue-icon-btn is-primary"
                     onClick={() =>
                       send(onPlayNow, track, 'Playing now', dedicationFor(track) || undefined)
                     }
@@ -326,7 +326,7 @@ export default function AddToQueueForm({
                     title={inRoom ? 'Play now' : 'Join a room first'}
                     aria-label={`Play ${track.title} now`}
                   >
-                    <Play size={20} />
+                    <Play size={18} />
                   </button>
                 </div>
               </li>
@@ -336,16 +336,17 @@ export default function AddToQueueForm({
       )}
 
       {!searching && results.length === 0 && !error && (
-        <p className="hint" style={{ marginTop: 10 }}>
-          {inRoom
-            ? 'Nothing searched yet. A title is all it takes.'
-            : 'A room is needed to add a track to a queue. Join one and come back.'}
-        </p>
+        <div className="lounge-search-empty">
+          <p className="lounge-search-empty-title">Nothing searched yet</p>
+          <p className="lounge-search-empty-text">
+            Search for a song, artist or paste a YouTube link to get started.
+          </p>
+        </div>
       )}
 
       {nextPageToken && (
         <button
-          className="btn soft"
+          className="lounge-btn lounge-load-btn"
           style={{ marginTop: 10 }}
           onClick={() => runSearch(nextPageToken)}
           disabled={searching}

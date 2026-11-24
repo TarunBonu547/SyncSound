@@ -4,647 +4,848 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Sunday Radio Club | SyncSound</title>
+<title>SyncSound — Music brings us closer</title>
+
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Playfair+Display:wght@400;500;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
 
 <style>
 :root {
-  --paper: #f4ebdd;
-  --ink: #292823;
-  --orange: #f16b45;
-  --blue: #5269c9;
-  --yellow: #f3ce68;
-  --green: #a9bb85;
+  --bg: #F5EFE6;
+  --surface: #FCF9F4;
+  --text: #332B27;
+  --muted: #8D8177;
+  --border: #E4D9CC;
+  --terracotta: #B87358;
+  --terracotta-dark: #92583F;
+  --olive: #858A70;
+  --white: #FFFDF9;
 }
 
-* { box-sizing: border-box; margin: 0; padding: 0; }
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  scroll-behavior: smooth;
+}
 
 body {
   min-height: 100vh;
-  background: var(--paper);
-  color: var(--ink);
-  font-family: 'Outfit', sans-serif;
   overflow-x: hidden;
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Manrope', sans-serif;
 }
 
-button, input { font: inherit; }
-button { cursor: pointer; }
+button, input {
+  font-family: 'Manrope', sans-serif;
+}
+
+button {
+  cursor: pointer;
+}
 
 .page {
+  min-height: 100vh;
+  padding: 0 9%;
+  display: flex;
+  flex-direction: column;
   position: relative;
-  z-index: 2;
-  width: min(1160px, 92%);
-  margin: auto;
-  padding: 25px 0 35px;
+  isolation: isolate;
 }
 
-/* PAPER TEXTURE */
-body::before {
-  content: "";
+/* AMBIENT BACKGROUND */
+
+.ambient {
   position: fixed;
-  inset: 0;
-  z-index: 10;
-  pointer-events: none;
+  z-index: -1;
+  width: 300px;
+  height: 300px;
+  border-radius: 50%;
+  filter: blur(90px);
   opacity: .13;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.24'/%3E%3C/svg%3E");
+  pointer-events: none;
+}
+
+.ambient.one {
+  background: #C88D70;
+  top: 10%;
+  left: -180px;
+  animation: ambientMove 12s ease-in-out infinite alternate;
+}
+
+.ambient.two {
+  background: #A8A98C;
+  right: -180px;
+  bottom: 5%;
+  animation: ambientMove 15s ease-in-out infinite alternate-reverse;
 }
 
 /* HEADER */
+
 header {
+  height: 88px;
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  padding-bottom: 17px;
-  border-bottom: 2px solid var(--ink);
+  justify-content: space-between;
+  border-bottom: 1px solid var(--border);
+  animation: headerEnter .9s ease both;
 }
 
-.brand {
-  font-size: 25px;
-  font-weight: 900;
+.logo {
+  font-family: 'Playfair Display', serif;
+  font-weight: 800;
+  font-size: 29px;
   letter-spacing: -1.5px;
 }
 
-.brand span { color: var(--orange); }
+.logo span {
+  color: var(--terracotta);
+}
 
-.header-right {
-  font: 11px 'Space Mono', monospace;
-  letter-spacing: 1px;
+nav {
+  display: flex;
+  align-items: center;
+  gap: 38px;
+}
+
+nav a {
+  text-decoration: none;
+  color: var(--muted);
+  font-family: 'Playfair Display', serif;
+  font-size: 14px;
+  transition: color .3s;
+}
+
+nav a:hover {
+  color: var(--terracotta);
+}
+
+.header-btn {
+  border: 0;
+  background: var(--text);
+  color: white;
+  padding: 14px 25px;
+  border-radius: 9px;
+  font-size: 13px;
+  font-weight: 800;
+  transition: .3s ease;
+}
+
+.header-btn:hover {
+  background: var(--terracotta-dark);
+  transform: translateY(-3px);
+  box-shadow: 0 8px 20px #92583F25;
+}
+
+/* MAIN LAYOUT */
+
+main {
+  flex: 1;
+  width: 100%;
+  max-width: 1500px;
+  margin: auto;
+  display: grid;
+  grid-template-columns: .95fr 1.05fr;
+  align-items: center;
+  gap: clamp(50px, 6vw, 100px);
+  padding: 65px 0;
 }
 
 /* HERO */
-.hero {
-  min-height: 340px;
-  margin-top: 24px;
-  border-radius: 5px;
-  background: var(--orange);
-  color: white;
-  position: relative;
-  overflow: hidden;
-  display: flex;
-  align-items: center;
-  padding: 45px 7%;
-}
 
-.hero-copy {
-  position: relative;
-  z-index: 3;
-  max-width: 570px;
+.hero {
+  animation: heroEnter 1s cubic-bezier(.2,.8,.2,1) both;
 }
 
 .eyebrow {
-  font: 11px 'Space Mono', monospace;
-  letter-spacing: 2px;
-  margin-bottom: 17px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 32px;
+  color: var(--terracotta-dark);
+  font-family: 'Space Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 3px;
+}
+
+.eyebrow-dot {
+  width: 8px;
+  height: 8px;
+  background: var(--terracotta);
+  border-radius: 50%;
+  box-shadow: 0 0 0 5px #B8735818;
+  animation: dotPulse 2s infinite;
 }
 
 .hero h1 {
-  font-size: clamp(43px, 7vw, 78px);
-  font-weight: 900;
-  line-height: .91;
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(58px, 6vw, 88px);
+  font-weight: 700;
   letter-spacing: -4px;
-  text-transform: uppercase;
-}
-
-.hero h1 span { color: var(--yellow); }
-
-.hero-copy p {
-  font-size: 14px;
-  margin-top: 22px;
-  color: #fff0e8;
-}
-
-/* RECORD */
-.record-wrap {
-  position: absolute;
-  right: 9%;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 245px;
-  height: 245px;
-  z-index: 2;
-  animation: recordBob 4s ease-in-out infinite;
-}
-
-.record {
-  width: 100%;
-  height: 100%;
-  border-radius: 50%;
-  background: repeating-radial-gradient(
-    circle,
-    #242321 0px,
-    #242321 3px,
-    #383632 4px,
-    #242321 5px,
-    #242321 8px
-  );
-  box-shadow: 0 18px 35px #7b382d55;
-  display: grid;
-  place-items: center;
-  animation: spin 8s linear infinite;
-  position: relative;
-}
-
-.record::after {
-  content: "";
-  position: absolute;
-  width: 10px;
-  height: 10px;
-  background: #d9d2c5;
-  border-radius: 50%;
-}
-
-.record-label {
-  width: 91px;
-  height: 91px;
-  background: var(--yellow);
-  border: 4px solid #292823;
-  border-radius: 50%;
-  display: grid;
-  place-items: center;
-  color: var(--ink);
-  font-size: 13px;
-  font-weight: 900;
-  text-align: center;
-  line-height: 1;
-}
-
-@keyframes spin { to { transform: rotate(360deg); } }
-@keyframes recordBob {
-  0%, 100% { margin-top: 0; }
-  50% { margin-top: -12px; }
-}
-
-/* FLOATING DECOR */
-.decor {
-  position: absolute;
-  pointer-events: none;
-  z-index: 1;
-  animation: drift 5s ease-in-out infinite;
-}
-
-.star {
-  color: var(--yellow);
-  font-size: 35px;
-}
-
-.hero .star.one { top: 12%; right: 39%; }
-.hero .star.two { bottom: 12%; right: 42%; animation-delay: 1s; }
-.hero .circle {
-  width: 19px;
-  height: 19px;
-  background: var(--blue);
-  border-radius: 50%;
-  top: 15%;
-  right: 9%;
-  animation-delay: 1.5s;
-}
-.hero .ring {
-  width: 45px;
-  height: 45px;
-  border: 5px solid var(--yellow);
-  border-radius: 50%;
-  right: 38%;
-  bottom: 8%;
-}
-
-@keyframes drift {
-  0%,100% { transform: translateY(0) rotate(0deg); }
-  50% { transform: translateY(-14px) rotate(12deg); }
-}
-
-/* SOUND WAVE */
-.wave-section {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 5px;
-  height: 65px;
+  line-height: 1.06;
   overflow: hidden;
 }
 
-.bar {
-  width: 5px;
+.hero h1 .line {
+  display: block;
+  animation: textReveal .9s cubic-bezier(.2,.8,.2,1) both;
+}
+
+.hero h1 .line:nth-child(2) {
+  animation-delay: .2s;
+}
+
+.hero h1 .highlight {
+  color: var(--terracotta);
+  font-style: italic;
+}
+
+.hero-description {
+  max-width: 430px;
+  margin-top: 28px;
+  color: var(--muted);
+  font-family: 'Playfair Display', serif;
+  font-size: 17px;
+  line-height: 1.9;
+  animation: fadeUp .9s .5s both;
+}
+
+/* WAVEFORM */
+
+.wave-area {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  margin-top: 45px;
+  animation: fadeUp 1s .7s both;
+}
+
+.wave {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  height: 48px;
+}
+
+.wave span {
+  width: 4px;
+  height: var(--height);
+  background: var(--color);
   border-radius: 10px;
-  background: var(--blue);
-  animation: wave 1s ease-in-out infinite alternate;
+  animation: waveMotion var(--duration) ease-in-out infinite alternate;
+  animation-delay: var(--delay);
+  transform-origin: center;
 }
 
-.bar:nth-child(3n) { background: var(--orange); }
-.bar:nth-child(4n) { background: #9e8bc8; }
-
-@keyframes wave {
-  from { height: 8px; }
-  to { height: var(--h); }
+.wave-caption {
+  color: var(--muted);
+  font-family: 'Space Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 1px;
+  opacity: .8;
 }
 
-/* ROOM PANELS */
+/* CONNECTION AREA */
+
+.connect-section {
+  animation: sectionEnter 1s .2s cubic-bezier(.2,.8,.2,1) both;
+}
+
 .section-heading {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin: 5px 0 16px;
+  gap: 12px;
+  margin-bottom: 26px;
 }
 
 .section-heading h2 {
-  font-size: 25px;
-  font-weight: 800;
-  letter-spacing: -1px;
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(23px, 2.1vw, 31px);
+  font-weight: 700;
+  letter-spacing: -.8px;
 }
 
-.section-heading span {
-  font: 10px 'Space Mono', monospace;
+.section-index {
+  white-space: nowrap;
+  color: var(--muted);
+  font-family: 'Space Mono', monospace;
+  font-size: 10px;
 }
 
-.panels {
+/* CARDS */
+
+.cards {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 17px;
 }
 
-.panel {
-  padding: 25px;
-  border-radius: 5px;
-  min-height: 265px;
+.card {
+  --accent: var(--terracotta);
+  --accent-hover: var(--terracotta-dark);
+  --icon-bg: #F1E3D8;
+  --focus: #B8735818;
+
   position: relative;
+  min-width: 0;
+  padding: 26px 23px 25px;
   overflow: hidden;
-  transition: transform .3s ease, box-shadow .3s ease;
+  border: 1px solid var(--border);
+  border-radius: 17px;
+  background: var(--surface);
+  transition: transform .4s cubic-bezier(.2,.8,.2,1),
+              box-shadow .4s,
+              border-color .4s;
 }
 
-.panel:hover {
-  transform: translateY(-5px) rotate(-.3deg);
-  box-shadow: 8px 10px 0 #29282315;
+.card:nth-child(1) {
+  animation: cardEnter .8s .35s both;
 }
 
-.create { background: var(--yellow); }
-.join { background: var(--blue); color: white; }
+.card:nth-child(2) {
+  --accent: var(--olive);
+  --accent-hover: #6E755B;
+  --icon-bg: #E9E9DF;
+  --focus: #858A7018;
+  animation: cardEnter .8s .5s both;
+}
 
-.panel-top {
+.card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 0;
+  height: 3px;
+  background: var(--accent);
+  transition: width .4s;
+}
+
+.card:hover {
+  transform: translateY(-7px);
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--border));
+  box-shadow: 0 20px 45px #48392B0D;
+}
+
+.card:hover::before {
+  width: 100%;
+}
+
+.card-top {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  margin-bottom: 27px;
+}
+
+.card-number {
+  color: var(--muted);
+  font-family: 'Space Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 1px;
+}
+
+.card-icon {
+  width: 43px;
+  height: 43px;
+  display: grid;
+  place-items: center;
+  border-radius: 12px;
+  background: var(--icon-bg);
+  color: var(--accent);
+  font-size: 21px;
+  transition: transform .4s, border-radius .4s;
+}
+
+.card:hover .card-icon {
+  transform: rotate(-10deg) scale(1.08);
+  border-radius: 15px;
+}
+
+.card h3 {
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(22px, 2vw, 28px);
+  font-weight: 700;
+  letter-spacing: -.7px;
+  margin-bottom: 10px;
+}
+
+.card-description {
+  min-height: 43px;
+  margin-bottom: 23px;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.9;
+}
+
+/* FORM – EXPLICIT STYLING */
+
+.card form {
+  width: 100%;
+}
+
+.card .field {
+  width: 100%;
   margin-bottom: 17px;
 }
 
-.number {
-  font: 12px 'Space Mono', monospace;
-  opacity: .7;
+.card .field label {
+  display: block;
+  margin-bottom: 9px;
+  color: var(--text);
+  font-family: 'Manrope', sans-serif;
+  font-size: 12px;
+  font-weight: 800;
 }
 
-.panel-icon {
-  font-size: 29px;
-  animation: drift 3s ease-in-out infinite;
-}
-
-.panel h3 {
-  font-size: 31px;
-  font-weight: 900;
-  letter-spacing: -1px;
-}
-
-.panel p {
-  font-size: 13px;
-  opacity: .75;
-  margin: 5px 0 17px;
-}
-
-.panel input {
+.card .field input {
+  display: block;
   width: 100%;
-  border: 1.5px solid #29282340;
-  border-radius: 3px;
-  padding: 12px;
-  margin-bottom: 10px;
+  height: 48px;
+  padding: 0 14px;
+  border: 1px solid var(--border);
+  border-radius: 9px;
   outline: none;
-  background: #ffffffa8;
-  color: var(--ink);
+  background: #F8F3EC;
+  color: var(--text);
   font-size: 13px;
+  font-weight: 500;
+  box-shadow: none;
+  transition: border-color .3s, background .3s, box-shadow .3s;
 }
 
-.panel input:focus { border-color: var(--ink); }
+.card .field input::placeholder {
+  color: #B7A99B;
+  opacity: 1;
+}
 
-.panel button {
+.card .field input:focus {
+  border-color: var(--accent);
+  background: var(--white);
+  box-shadow: 0 0 0 4px var(--focus);
+}
+
+.helper {
+  display: flex;
+  justify-content: space-between;
+  gap: 5px;
+  margin-top: 8px;
+  color: var(--muted);
+  font-family: 'Manrope', sans-serif;
+  font-size: 9px;
+  line-height: 1.5;
+}
+
+/* BUTTON */
+
+.card .action-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
   width: 100%;
-  padding: 13px;
-  background: var(--ink);
+  min-height: 51px;
+  margin-top: 3px;
+  padding: 10px;
   border: 0;
-  border-radius: 3px;
+  border-radius: 9px;
+  background: var(--accent);
   color: white;
-  font: 700 12px 'Space Mono', monospace;
-  transition: .25s;
+  font-family: 'Space Mono', monospace;
+  font-size: 10px;
+  font-weight: 400;
+  letter-spacing: .4px;
+  box-shadow: none;
+  transition: background .3s, transform .3s, box-shadow .3s;
 }
 
-.join button {
-  background: var(--yellow);
-  color: var(--ink);
+.card .action-btn:hover {
+  background: var(--accent-hover);
+  transform: translateY(-3px);
+  box-shadow: 0 9px 20px var(--focus);
 }
 
-.panel button:hover {
-  letter-spacing: 1px;
-  transform: translateY(-2px);
+.card .action-btn:active {
+  transform: scale(.98);
+}
+
+.action-btn .arrow {
+  font-family: 'Manrope', sans-serif;
+  font-size: 19px;
+  transition: transform .3s;
+}
+
+.action-btn:hover .arrow {
+  transform: translateX(5px);
 }
 
 /* FOOTER */
+
 footer {
+  min-height: 58px;
   display: flex;
-  justify-content: space-between;
-  padding-top: 20px;
-  font: 10px 'Space Mono', monospace;
-}
-
-/* BACKGROUND ORBITING NOTES */
-.ambient {
-  position: fixed;
-  inset: 0;
-  z-index: 0;
-  overflow: hidden;
-  pointer-events: none;
-}
-
-.note {
-  position: absolute;
-  font-size: 22px;
-  opacity: .13;
-  animation: noteFloat linear infinite;
-}
-
-@keyframes noteFloat {
-  from { transform: translateY(110vh) rotate(0); }
-  to { transform: translateY(-20vh) rotate(180deg); }
-}
-
-/* TRANSITION OVERLAY */
-.transition {
-  position: fixed;
-  inset: 0;
-  z-index: 20;
-  pointer-events: none;
-  display: grid;
-  place-items: center;
-  background: var(--paper);
-  clip-path: circle(0% at 50% 50%);
-}
-
-.transition.active {
-  animation: revealCircle 1.15s cubic-bezier(.7,0,.2,1) forwards;
-}
-
-@keyframes revealCircle {
-  0% { clip-path: circle(0% at 50% 50%); }
-  100% { clip-path: circle(150% at 50% 50%); }
-}
-
-.transition-record {
-  width: 100px;
-  height: 100px;
-  border-radius: 50%;
-  background: repeating-radial-gradient(circle, #292823 0 3px, #494640 4px 5px);
-  border: 8px solid var(--orange);
-  animation: spin 1s linear infinite;
-  position: relative;
-}
-
-.transition-record::after {
-  content: "♫";
-  position: absolute;
-  inset: 28px;
-  border-radius: 50%;
-  background: var(--yellow);
-  display: grid;
-  place-items: center;
-  font-size: 19px;
-}
-
-/* ROOM PAGE */
-#roomPage {
-  display: none;
-  min-height: 80vh;
   align-items: center;
-  justify-content: center;
-  text-align: center;
+  justify-content: space-between;
+  gap: 15px;
+  border-top: 1px solid var(--border);
+  color: var(--muted);
+  font-family: 'Space Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 1px;
+  animation: fadeUp .8s .7s both;
 }
 
-.room-box {
-  width: min(500px, 95%);
-  background: white;
-  padding: 45px 25px;
-  border: 2px solid var(--ink);
-  box-shadow: 9px 9px 0 var(--yellow);
-  animation: roomEnter .7s cubic-bezier(.2,.8,.2,1) both;
+/* ANIMATIONS */
+
+@keyframes headerEnter {
+  from { opacity: 0; transform: translateY(-15px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
-@keyframes roomEnter {
-  from { opacity: 0; transform: translateY(35px) rotate(-3deg) scale(.92); }
-  to { opacity: 1; transform: translateY(0) rotate(0) scale(1); }
+@keyframes heroEnter {
+  from { opacity: 0; transform: translateX(-30px); }
+  to { opacity: 1; transform: translateX(0); }
 }
 
-.room-box h1 {
-  font-size: 40px;
-  font-weight: 900;
+@keyframes sectionEnter {
+  from { opacity: 0; transform: translateX(30px); }
+  to { opacity: 1; transform: translateX(0); }
 }
 
-.room-box p {
-  margin: 12px 0;
-  color: #777;
+@keyframes cardEnter {
+  from { opacity: 0; transform: translateY(22px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
-.room-code {
-  font: 700 22px 'Space Mono', monospace;
-  background: var(--yellow);
-  padding: 15px;
-  margin: 25px auto;
-  max-width: 230px;
+@keyframes textReveal {
+  from { opacity: 0; transform: translateY(45px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
-.room-box button {
-  background: var(--orange);
-  color: white;
-  border: none;
-  padding: 13px 25px;
-  font: 700 12px 'Space Mono', monospace;
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(15px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
-/* MOBILE */
-@media(max-width: 700px) {
-  .hero { min-height: 460px; align-items: flex-start; padding: 35px 25px; }
-  .hero h1 { font-size: 52px; }
-  .record-wrap { width: 165px; height: 165px; top: auto; bottom: 15px; right: 12%; }
-  .record-label { width: 65px; height: 65px; font-size: 10px; }
-  .panels { grid-template-columns: 1fr; }
-  .panel { min-height: 240px; }
-  .header-right { font-size: 8px; }
-  footer { gap: 15px; font-size: 8px; }
+@keyframes waveMotion {
+  from { transform: scaleY(.35); opacity: .55; }
+  to { transform: scaleY(1); opacity: 1; }
+}
+
+@keyframes dotPulse {
+  50% { box-shadow: 0 0 0 9px #B8735808; }
+}
+
+@keyframes ambientMove {
+  from { transform: translate(0, 0) scale(1); }
+  to { transform: translate(50px, 30px) scale(1.2); }
+}
+
+/* RESPONSIVE */
+
+@media (max-width: 1100px) {
+  .page {
+    padding: 0 5%;
+  }
+
+  main {
+    gap: 40px;
+  }
+
+  .cards {
+    gap: 12px;
+  }
+
+  .card {
+    padding: 22px 16px;
+  }
+}
+
+@media (max-width: 800px) {
+  main {
+    grid-template-columns: 1fr;
+    gap: 55px;
+    padding: 65px 0;
+  }
+
+  .hero {
+    text-align: center;
+  }
+
+  .eyebrow, .wave-area {
+    justify-content: center;
+  }
+
+  .hero h1 {
+    font-size: clamp(58px, 10vw, 82px);
+  }
+
+  .hero-description {
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .connect-section {
+    width: 100%;
+  }
+}
+
+@media (max-width: 520px) {
+  header {
+    height: 75px;
+  }
+
+  nav {
+    gap: 12px;
+  }
+
+  nav a {
+    display: none;
+  }
+
+  .logo {
+    font-size: 25px;
+  }
+
+  .header-btn {
+    padding: 11px 17px;
+  }
+
+  .cards {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .card {
+    padding: 24px;
+  }
+
+  .card-description {
+    min-height: auto;
+  }
+
+  .section-heading {
+    align-items: flex-start;
+  }
+
+  .section-heading h2 {
+    font-size: 24px;
+  }
+
+  .section-index {
+    font-size: 8px;
+    padding-top: 8px;
+  }
+
+  footer {
+    flex-wrap: wrap;
+    justify-content: center;
+    padding: 18px 0;
+    text-align: center;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
 </style>
 </head>
 
 <body>
+<div class="ambient one"></div>
+<div class="ambient two"></div>
 
-<div class="ambient" id="ambient"></div>
-<div class="transition" id="transition">
-  <div class="transition-record"></div>
-</div>
-
-<div class="page" id="homePage">
+<div class="page">
 
 <header>
-  <div class="brand">SUNDAY RADIO<span>®</span></div>
-  <div class="header-right">VOL. 001 &nbsp; / &nbsp; MUSIC CLUB</div>
+  <div class="logo">syncsound<span>.</span></div>
+
+  <nav>
+    <a href="#connect">Rooms</a>
+    <a href="#about">About</a>
+    <button class="header-btn" onclick="document.getElementById('connect').scrollIntoView({behavior:'smooth'})">
+      Get Started
+    </button>
+  </nav>
 </header>
 
-<section class="hero">
-  <div class="hero-copy">
-    <div class="eyebrow">✳ YOUR PERSONAL BROADCAST STATION</div>
-    <h1>GOOD<br>MUSIC.<br><span>GOOD</span><br>MOOD.</h1>
-    <p>Find your frequency. Share your sound.</p>
-  </div>
+<main>
 
-  <div class="record-wrap">
-    <div class="record">
-      <div class="record-label">SUNDAY<br>RADIO<br>♫</div>
+  <section class="hero" id="about">
+
+    <div class="eyebrow">
+      <span class="eyebrow-dot"></span>
+      YOUR SPACE. YOUR SOUND.
     </div>
-  </div>
 
-  <div class="decor star one">✳</div>
-  <div class="decor star two">✴</div>
-  <div class="decor circle"></div>
-  <div class="decor ring"></div>
-</section>
+    <h1>
+      <span class="line">Music brings us</span>
+      <span class="line highlight">closer.</span>
+    </h1>
 
-<div class="wave-section" id="wave"></div>
+    <p class="hero-description">
+      Create a room, invite someone and listen together.
+      Every song, every moment, in sync.
+    </p>
 
-<div class="section-heading">
-  <h2>Pick your station.</h2>
-  <span>SELECT / 01—02</span>
-</div>
-
-<section class="panels">
-
-  <div class="panel create">
-    <div class="panel-top">
-      <span class="number">STATION 01 / HOST</span>
-      <span class="panel-icon">◉</span>
+    <div class="wave-area">
+      <div class="wave">
+        <span style="--height:13px;--color:#C58B71;--delay:0s;--duration:.8s"></span>
+        <span style="--height:22px;--color:#B87358;--delay:.1s;--duration:1s"></span>
+        <span style="--height:34px;--color:#A5A68A;--delay:.2s;--duration:.9s"></span>
+        <span style="--height:25px;--color:#C58B71;--delay:.3s;--duration:1.1s"></span>
+        <span style="--height:43px;--color:#B87358;--delay:.4s;--duration:.8s"></span>
+        <span style="--height:27px;--color:#A5A68A;--delay:.5s;--duration:1.2s"></span>
+        <span style="--height:17px;--color:#C58B71;--delay:.6s;--duration:.9s"></span>
+        <span style="--height:37px;--color:#B87358;--delay:.7s;--duration:1s"></span>
+        <span style="--height:47px;--color:#A5A68A;--delay:.8s;--duration:.8s"></span>
+        <span style="--height:23px;--color:#C58B71;--delay:.9s;--duration:1.1s"></span>
+        <span style="--height:34px;--color:#B87358;--delay:1s;--duration:.9s"></span>
+        <span style="--height:18px;--color:#A5A68A;--delay:1.1s;--duration:1s"></span>
+        <span style="--height:29px;--color:#C58B71;--delay:1.2s;--duration:.8s"></span>
+        <span style="--height:12px;--color:#A5A68A;--delay:1.3s;--duration:1.1s"></span>
+      </div>
+      <span class="wave-caption">IN PERFECT SYNC</span>
     </div>
-    <h3>Go On Air.</h3>
-    <p>Start a new listening session.</p>
-    <input id="createName" placeholder="What's your name?">
-    <button onclick="createRoom()">CREATE YOUR ROOM ↗</button>
-  </div>
 
-  <div class="panel join">
-    <div class="panel-top">
-      <span class="number">STATION 02 / GUEST</span>
-      <span class="panel-icon">✳</span>
+  </section>
+
+  <section class="connect-section" id="connect">
+
+    <div class="section-heading">
+      <h2>How would you like to listen?</h2>
+      <span class="section-index">01 — 02 / CONNECT</span>
     </div>
-    <h3>Tune In.</h3>
-    <p>Enter a room code to join the session.</p>
-    <input id="joinName" placeholder="What's your name?">
-    <input id="joinCode" placeholder="Enter room code">
-    <button onclick="joinRoom()">JOIN THE SESSION ↗</button>
-  </div>
 
-</section>
+    <div class="cards">
+
+      <article class="card">
+
+        <div class="card-top">
+          <span class="card-number">01 / HOST</span>
+          <div class="card-icon">↗</div>
+        </div>
+
+        <h3>Create a room.</h3>
+        <p class="card-description">
+          Start a new listening session and bring someone along.
+        </p>
+
+        <form id="createForm">
+
+          <div class="field">
+            <label for="hostName">Your name</label>
+            <input id="hostName" type="text" placeholder="Enter your name" maxlength="24" required>
+            <div class="helper">
+              <span>The other listeners will see this name.</span>
+              <span id="hostCount">0/24</span>
+            </div>
+          </div>
+
+          <div class="field">
+            <label for="roomName">Room name</label>
+            <input id="roomName" type="text" placeholder="e.g. Late night listening" maxlength="40" required>
+          </div>
+
+          <button class="action-btn" type="submit">
+            CREATE YOUR ROOM <span class="arrow">→</span>
+          </button>
+
+        </form>
+      </article>
+
+      <article class="card">
+
+        <div class="card-top">
+          <span class="card-number">02 / GUEST</span>
+          <div class="card-icon">⌁</div>
+        </div>
+
+        <h3>Join a room.</h3>
+        <p class="card-description">
+          Have a room code already? Enter it and tune in.
+        </p>
+
+        <form id="joinForm">
+
+          <div class="field">
+            <label for="guestName">Your name</label>
+            <input id="guestName" type="text" placeholder="Enter your name" maxlength="24" required>
+            <div class="helper">
+              <span>The other listeners will see this name.</span>
+              <span id="guestCount">0/24</span>
+            </div>
+          </div>
+
+          <div class="field">
+            <label for="roomCode">Room code</label>
+            <input id="roomCode" type="text" placeholder="SS-1234" maxlength="7" required>
+          </div>
+
+          <button class="action-btn" type="submit">
+            ↪ JOIN THE SESSION <span class="arrow">→</span>
+          </button>
+
+        </form>
+      </article>
+
+    </div>
+  </section>
+
+</main>
 
 <footer>
-  <span>NO ALGORITHMS. JUST GOOD TUNES.</span>
-  <span>MADE FOR MUSIC LOVERS ✳</span>
+  <span>© 2026 SYNCSOUND</span>
+  <span>MADE FOR SHARED LISTENING.</span>
 </footer>
-</div>
 
-<div class="page" id="roomPage">
-  <div class="room-box">
-    <div style="font-size:42px;margin-bottom:15px">♫</div>
-    <h1>You're On Air!</h1>
-    <p id="welcome"></p>
-    <div class="room-code" id="roomCode"></div>
-    <p>Your station is ready.</p>
-    <button onclick="backHome()">← BACK TO STATIONS</button>
-  </div>
 </div>
 
 <script>
-// Animated waveform
-const wave = document.getElementById('wave');
+function setupCounter(inputId, counterId) {
+  const input = document.getElementById(inputId);
+  const counter = document.getElementById(counterId);
 
-for (let i = 0; i < 55; i++) {
-  const bar = document.createElement('div');
-  bar.className = 'bar';
-  bar.style.setProperty('--h', (12 + Math.random() * 40) + 'px');
-  bar.style.animationDelay = Math.random() + 's';
-  bar.style.animationDuration = (.5 + Math.random() * .8) + 's';
-  wave.appendChild(bar);
+  input.addEventListener('input', () => {
+    counter.textContent = `${input.value.length}/24`;
+  });
 }
 
-// Ambient background notes
-const ambient = document.getElementById('ambient');
-const notes = ['♪','♫','♬','♩','✳','✴'];
+setupCounter('hostName', 'hostCount');
+setupCounter('guestName', 'guestCount');
 
-for (let i = 0; i < 14; i++) {
-  const note = document.createElement('span');
-  note.className = 'note';
-  note.textContent = notes[Math.floor(Math.random() * notes.length)];
-  note.style.left = Math.random() * 100 + '%';
-  note.style.animationDuration = (12 + Math.random() * 18) + 's';
-  note.style.animationDelay = (-Math.random() * 25) + 's';
-  note.style.fontSize = (15 + Math.random() * 20) + 'px';
-  ambient.appendChild(note);
-}
+document.getElementById('roomCode').addEventListener('input', e => {
+  let value = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
 
-// Transition
-let busy = false;
-
-function enterRoom(name, code) {
-  if (busy) return;
-  busy = true;
-
-  const overlay = document.getElementById('transition');
-  overlay.classList.remove('active');
-  void overlay.offsetWidth;
-  overlay.classList.add('active');
-
-  setTimeout(() => {
-    document.getElementById('homePage').style.display = 'none';
-    document.getElementById('roomPage').style.display = 'flex';
-
-    document.getElementById('welcome').textContent =
-      'Welcome, ' + name + '. Your listening session is ready.';
-
-    document.getElementById('roomCode').textContent = code;
-  }, 800);
-
-  setTimeout(() => {
-    overlay.classList.remove('active');
-    busy = false;
-  }, 1500);
-}
-
-function createRoom() {
-  const name = document.getElementById('createName').value.trim();
-
-  if (!name) {
-    alert('Enter your name to create a room!');
-    return;
+  if (value.startsWith('SS')) {
+    value = 'SS-' + value.slice(2, 6);
+  } else {
+    value = value.slice(0, 6);
   }
 
-  const code = 'SR-' + Math.floor(1000 + Math.random() * 9000);
-  enterRoom(name, code);
-}
+  e.target.value = value;
+});
 
-function joinRoom() {
-  const name = document.getElementById('joinName').value.trim();
-  const code = document.getElementById('joinCode').value.trim().toUpperCase();
+document.getElementById('createForm').addEventListener('submit', e => {
+  e.preventDefault();
+  alert('Demo only: Create Room interaction.');
+});
 
-  if (!name || !/^SR-\d{4}$/.test(code)) {
-    alert('Enter your name and a valid room code (SR-1234).');
-    return;
-  }
-
-  enterRoom(name, code);
-}
-
-function backHome() {
-  document.getElementById('roomPage').style.display = 'none';
-  document.getElementById('homePage').style.display = 'block';
-}
+document.getElementById('joinForm').addEventListener('submit', e => {
+  e.preventDefault();
+  alert('Demo only: Join Room interaction.');
+});
 </script>
 
 </body>
