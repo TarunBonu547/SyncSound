@@ -62,7 +62,7 @@
   height: 72px;
   padding: 0 24px;
   background: rgba(255, 255, 250, 0.6);
-  border-bottom: 1px solid var(--lu-border-soft);
+  border-bottom: 1px solid var(--lu-border-medium);
   backdrop-filter: blur(20px) saturate(1.1);
   -webkit-backdrop-filter: blur(20px) saturate(1.1);
 }
@@ -167,7 +167,7 @@
   margin-top: 6px;
   padding: 20px 26px;
   background: var(--lu-surface);
-  border: 1px solid var(--lu-border-soft);
+  border: 1px solid var(--lu-border-medium);
   border-radius: var(--lu-radius-header);
   box-shadow: var(--lu-shadow-sm);
   display: flex;
@@ -353,7 +353,7 @@
 .lounge .lounge-room-meta .status-pill {
   padding: 6px 11px;
   background: rgba(255, 255, 250, 0.7);
-  border-color: var(--lu-border-soft);
+  border-color: var(--lu-border-medium);
   font-family: var(--font-heading);
   font-size: 13px;
   font-weight: 500;
@@ -418,7 +418,7 @@
 }
 
 .lounge .lounge-header-btn--video {
-  border-color: var(--lu-border-soft);
+  border-color: var(--lu-border-medium);
   color: var(--lu-plum);
 }
 
@@ -449,7 +449,7 @@
   border-radius: var(--lu-radius-card);
   overflow: hidden;
   background: #fff;
-  border: 1px solid var(--lu-border-soft);
+  border: 1px solid var(--lu-border-medium);
   box-shadow: var(--lu-shadow-sm);
   padding: 24px;
   display: flex;
@@ -487,7 +487,7 @@
   max-width: 460px;
   border-radius: var(--lu-radius-artwork);
   overflow: hidden;
-  border: 1px solid var(--lu-border-soft);
+  border: 1px solid var(--lu-border-medium);
   box-shadow: var(--lu-shadow-sm);
   background: transparent;
 }
@@ -646,7 +646,7 @@
   flex: none;
   width: 42px;
   height: 42px;
-  border: 1px solid var(--lu-border-soft);
+  border: 1px solid var(--lu-border-medium);
   border-radius: 50%;
   background: transparent;
   color: var(--lu-muted);
@@ -744,7 +744,7 @@
 .lounge .lounge-control {
   width: 50px;
   height: 50px;
-  border: 1px solid var(--lu-border-soft);
+  border: 1px solid var(--lu-border-medium);
   background: var(--lu-surface-strong);
   color: var(--lu-plum);
   border-radius: 50%;
@@ -827,7 +827,7 @@
   background: rgba(255, 255, 255, 0.85);
   border-radius: var(--lu-radius-badge);
   padding: 3px 9px;
-  border: 1px solid var(--lu-border-soft);
+  border: 1px solid var(--lu-border-medium);
 }
 
 /* --- Shared buttons ------------------------------------------------------- */
@@ -838,7 +838,7 @@
   gap: 8px;
   min-height: 42px;
   padding: 0 18px;
-  border: 1px solid var(--lu-border-soft);
+  border: 1px solid var(--lu-border-medium);
   border-radius: var(--lu-radius-button);
   background: var(--lu-surface-strong);
   color: var(--lu-text);
@@ -917,7 +917,7 @@
   flex: 1;
   width: 100%;
   height: 56px;
-  border: 1px solid var(--lu-border-soft);
+  border: 1px solid var(--lu-border-medium);
   background: var(--lu-bg);
   border-radius: var(--lu-radius-button);
   padding: 0 20px 0 48px;
@@ -997,7 +997,7 @@
 
 .lounge .lounge-action-load {
   background: transparent;
-  border-color: var(--lu-border-soft);
+  border-color: var(--lu-border-medium);
   color: var(--lu-plum);
 }
 
@@ -1029,7 +1029,7 @@
   margin-top: 18px;
   padding: 24px;
   background: rgba(255, 255, 250, 0.5);
-  border: 1px solid var(--lu-border-soft);
+  border: 1px solid var(--lu-border-medium);
   border-radius: var(--lu-radius-button);
   text-align: center;
 }
@@ -1065,7 +1065,7 @@
   display: inline-flex;
   align-items: center;
   gap: 7px;
-  border: 1px solid var(--lu-border-soft);
+  border: 1px solid var(--lu-border-medium);
   border-radius: var(--lu-radius-button);
   background: var(--lu-surface-strong);
   color: var(--lu-rose);
@@ -1089,13 +1089,13 @@
   gap: 7px;
   padding: 10px;
   background: var(--lu-lavender-wash);
-  border: 1px solid var(--lu-border-soft);
+  border: 1px solid var(--lu-border-medium);
   border-radius: var(--lu-radius-button);
 }
 
 .lounge .lounge-dedication-textarea {
   width: 100%;
-  border: 1px solid var(--lu-border-soft);
+  border: 1px solid var(--lu-border-medium);
   border-radius: var(--lu-radius-button);
   padding: 10px 12px;
   outline: none;
@@ -1128,7 +1128,7 @@
   height: 32px;
   display: grid;
   place-items: center;
-  border: 1px solid var(--lu-border-soft);
+  border: 1px solid var(--lu-border-medium);
   border-radius: var(--lu-radius-button);
   background: var(--lu-surface-strong);
   color: var(--lu-muted);
@@ -1190,7 +1190,7 @@
   align-items: center;
   gap: 16px;
   background: rgba(255, 255, 250, 0.7);
-  border: 1px solid var(--lu-border-soft);
+  border: 1px solid var(--lu-border-medium);
   border-radius: var(--lu-radius-card);
   padding: 14px 18px;
   min-height: 104px;
@@ -1243,6 +1243,7 @@
   object-fit: cover;
   background: linear-gradient(135deg, #f2d7cb, #e3d4f5);
   box-shadow: var(--lu-shadow-sm);
+  border: 1px solid var(--lu-border-medium);
 }
 
 .lounge .lounge-queue-eq {
@@ -1323,7 +1324,7 @@
   height: 38px;
   display: grid;
   place-items: center;
-  border: 1px solid var(--lu-border-soft);
+  border: 1px solid var(--lu-border-medium);
   border-radius: var(--lu-radius-button);
   background: var(--lu-surface-strong);
   color: var(--lu-muted);
@@ -1373,7 +1374,7 @@
 .lounge .lounge-empty-queue {
   text-align: center;
   padding: 44px 24px;
-  border: 1px dashed var(--lu-border-soft);
+  border: 1px dashed var(--lu-border-medium);
   border-radius: var(--lu-radius-card);
   color: var(--lu-muted);
   font-size: 14px;
@@ -1420,7 +1421,7 @@
 .lounge .lounge-chat-heading {
   position: relative;
   padding: 0 2px 16px;
-  border-bottom: 1px solid var(--lu-border-soft);
+  border-bottom: 1px solid var(--lu-border-medium);
   margin-bottom: 10px;
 }
 
@@ -1460,7 +1461,7 @@
 .lounge .lounge-chat-status .status-pill {
   padding: 5px 10px;
   background: rgba(255, 255, 250, 0.7);
-  border-color: var(--lu-border-soft);
+  border-color: var(--lu-border-medium);
   font-family: var(--font-heading);
   font-size: 13px;
   font-weight: 500;
@@ -1479,7 +1480,7 @@
   gap: 5px;
   padding: 5px 10px;
   background: rgba(255, 255, 250, 0.7);
-  border: 1px solid var(--lu-border-soft);
+  border: 1px solid var(--lu-border-medium);
   border-radius: var(--lu-radius-badge);
   font-family: var(--font-heading);
   font-size: 13px;
@@ -1529,7 +1530,7 @@
 
 .lounge .lounge-chat-bubble {
   background: var(--lu-lavender-wash);
-  border: 1px solid var(--lu-border-soft);
+  border: 1px solid var(--lu-border-medium);
   border-radius: var(--lu-radius-chat-bubble);
   padding: 8px 12px;
   font-family: var(--font-heading);
@@ -1596,7 +1597,7 @@
 .lounge .lounge-chat-reply-btn {
   width: 26px;
   height: 26px;
-  border: 1px solid var(--lu-border-soft);
+  border: 1px solid var(--lu-border-medium);
   border-radius: var(--lu-radius-button);
   background: var(--lu-surface-strong);
   color: var(--lu-muted);
@@ -1679,7 +1680,7 @@
   padding: 8px 10px;
   margin-bottom: 8px;
   background: var(--lu-lavender-wash);
-  border: 1px solid var(--lu-border-soft);
+  border: 1px solid var(--lu-border-medium);
   border-radius: var(--r-sm);
 }
 
@@ -1736,14 +1737,14 @@
   align-items: center;
   gap: 8px;
   padding-top: 10px;
-  border-top: 1px solid var(--lu-border-soft);
+  border-top: 1px solid var(--lu-border-medium);
 }
 
 .lounge .lounge-chat-smiley {
   width: 36px;
   height: 36px;
   flex: none;
-  border: 1px solid var(--lu-border-soft);
+  border: 1px solid var(--lu-border-medium);
   border-radius: var(--lu-radius-button);
   background: var(--lu-surface-strong);
   font-size: 17px;
@@ -1756,13 +1757,13 @@
 
 .lounge .lounge-chat-smiley:hover:not(:disabled) {
   background: #fff;
-  border-color: var(--lu-border-soft);
+  border-color: var(--lu-border-medium);
 }
 
 .lounge .lounge-chat-input {
   flex: 1;
   min-width: 0;
-  border: 1px solid var(--lu-border-soft);
+  border: 1px solid var(--lu-border-medium);
   border-radius: var(--lu-radius-button);
   padding: 10px 13px;
   background: rgba(255, 255, 250, 0.75);
