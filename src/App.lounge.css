@@ -1127,6 +1127,7 @@
   border: 1px solid var(--lu-border-soft);
   border-radius: var(--r-md);
   padding: 14px 16px;
+  min-height: 104px;
   transition: background-color var(--t-base) var(--ease-out), border-color var(--t-base) var(--ease-out), transform var(--t-fast) var(--ease-out);
 }
 
@@ -1143,8 +1144,8 @@
 }
 
 .lounge .lounge-queue-art {
-  width: 60px;
-  height: 60px;
+  width: 64px;
+  height: 64px;
   flex: none;
   border-radius: var(--r-md);
   object-fit: cover;
@@ -1154,6 +1155,16 @@
 
 .lounge .lounge-queue-art.is-current {
   position: relative;
+}
+
+.lounge .lounge-queue-thumb {
+  width: 160px;
+  height: 90px;
+  flex: none;
+  border-radius: var(--r-md);
+  object-fit: cover;
+  background: linear-gradient(135deg, #f2d7cb, #e3d4f5);
+  box-shadow: var(--shadow-sm);
 }
 
 .lounge .lounge-queue-eq {
@@ -2004,6 +2015,37 @@
   .lounge .lounge-action-load {
     flex: 1;
     min-width: 0;
+  }
+}
+
+@media (max-width: 720px) {
+  .lounge .lounge-queue-item {
+    gap: 10px;
+    padding: 10px 12px;
+    min-height: 88px;
+  }
+
+  .lounge .lounge-queue-thumb {
+    width: 104px;
+    height: 58px;
+  }
+
+  .lounge .lounge-queue-art {
+    width: 48px;
+    height: 48px;
+  }
+
+  .lounge .lounge-queue-details strong {
+    font-size: 14px;
+  }
+
+  .lounge .lounge-queue-details small {
+    font-size: 12px;
+  }
+
+  .lounge .lounge-queue-icon-btn {
+    width: 34px;
+    height: 34px;
   }
 }
 

@@ -971,7 +971,9 @@
   font-weight: 600;
   line-height: 1.35;
   color: var(--ink);
-  overflow-wrap: anywhere;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .queue-channel {
@@ -1001,6 +1003,35 @@
   align-items: center;
   gap: 4px;
   flex: none;
+}
+
+/* --- Single lookup result card -------------------------------------------- */
+.search-result {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 16px;
+  border-radius: var(--r-md);
+  border: 1px solid transparent;
+  background: rgba(255, 255, 255, 0.6);
+}
+
+.search-thumb {
+  width: 160px;
+  height: 90px;
+  border-radius: var(--r-md);
+  object-fit: cover;
+  box-shadow: var(--shadow-xs);
+  background: #fff;
+  flex: none;
+}
+
+.search-result-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
 
 /* --- Shared music icon buttons --------------------------------------------- */
@@ -1077,7 +1108,7 @@
 /* --- Search results --------------------------------------------------------- */
 .search-list .queue-row {
   gap: 14px;
-  padding: 12px 14px;
+  padding: 10px 14px;
   border-radius: var(--r-md);
   border: 1px solid transparent;
   transition: background-color var(--t-base) var(--ease-out), border-color var(--t-base) var(--ease-out), transform var(--t-fast) var(--ease-out);
@@ -1095,9 +1126,9 @@
 }
 
 .search-list .queue-thumb {
-  width: 68px;
-  height: 68px;
-  border-radius: 12px;
+  width: 160px;
+  height: 90px;
+  border-radius: var(--r-md);
   object-fit: cover;
   box-shadow: var(--shadow-xs);
   background: #fff;
@@ -1109,7 +1140,7 @@
   min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 6px;
 }
 
 .search-list .queue-title {
@@ -1118,12 +1149,9 @@
   font-weight: 600;
   line-height: 1.35;
   color: var(--ink);
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
   overflow: hidden;
-  overflow-wrap: anywhere;
-  word-break: break-word;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .search-list .queue-channel {
@@ -1138,13 +1166,15 @@
 .search-list .queue-actions {
   gap: 8px;
   flex: none;
+  display: flex;
+  align-items: center;
 }
 
 .search-list .queue-actions button {
-  width: 52px;
-  height: 52px;
-  min-width: 52px;
-  min-height: 52px;
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  min-height: 44px;
   flex-shrink: 0;
   padding: 0;
   display: inline-flex;
@@ -1176,8 +1206,8 @@
 
 @media (max-width: 720px) {
   .search-list .queue-thumb {
-    width: 56px;
-    height: 56px;
+    width: 88px;
+    height: 50px;
     border-radius: 10px;
   }
 
@@ -1203,6 +1233,16 @@
     height: 50px;
     min-width: 50px;
     min-height: 50px;
+  }
+
+  .search-result {
+    gap: 10px;
+    padding: 10px 12px;
+  }
+
+  .search-thumb {
+    width: 104px;
+    height: 58px;
   }
 }
 
