@@ -1,4 +1,4 @@
-import { Headphones, Users, Video, Link2 } from 'lucide-react';
+import { Headphones, UsersRound, Video, Link2, Copy } from 'lucide-react';
 import type { RoomMember } from '../../types/music';
 import { avatarFor } from '../../utils/avatar';
 import StatusIndicator from '../common/StatusIndicator';
@@ -36,6 +36,16 @@ export default function RoomHeader({ roomCode, roomName, members, connected, onO
           <div className="lounge-room-meta">
             <span className="lounge-room-code" title="The code of the room">
               {roomCode || '—'}
+              <button
+                className="lounge-room-code-copy"
+                onClick={onCopyLink}
+                title="Copy room code"
+                aria-label="Copy room code"
+                disabled={!roomCode}
+                aria-hidden={!roomCode}
+              >
+                <Copy size={12} aria-hidden="true" />
+              </button>
             </span>
             <StatusIndicator
               connected={connected}
@@ -43,7 +53,7 @@ export default function RoomHeader({ roomCode, roomName, members, connected, onO
               live={!!roomCode}
             />
             <span className="lounge-room-listeners" key={count}>
-              <Users size={14} aria-hidden="true" />
+              <UsersRound size={14} aria-hidden="true" />
               {count} {count === 1 ? 'listener' : 'listeners'}
             </span>
           </div>

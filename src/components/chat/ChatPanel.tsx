@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Send, Reply, Users, MessageCircle, X } from 'lucide-react';
+import { Send, Reply, UsersRound, MessageCircle, X, Smile } from 'lucide-react';
 import type { ChatEntry, RoomMember } from '../../types/music';
 import { formatTime } from '../../utils/avatar';
 import { MAX_CHAT_LENGTH } from '../../hooks/useRoom';
@@ -236,7 +236,7 @@ export default function ChatPanel({
             live={inRoom}
           />
           <span className="lounge-chat-listeners">
-            <Users size={12} aria-hidden="true" />
+            <UsersRound size={12} aria-hidden="true" />
             {count} {count === 1 ? 'listener' : 'listeners'}
           </span>
         </div>
@@ -426,7 +426,7 @@ export default function ChatPanel({
           title="Add a smiley"
           aria-label="Add a smiley"
         >
-          😊
+          <Smile size={16} aria-hidden="true" />
         </button>
         <input
           ref={inputRef}

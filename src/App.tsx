@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Menu, X, ArrowLeft, LogOut, Settings, User, Music, Home, Search, MessageCircle, Heart, Plus, Link2, Users } from 'lucide-react';
+import { Menu, X, ArrowLeft, LogOut, Settings, CircleUserRound, Library, House, Search, MessageCircle, Heart, Plus, Link2, UsersRound } from 'lucide-react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useYouTubePlayer, extractVideoId } from './hooks/useYouTubePlayer';
 import { useSocket } from './hooks/useSocket';
@@ -1029,7 +1029,7 @@ export default function App() {
 
           <nav className="navbar-center" aria-label="Main navigation">
             <button className={`nav-link ${view === 'home' ? 'is-active' : ''}`} onClick={goHome}>
-              <Home size={16} aria-hidden="true" />
+              <House size={16} aria-hidden="true" />
               <span>Home</span>
             </button>
             <button className={`nav-link ${view === 'search' ? 'is-active' : ''}`} onClick={goSearch}>
@@ -1040,7 +1040,7 @@ export default function App() {
               className={`nav-link ${view === 'library' ? 'is-active' : ''}`}
               onClick={() => goLibrary('liked')}
             >
-              <Music size={16} aria-hidden="true" />
+              <Library size={16} aria-hidden="true" />
               <span>Your Library</span>
             </button>
           </nav>
@@ -1076,7 +1076,7 @@ export default function App() {
                   </div>
                   <div className="profile-dropdown-divider" />
                   <button className="profile-dropdown-item" role="menuitem" onClick={() => { setProfileOpen(false); goLibrary('liked'); }}>
-                    <User size={18} /> Your Library
+                    <CircleUserRound size={18} /> Your Library
                   </button>
                   <button className="profile-dropdown-item" role="menuitem" onClick={() => { setProfileOpen(false); setSettingsOpen(true); }}>
                     <Settings size={18} /> Settings
@@ -1429,10 +1429,10 @@ export default function App() {
 
             <div className="nav-section">
               {[
-                { id: 'home', label: 'Home', icon: <Home size={18} /> },
+                { id: 'home', label: 'Home', icon: <House size={18} /> },
                 { id: 'search', label: 'Search Music', icon: <Search size={18} /> },
                 { id: 'liked-songs', label: 'Liked Songs', icon: <Heart size={18} /> },
-                { id: 'playlists', label: 'Your Library', icon: <User size={18} /> },
+                { id: 'playlists', label: 'Your Library', icon: <CircleUserRound size={18} /> },
               ].map((item) => (
                 <button
                   key={item.id}
@@ -1453,7 +1453,7 @@ export default function App() {
             <div className="nav-section">
               <span className="nav-section-title">Listen Together</span>
               {[
-                { id: 'room', label: 'Your Room', icon: <Users size={18} /> },
+                { id: 'room', label: 'Your Room', icon: <UsersRound size={18} /> },
                 { id: 'create-room', label: 'Create Room', icon: <Plus size={18} /> },
                 { id: 'join-room', label: 'Join Room', icon: <Link2 size={18} /> },
               ].map((item) => (
