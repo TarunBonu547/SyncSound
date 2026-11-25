@@ -50,6 +50,7 @@ export default function QueueItem({
       </span>
       {isCurrent ? (
         <span className="lounge-queue-art is-current" aria-hidden="true">
+          <img className="lounge-queue-art-img" src={item.thumbnail} alt="" />
           <span className="lounge-queue-eq">
             <span />
             <span />

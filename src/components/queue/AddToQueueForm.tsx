@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react';
-import { Play, Plus, Loader2, Link2, Heart, Send, X, Search } from 'lucide-react';
+import { Play, Plus, Loader2, Link2, Heart, Send, X, Search, ChevronDown } from 'lucide-react';
 import { extractVideoId } from '../../hooks/useYouTubePlayer';
 import { formatDuration } from '../../utils/youtubeSearch';
 import type { SearchResult } from '../../utils/youtubeSearch';
@@ -347,11 +347,18 @@ export default function AddToQueueForm({
       {nextPageToken && (
         <button
           className="lounge-btn lounge-load-btn"
-          style={{ marginTop: 10 }}
           onClick={() => runSearch(nextPageToken)}
           disabled={searching}
         >
-          {searching ? <Loader2 size={16} className="spin" /> : null} Load more
+          {searching ? (
+            <>
+              <Loader2 size={16} className="spin" /> Loading more songs…
+            </>
+          ) : (
+            <>
+              <ChevronDown size={16} aria-hidden="true" /> Load more results
+            </>
+          )}
         </button>
       )}
     </section>
