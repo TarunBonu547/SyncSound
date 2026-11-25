@@ -15,7 +15,10 @@
   --lu-muted: var(--text-muted);
   --lu-faint: var(--text-faint);
   --lu-border: rgba(217, 154, 167, 0.18);
-  --lu-border-soft: rgba(217, 154, 167, 0.10);
+  --lu-border-soft: rgba(217, 154, 167, 0.28);
+  --lu-border-medium: rgba(217, 154, 167, 0.45);
+  --lu-border-strong: rgba(217, 154, 167, 0.70);
+  --lu-border-hover: rgba(217, 154, 167, 0.65);
   --lu-peach: var(--peach);
   --lu-rose: var(--rose);
   --lu-lavender: var(--lavender);
@@ -415,7 +418,7 @@
 }
 
 .lounge .lounge-header-btn--video {
-  border-color: var(--lu-border);
+  border-color: var(--lu-border-soft);
   color: var(--lu-plum);
 }
 
@@ -643,7 +646,7 @@
   flex: none;
   width: 42px;
   height: 42px;
-  border: 1px solid var(--lu-border);
+  border: 1px solid var(--lu-border-soft);
   border-radius: 50%;
   background: transparent;
   color: var(--lu-muted);
@@ -741,7 +744,7 @@
 .lounge .lounge-control {
   width: 50px;
   height: 50px;
-  border: 1px solid var(--lu-border);
+  border: 1px solid var(--lu-border-soft);
   background: var(--lu-surface-strong);
   color: var(--lu-plum);
   border-radius: 50%;
@@ -835,7 +838,7 @@
   gap: 8px;
   min-height: 42px;
   padding: 0 18px;
-  border: 1px solid var(--lu-border);
+  border: 1px solid var(--lu-border-soft);
   border-radius: var(--lu-radius-button);
   background: var(--lu-surface-strong);
   color: var(--lu-text);
@@ -878,7 +881,7 @@
 /* --- Add to queue form ---------------------------------------------------- */
 .lounge .lounge-add-queue {
   background: var(--lu-surface);
-  border: 1px solid var(--lu-border-soft);
+  border: 1px solid var(--lu-border-medium);
   border-radius: var(--lu-radius-card);
   padding: 30px 32px;
   box-shadow: var(--lu-shadow-sm);
@@ -914,7 +917,7 @@
   flex: 1;
   width: 100%;
   height: 56px;
-  border: 1px solid var(--lu-border);
+  border: 1px solid var(--lu-border-soft);
   background: var(--lu-bg);
   border-radius: var(--lu-radius-button);
   padding: 0 20px 0 48px;
@@ -954,7 +957,7 @@
 
 .lounge .lounge-load-btn {
   background: var(--lu-rose);
-  border-color: transparent;
+  border: 1px solid var(--lu-border-hover);
   color: var(--lu-plum);
   font-weight: 600;
   display: inline-flex;
@@ -994,7 +997,7 @@
 
 .lounge .lounge-action-load {
   background: transparent;
-  border-color: var(--lu-border);
+  border-color: var(--lu-border-soft);
   color: var(--lu-plum);
 }
 
@@ -1062,7 +1065,7 @@
   display: inline-flex;
   align-items: center;
   gap: 7px;
-  border: 1px solid var(--lu-border);
+  border: 1px solid var(--lu-border-soft);
   border-radius: var(--lu-radius-button);
   background: var(--lu-surface-strong);
   color: var(--lu-rose);
@@ -1092,7 +1095,7 @@
 
 .lounge .lounge-dedication-textarea {
   width: 100%;
-  border: 1px solid var(--lu-border);
+  border: 1px solid var(--lu-border-soft);
   border-radius: var(--lu-radius-button);
   padding: 10px 12px;
   outline: none;
@@ -1125,7 +1128,7 @@
   height: 32px;
   display: grid;
   place-items: center;
-  border: 1px solid var(--lu-border);
+  border: 1px solid var(--lu-border-soft);
   border-radius: var(--lu-radius-button);
   background: var(--lu-surface-strong);
   color: var(--lu-muted);
@@ -1149,7 +1152,7 @@
 .lounge .lounge-queue-panel,
 .lounge .lounge-queue-card {
   background: var(--lu-surface);
-  border: 1px solid var(--lu-border-soft);
+  border: 1px solid var(--lu-border-medium);
   border-radius: var(--lu-radius-card);
   padding: 30px 32px;
   box-shadow: var(--lu-shadow-sm);
@@ -1191,19 +1194,20 @@
   border-radius: var(--lu-radius-card);
   padding: 14px 18px;
   min-height: 104px;
-  transition: background-color var(--t-base) var(--ease-out), border-color var(--t-base) var(--ease-out), transform var(--t-fast) var(--ease-out);
+  transition: background-color var(--t-base) var(--ease-out), border-color var(--t-base) var(--ease-out), transform var(--t-fast) var(--ease-out), box-shadow var(--t-base) var(--ease-out);
 }
 
 .lounge .lounge-queue-item:hover {
-  background: #fff;
-  border-color: var(--lu-border);
+  background: rgba(255, 255, 250, 0.85);
+  border-color: var(--lu-border-hover);
   transform: translateY(-1.5px);
+  box-shadow: var(--lu-shadow-sm);
 }
 
 .lounge .lounge-queue-item.is-current {
-  border-color: var(--lu-peach);
+  border-color: var(--lu-border-strong);
   background: var(--lu-peach-wash);
-  box-shadow: inset 3px 0 0 var(--lu-peach);
+  box-shadow: inset 3px 0 0 var(--lu-peach), var(--lu-shadow-sm);
 }
 
 .lounge .lounge-queue-art {
@@ -1319,7 +1323,7 @@
   height: 38px;
   display: grid;
   place-items: center;
-  border: 1px solid var(--lu-border);
+  border: 1px solid var(--lu-border-soft);
   border-radius: var(--lu-radius-button);
   background: var(--lu-surface-strong);
   color: var(--lu-muted);
@@ -1403,7 +1407,7 @@
 /* --- Chat panel ----------------------------------------------------------- */
 .lounge .lounge-chat-panel {
   background: var(--lu-surface);
-  border: 1px solid var(--lu-border-soft);
+  border: 1px solid var(--lu-border-medium);
   border-radius: var(--lu-radius-card);
   padding: 16px 16px 12px;
   min-height: 600px;
@@ -1592,7 +1596,7 @@
 .lounge .lounge-chat-reply-btn {
   width: 26px;
   height: 26px;
-  border: 1px solid var(--lu-border);
+  border: 1px solid var(--lu-border-soft);
   border-radius: var(--lu-radius-button);
   background: var(--lu-surface-strong);
   color: var(--lu-muted);
@@ -1739,7 +1743,7 @@
   width: 36px;
   height: 36px;
   flex: none;
-  border: 1px solid var(--lu-border);
+  border: 1px solid var(--lu-border-soft);
   border-radius: var(--lu-radius-button);
   background: var(--lu-surface-strong);
   font-size: 17px;
@@ -1758,7 +1762,7 @@
 .lounge .lounge-chat-input {
   flex: 1;
   min-width: 0;
-  border: 1px solid var(--lu-border);
+  border: 1px solid var(--lu-border-soft);
   border-radius: var(--lu-radius-button);
   padding: 10px 13px;
   background: rgba(255, 255, 250, 0.75);
@@ -1917,7 +1921,7 @@
   width: 52px;
   height: 52px;
   border-radius: 50%;
-  border: 1px solid var(--lu-border);
+  border: 1px solid var(--lu-border-soft);
   background: #fff;
   color: var(--lu-plum);
   display: grid;
