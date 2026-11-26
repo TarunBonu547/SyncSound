@@ -163,7 +163,7 @@ export default function AddToQueueForm({
             {searching ? 'Searching…' : 'Search'}
           </button>
           <button className="lounge-btn lounge-action-add" onClick={addQueue} disabled={adding || !inRoom}>
-            {adding ? 'Adding…' : '+ Add to Queue'}
+            {adding ? 'Adding…' : <><Plus size={16} aria-hidden="true" /> Add to Queue</>}
           </button>
           <button
             className="lounge-btn lounge-action-load"
