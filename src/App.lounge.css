@@ -648,36 +648,25 @@
   height: 42px;
   border: 1px solid var(--lu-border-medium);
   border-radius: 50%;
-  background: linear-gradient(180deg, var(--lu-surface-strong), var(--lu-surface));
-  color: var(--lu-plum);
+  background: transparent;
+  color: var(--lu-muted);
   display: grid;
   place-items: center;
   cursor: pointer;
-  box-shadow: var(--lu-shadow-sm), var(--shadow-inset);
-  transition: transform var(--t-base) var(--ease-out), color var(--t-fast) var(--ease-out), background-color var(--t-base) var(--ease-out), border-color var(--t-fast) var(--ease-out), box-shadow var(--t-base) var(--ease-out);
+  transition: transform var(--t-fast) var(--ease-out), color var(--t-fast) var(--ease-out), background-color var(--t-base) var(--ease-out), border-color var(--t-fast) var(--ease-out);
 }
 
 .lounge .lounge-heart-btn:hover:not(:disabled) {
   color: var(--lu-rose);
   background: var(--lu-rose-wash);
-  border-color: var(--lu-border-strong);
-  box-shadow: var(--lu-shadow-md);
-  transform: translateY(-2px);
-}
-
-.lounge .lounge-heart-btn:active:not(:disabled) {
-  transform: translateY(0) scale(0.94);
+  border-color: rgba(217, 154, 167, 0.45);
+  transform: translateY(-1px);
 }
 
 .lounge .lounge-heart-btn.is-active {
   color: var(--lu-rose);
   background: var(--lu-rose-wash);
-  border-color: var(--lu-border-strong);
-  box-shadow: 0 6px 16px rgba(217, 154, 167, 0.18);
-}
-
-.lounge .lounge-heart-btn.is-active:hover:not(:disabled) {
-  background: rgba(217, 154, 167, 0.28);
+  border-color: rgba(217, 154, 167, 0.55);
 }
 
 .lounge .lounge-heart-btn:disabled {
@@ -756,14 +745,13 @@
   width: 50px;
   height: 50px;
   border: 1px solid var(--lu-border-medium);
-  background: linear-gradient(180deg, var(--lu-surface-strong), var(--lu-surface));
+  background: var(--lu-surface-strong);
   color: var(--lu-plum);
   border-radius: 50%;
   display: grid;
   place-items: center;
   cursor: pointer;
-  box-shadow: var(--lu-shadow-sm), var(--shadow-inset);
-  transition: transform var(--t-base) var(--ease-out), background-color var(--t-base) var(--ease-out), border-color var(--t-base) var(--ease-out), box-shadow var(--t-base) var(--ease-out), color var(--t-fast) var(--ease-out);
+  transition: transform var(--t-fast) var(--ease-out), background-color var(--t-base) var(--ease-out), border-color var(--t-base) var(--ease-out), box-shadow var(--t-base) var(--ease-out);
 }
 
 .lounge .lounge-control svg {
@@ -774,18 +762,18 @@
 
 .lounge .lounge-control:hover:not(:disabled) {
   background: #fff;
-  border-color: var(--lu-border-strong);
+  border-color: var(--lu-peach);
   color: var(--lu-plum);
-  box-shadow: var(--lu-shadow-md);
-  transform: translateY(-2px);
+  box-shadow: var(--lu-shadow-sm);
+  transform: translateY(-1.5px);
 }
 
 .lounge .lounge-control:active:not(:disabled) {
-  transform: translateY(0) scale(0.94);
+  transform: translateY(0) scale(0.96);
 }
 
 .lounge .lounge-control:disabled {
-  opacity: 0.45;
+  opacity: 0.5;
   cursor: not-allowed;
 }
 
@@ -794,24 +782,23 @@
   height: 64px;
   border: none;
   background: linear-gradient(135deg, var(--lu-peach), var(--lu-rose));
-  color: #fff;
-  box-shadow: var(--shadow-accent), 0 10px 24px rgba(217, 154, 167, 0.28);
+  color: var(--lu-twilight);
+  box-shadow: var(--shadow-accent);
 }
 
 .lounge .lounge-control--play svg {
   width: 28px;
   height: 28px;
-  fill: currentColor;
 }
 
 .lounge .lounge-control--play:hover:not(:disabled) {
-  filter: brightness(1.05);
-  box-shadow: 0 16px 32px rgba(217, 154, 167, 0.36);
+  filter: brightness(1.06);
+  box-shadow: 0 14px 30px rgba(232, 183, 173, 0.3);
   transform: translateY(-2px);
 }
 
 .lounge .lounge-control--play:active:not(:disabled) {
-  transform: scale(0.94);
+  transform: scale(0.95);
 }
 
 /* --- Reactions ------------------------------------------------------------ */
@@ -1006,26 +993,6 @@
   min-height: 52px;
   padding: 0 20px;
   flex-shrink: 0;
-}
-
-.lounge .lounge-action-add {
-  background: linear-gradient(180deg, var(--lu-surface-strong), var(--lu-surface));
-  border-color: var(--lu-border-medium);
-  color: var(--lu-plum);
-  box-shadow: var(--lu-shadow-sm), var(--shadow-inset);
-  font-weight: 600;
-}
-
-.lounge .lounge-action-add:hover:not(:disabled) {
-  background: #fff;
-  border-color: var(--lu-border-strong);
-  color: var(--lu-plum);
-  box-shadow: var(--lu-shadow-md);
-  transform: translateY(-2px);
-}
-
-.lounge .lounge-action-add:active:not(:disabled) {
-  transform: translateY(0) scale(0.98);
 }
 
 .lounge .lounge-action-load {
@@ -1359,49 +1326,30 @@
   place-items: center;
   border: 1px solid var(--lu-border-medium);
   border-radius: var(--lu-radius-button);
-  background: linear-gradient(180deg, var(--lu-surface-strong), var(--lu-surface));
-  color: var(--lu-plum);
+  background: var(--lu-surface-strong);
+  color: var(--lu-muted);
   cursor: pointer;
-  box-shadow: var(--lu-shadow-sm), var(--shadow-inset);
-  transition: background-color var(--t-fast) var(--ease-out), color var(--t-fast) var(--ease-out), border-color var(--t-fast) var(--ease-out), transform var(--t-base) var(--ease-out), box-shadow var(--t-base) var(--ease-out);
+  transition: background-color var(--t-fast) var(--ease-out), color var(--t-fast) var(--ease-out), border-color var(--t-fast) var(--ease-out), transform var(--t-fast) var(--ease-out);
 }
 
 .lounge .lounge-queue-icon-btn:hover:not(:disabled) {
   background: #fff;
-  border-color: var(--lu-border-strong);
+  border-color: var(--lu-peach);
   color: var(--lu-plum);
-  transform: translateY(-2px);
-  box-shadow: var(--lu-shadow-md);
-}
-
-.lounge .lounge-queue-icon-btn:active:not(:disabled) {
-  transform: translateY(0) scale(0.94);
+  transform: translateY(-1.5px);
 }
 
 .lounge .lounge-queue-icon-btn.is-primary {
-  background: linear-gradient(135deg, var(--lu-peach), var(--lu-rose));
-  border-color: transparent;
-  color: #fff;
-  box-shadow: var(--shadow-accent);
-}
-
-.lounge .lounge-queue-icon-btn.is-primary svg {
-  fill: currentColor;
-}
-
-.lounge .lounge-queue-icon-btn.is-primary:hover:not(:disabled) {
-  filter: brightness(1.05);
-  box-shadow: 0 10px 22px rgba(217, 154, 167, 0.32);
+  color: var(--lu-rose);
 }
 
 .lounge .lounge-queue-icon-btn.is-danger {
-  color: #8a4a5a;
+  color: var(--lu-plum);
 }
 
 .lounge .lounge-queue-icon-btn.is-danger:hover:not(:disabled) {
   background: var(--lu-rose-wash);
-  border-color: var(--lu-border-strong);
-  color: #8a4a5a;
+  border-color: var(--lu-rose);
 }
 
 .lounge .lounge-queue-icon-btn:disabled {
