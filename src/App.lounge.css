@@ -1221,6 +1221,7 @@
 .lounge .lounge-queue-item {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 16px;
   background: rgba(255, 255, 250, 0.7);
   border: 1px solid var(--lu-border-medium);
@@ -1407,6 +1408,128 @@
 .lounge .lounge-queue-icon-btn:disabled {
   opacity: 0.45;
   cursor: not-allowed;
+}
+
+/* --- Note button + indicator --------------------------------------------- */
+.lounge .lounge-note-btn {
+  position: relative;
+}
+
+.lounge .lounge-note-btn.has-note {
+  border-color: var(--lu-border-strong);
+  color: var(--lu-plum);
+}
+
+.lounge .lounge-note-btn.is-open {
+  background: var(--lu-rose-wash);
+  border-color: var(--lu-rose);
+  color: var(--lu-plum);
+}
+
+.lounge .lounge-note-dot {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--lu-rose);
+  box-shadow: 0 0 0 2px var(--lu-surface-strong);
+  pointer-events: none;
+}
+
+/* --- Note view (read mode) ----------------------------------------------- */
+.lounge .lounge-note-view {
+  flex-basis: 100%;
+  margin-top: 4px;
+  padding: 12px 14px;
+  background: linear-gradient(180deg, var(--lu-surface-strong), var(--lu-surface));
+  border: 1px solid var(--lu-border-medium);
+  border-radius: var(--lu-radius-button);
+  box-shadow: var(--lu-shadow-sm), var(--shadow-inset);
+  animation: luNoteIn 220ms var(--ease-out) both;
+  transform-origin: top center;
+}
+
+.lounge .lounge-note-view-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.lounge .lounge-note-view-author {
+  font-family: var(--font-heading);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--lu-plum);
+}
+
+.lounge .lounge-note-view-date {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--lu-faint);
+  white-space: nowrap;
+}
+
+.lounge .lounge-note-view-text {
+  margin: 0 0 10px;
+  font-family: var(--font-heading);
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--lu-text);
+  word-break: break-word;
+  white-space: pre-wrap;
+}
+
+.lounge .lounge-note-view-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+.lounge .lounge-note-view-actions .lounge-icon-btn {
+  width: 30px;
+  height: 30px;
+}
+
+.lounge .lounge-icon-btn.is-danger {
+  color: #8a4a5a;
+}
+
+.lounge .lounge-icon-btn.is-danger:hover:not(:disabled) {
+  background: var(--lu-rose-wash);
+  border-color: var(--lu-border-strong);
+  color: #8a4a5a;
+}
+
+/* --- Note editor (edit mode) --------------------------------------------- */
+.lounge .lounge-note-editor {
+  flex-basis: 100%;
+  margin-top: 4px;
+  animation: luNoteIn 220ms var(--ease-out) both;
+  transform-origin: top center;
+}
+
+@keyframes luNoteIn {
+  from {
+    opacity: 0;
+    transform: translateY(-6px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lounge .lounge-note-view,
+  .lounge .lounge-note-editor {
+    animation-duration: 0.01ms !important;
+  }
 }
 
 .lounge .lounge-queue-drag-handle {
