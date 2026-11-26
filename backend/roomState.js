@@ -102,8 +102,6 @@ class RoomState {
     /** Monotonic photo sequence for this room. */
     this.photoSeq = 0;
     this.queue = [];
-    /** Personal notes keyed by videoId, so they survive remove/re-add. */
-    this.notesByVideoId = new Map();
     this.currentQueueItemId = null;
     this.currentVideoId = null;
     this.playbackStatus = 'ended';
@@ -390,40 +388,25 @@ class RoomState {
       qi.dedication.authorId = clientId;
       qi.dedication.authorName = clientName;
     }
-    if (!qi.dedication) {
-      const saved = this.notesByVideoId.get(qi.videoId);
-      if (saved) qi.dedication = { ...saved };
-    }
     this.queue.push(qi);
     this.queueRevision += 1;
     return { ok: true, item: qi };
   }
 
-  queueEditDedication(itemId, dedicationText, clientId, clientName = null) {
+  queueEditDedication(itemId, dedicationText, clientId) {
     const idx = this.queue.findIndex((q) => q.id === itemId);
     if (idx === -1) return { ok: false, error: 'Item not found' };
     const item = this.queue[idx];
-    const text = typeof dedicationText === 'string' ? dedicationText.replace(/\s+/g, ' ').trim() : '';
-    if (item.dedication && item.dedication.authorId !== clientId) {
+    if (!item.dedication || item.dedication.authorId !== clientId) {
       return { ok: false, error: 'Not the author of this dedication' };
     }
+    const text = typeof dedicationText === 'string' ? dedicationText.replace(/\s+/g, ' ').trim() : '';
     if (!text) {
       delete item.dedication;
-      this.notesByVideoId.delete(item.videoId);
     } else {
       if (text.length > MAX_DEDICATION_LENGTH) return { ok: false, error: 'Dedication is too long' };
-      if (!item.dedication) {
-        item.dedication = {
-          text,
-          authorId: clientId,
-          authorName: clientName || 'Someone',
-          createdAt: Date.now(),
-        };
-      } else {
-        item.dedication.text = text;
-        item.dedication.createdAt = Date.now();
-      }
-      this.notesByVideoId.set(item.videoId, { ...item.dedication });
+      item.dedication.text = text;
+      item.dedication.createdAt = Date.now();
     }
     this.queueRevision += 1;
     return { ok: true, item };

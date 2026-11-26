@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react';
-import { Play, ArrowUp, ArrowDown, X, Pencil, Heart, Send, Grab, Trash2 } from 'lucide-react';
+import { Play, ArrowUp, ArrowDown, X, Pencil, Heart, Send, Grab } from 'lucide-react';
 import { formatDuration } from '../../utils/youtubeSearch';
 import type { QueueEntry } from '../../types/music';
 
@@ -16,15 +16,6 @@ type QueueItemProps = {
   editDedication: (itemId: string, text: string | null) => Promise<string | null>;
 };
 
-/** Formats a dedication timestamp into a short, readable label. */
-function formatNoteDate(ms: number) {
-  const diff = Date.now() - ms;
-  if (diff < 60_000) return 'just now';
-  if (diff < 3_600_000) return `${Math.floor(diff / 60_000)}m ago`;
-  if (diff < 86_400_000) return `${Math.floor(diff / 3_600_000)}h ago`;
-  return `${Math.floor(diff / 86_400_000)}d ago`;
-}
-
 /** One track of the shared queue. */
 export default function QueueItem({
   item,
@@ -37,54 +28,20 @@ export default function QueueItem({
   editDedication,
 }: QueueItemProps) {
   const duration = formatDuration(item.durationSeconds);
-  const [noteOpen, setNoteOpen] = useState(false);
-  const [noteMode, setNoteMode] = useState<'view' | 'edit'>('view');
+  const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(item.dedication?.text || '');
-  const [saving, setSaving] = useState(false);
   const hasDedication = Boolean(item.dedication);
-
-  const openNote = useCallback(() => {
-    if (noteOpen) {
-      setNoteOpen(false);
-      return;
-    }
-    setDraft(item.dedication?.text || '');
-    setNoteMode(hasDedication ? 'view' : 'edit');
-    setNoteOpen(true);
-  }, [noteOpen, hasDedication, item.dedication]);
 
   const handleSave = useCallback(async () => {
     const text = draft.trim();
-    setSaving(true);
-    try {
-      await editDedication(item.id, text || null);
-      setNoteMode(text ? 'view' : 'edit');
-      if (!text) setNoteOpen(false);
-    } finally {
-      setSaving(false);
-    }
-  }, [draft, editDedication, item.id]);
-
-  const handleDelete = useCallback(async () => {
-    setSaving(true);
-    try {
+    if (!text) {
       await editDedication(item.id, null);
-      setNoteOpen(false);
-      setDraft('');
-    } finally {
-      setSaving(false);
+      setEditing(false);
+      return;
     }
-  }, [editDedication, item.id]);
-
-  const handleCancelEdit = useCallback(() => {
-    if (hasDedication) {
-      setDraft(item.dedication!.text);
-      setNoteMode('view');
-    } else {
-      setNoteOpen(false);
-      setDraft('');
-    }
-  }, [hasDedication, item.dedication]);
+    await editDedication(item.id, text);
+    setEditing(false);
+  }, [draft, editDedication, item.id]);
 
   return (
     <li className={`lounge-queue-item ${isCurrent ? 'is-current' : ''}`}>
@@ -108,7 +65,7 @@ export default function QueueItem({
           {item.title}
           {isCurrent && <span className="lounge-now-badge">Now playing</span>}
           {hasDedication && (
-            <span className="lounge-queue-dedication" aria-label="This song has a note">
+            <span className="lounge-queue-dedication" aria-label="This song has a dedication">
               <Heart size={11} aria-hidden="true" />
             </span>
           )}
@@ -127,17 +84,17 @@ export default function QueueItem({
         >
           <Play size={16} />
         </button>
-        <button
-          type="button"
-          className={`lounge-queue-icon-btn lounge-note-btn ${hasDedication ? 'has-note' : ''} ${noteOpen ? 'is-open' : ''}`}
-          onClick={openNote}
-          title={hasDedication ? 'View note' : 'Add a note'}
-          aria-label={hasDedication ? `View note for ${item.title}` : `Add a note to ${item.title}`}
-          aria-expanded={noteOpen}
-        >
-          <Pencil size={14} aria-hidden="true" />
-          {hasDedication && <span className="lounge-note-dot" aria-hidden="true" />}
-        </button>
+        {hasDedication && isAuthor && (
+          <button
+            type="button"
+            className="lounge-queue-icon-btn"
+            onClick={() => { setDraft(item.dedication!.text); setEditing(true); }}
+            title="Edit dedication"
+            aria-label={`Edit dedication for ${item.title}`}
+          >
+            <Pencil size={14} aria-hidden="true" />
+          </button>
+        )}
         <button
           className="lounge-queue-icon-btn"
           onClick={onMoveUp}
@@ -163,51 +120,8 @@ export default function QueueItem({
           <X size={15} />
         </button>
       </div>
-      {noteOpen && noteMode === 'view' && hasDedication && (
-        <div className="lounge-note-view">
-          <div className="lounge-note-view-head">
-            <span className="lounge-note-view-author">{item.dedication!.authorName}</span>
-            <span className="lounge-note-view-date">{formatNoteDate(item.dedication!.createdAt)}</span>
-          </div>
-          <p className="lounge-note-view-text">{item.dedication!.text}</p>
-          <div className="lounge-note-view-actions">
-            {isAuthor && (
-              <>
-                <button
-                  type="button"
-                  className="lounge-icon-btn"
-                  onClick={() => { setDraft(item.dedication!.text); setNoteMode('edit'); }}
-                  aria-label="Edit note"
-                  title="Edit note"
-                >
-                  <Pencil size={14} aria-hidden="true" />
-                </button>
-                <button
-                  type="button"
-                  className="lounge-icon-btn is-danger"
-                  onClick={handleDelete}
-                  disabled={saving}
-                  aria-label="Delete note"
-                  title="Delete note"
-                >
-                  <Trash2 size={14} aria-hidden="true" />
-                </button>
-              </>
-            )}
-            <button
-              type="button"
-              className="lounge-icon-btn"
-              onClick={() => setNoteOpen(false)}
-              aria-label="Close note"
-              title="Close"
-            >
-              <X size={14} aria-hidden="true" />
-            </button>
-          </div>
-        </div>
-      )}
-      {noteOpen && noteMode === 'edit' && (
-        <div className="lounge-dedication-editor lounge-queue-dedication-editor lounge-note-editor">
+      {editing && hasDedication && isAuthor && (
+        <div className="lounge-dedication-editor lounge-queue-dedication-editor">
           <textarea
             className="lounge-dedication-textarea"
             value={draft}
@@ -218,20 +132,21 @@ export default function QueueItem({
                 handleSave();
               }
               if (e.key === 'Escape') {
-                handleCancelEdit();
+                setDraft(item.dedication!.text);
+                setEditing(false);
               }
             }}
-            placeholder="Write something about this song…"
+            placeholder="This song reminds me of you…"
             maxLength={200}
             rows={2}
-            aria-label="Note"
+            aria-label="Edit dedication"
           />
           <span className="lounge-dedication-counter">{draft.length} / 200</span>
           <div className="lounge-dedication-editor-actions">
-            <button type="button" className="lounge-icon-btn" onClick={handleCancelEdit} aria-label="Cancel">
+            <button type="button" className="lounge-icon-btn" onClick={() => { setDraft(item.dedication!.text); setEditing(false); }} aria-label="Cancel">
               <X size={14} aria-hidden="true" />
             </button>
-            <button type="button" className="lounge-icon-btn is-primary" onClick={handleSave} disabled={saving} aria-label="Save note">
+            <button type="button" className="lounge-icon-btn is-primary" onClick={handleSave} aria-label="Save dedication">
               <Send size={14} aria-hidden="true" />
             </button>
           </div>

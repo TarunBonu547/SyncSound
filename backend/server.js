@@ -459,12 +459,7 @@ io.on('connection', (socket) => {
     requireRoom(code, socket, cb, (room) => {
       const member = room.getMember(socket.id);
       const text = typeof dedication === 'string' ? dedication : null;
-      const result = room.queueEditDedication(
-        itemId,
-        text,
-        member ? member.clientId : null,
-        member ? member.name : null,
-      );
+      const result = room.queueEditDedication(itemId, text, member ? member.clientId : null);
       if (!result.ok) {
         if (cb) cb({ ok: false, error: result.error });
         return;
