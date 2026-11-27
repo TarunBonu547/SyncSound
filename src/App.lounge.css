@@ -640,34 +640,71 @@
 
 .lounge .lounge-heart-btn {
   flex: none;
-  width: 42px;
-  height: 42px;
-  border: 1px solid var(--lu-border-medium);
-  border-radius: 50%;
-  background: transparent;
-  color: var(--lu-muted);
+  width: 44px;
+  height: 44px;
+  border: 1px solid rgba(217, 154, 167, 0.4);
+  border-radius: 18px;
+  background: rgba(255, 250, 248, 0.85);
+  backdrop-filter: blur(12px) saturate(1.1);
+  -webkit-backdrop-filter: blur(12px) saturate(1.1);
+  color: var(--lu-plum);
   display: grid;
   place-items: center;
   cursor: pointer;
-  transition: transform var(--t-fast) var(--ease-out), color var(--t-fast) var(--ease-out), background-color var(--t-base) var(--ease-out), border-color var(--t-fast) var(--ease-out);
+  position: relative;
+  overflow: hidden;
+  transition:
+    transform 250ms cubic-bezier(0.4, 0, 0.2, 1),
+    background-color 250ms var(--ease-out),
+    border-color 250ms var(--ease-out),
+    box-shadow 250ms var(--ease-out);
+  box-shadow:
+    0 4px 16px rgba(217, 154, 167, 0.10),
+    inset 0 1px 0 rgba(255, 255, 250, 0.8);
+}
+
+.lounge .lounge-heart-btn::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  border: 1px solid rgba(255, 255, 250, 0.7);
+  pointer-events: none;
 }
 
 .lounge .lounge-heart-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  background: rgba(255, 250, 248, 0.95);
+  border-color: rgba(217, 154, 167, 0.6);
   color: var(--lu-rose);
-  background: var(--lu-rose-wash);
-  border-color: rgba(217, 154, 167, 0.45);
-  transform: translateY(-1px);
+  box-shadow:
+    0 8px 24px rgba(217, 154, 167, 0.14),
+    inset 0 1px 0 rgba(255, 255, 250, 0.9);
+}
+
+.lounge .lounge-heart-btn:active:not(:disabled) {
+  transform: translateY(0) scale(0.96);
 }
 
 .lounge .lounge-heart-btn.is-active {
   color: var(--lu-rose);
-  background: var(--lu-rose-wash);
-  border-color: rgba(217, 154, 167, 0.55);
+  background: rgba(255, 248, 245, 0.95);
+  border-color: var(--lu-rose);
+  box-shadow:
+    0 8px 24px rgba(217, 154, 167, 0.16),
+    inset 0 1px 0 rgba(255, 255, 250, 0.9);
+}
+
+.lounge .lounge-heart-btn.is-active:hover:not(:disabled) {
+  background: rgba(255, 248, 245, 0.98);
+  box-shadow:
+    0 8px 28px rgba(217, 154, 167, 0.18);
 }
 
 .lounge .lounge-heart-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+  transform: none;
 }
 
 .lounge .lounge-error-text {
@@ -740,28 +777,55 @@
 .lounge .lounge-control {
   width: 50px;
   height: 50px;
-  border: 1px solid var(--lu-border-medium);
-  background: var(--lu-surface-strong);
+  border: 1px solid rgba(217, 154, 167, 0.35);
+  border-radius: 18px;
+  background: rgba(255, 250, 248, 0.85);
+  backdrop-filter: blur(12px) saturate(1.1);
+  -webkit-backdrop-filter: blur(12px) saturate(1.1);
   color: var(--lu-plum);
-  border-radius: 50%;
   display: grid;
   place-items: center;
   cursor: pointer;
-  transition: transform var(--t-fast) var(--ease-out), background-color var(--t-base) var(--ease-out), border-color var(--t-base) var(--ease-out), box-shadow var(--t-base) var(--ease-out);
+  position: relative;
+  overflow: hidden;
+  transition:
+    transform 250ms cubic-bezier(0.4, 0, 0.2, 1),
+    background-color 250ms var(--ease-out),
+    border-color 250ms var(--ease-out),
+    box-shadow 250ms var(--ease-out);
+  box-shadow:
+    0 4px 16px rgba(217, 154, 167, 0.10),
+    inset 0 1px 0 rgba(255, 255, 250, 0.8);
+}
+
+.lounge .lounge-control::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  border: 1px solid rgba(255, 255, 250, 0.7);
+  pointer-events: none;
 }
 
 .lounge .lounge-control svg {
   width: 20px;
   height: 20px;
   fill: currentColor;
+  flex: none;
 }
 
 .lounge .lounge-control:hover:not(:disabled) {
-  background: #fff;
-  border-color: var(--lu-peach);
-  color: var(--lu-plum);
-  box-shadow: var(--lu-shadow-sm);
-  transform: translateY(-1.5px);
+  transform: translateY(-2px);
+  background: rgba(255, 250, 248, 0.95);
+  border-color: rgba(217, 154, 167, 0.6);
+  color: var(--lu-rose);
+  box-shadow:
+    0 8px 24px rgba(217, 154, 167, 0.14),
+    inset 0 1px 0 rgba(255, 255, 250, 0.9);
+}
+
+.lounge .lounge-control svg:hover {
+  transform: scale(1.08);
 }
 
 .lounge .lounge-control:active:not(:disabled) {
@@ -771,30 +835,42 @@
 .lounge .lounge-control:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
 }
 
 .lounge .lounge-control--play {
   width: 64px;
   height: 64px;
   border: none;
+  border-radius: 20px;
   background: linear-gradient(135deg, var(--lu-peach), var(--lu-rose));
-  color: var(--lu-twilight);
-  box-shadow: var(--shadow-accent);
+  color: #fff;
+  box-shadow:
+    0 10px 26px rgba(217, 154, 167, 0.22),
+    inset 0 1px 0 rgba(255, 255, 250, 0.4);
 }
 
 .lounge .lounge-control--play svg {
   width: 28px;
   height: 28px;
+  fill: #fff;
+  flex: none;
 }
 
 .lounge .lounge-control--play:hover:not(:disabled) {
-  filter: brightness(1.06);
-  box-shadow: 0 14px 30px rgba(232, 183, 173, 0.3);
-  transform: translateY(-2px);
+  transform: translateY(-2px) scale(1.03);
+  box-shadow:
+    0 16px 32px rgba(217, 154, 167, 0.28),
+    inset 0 1px 0 rgba(255, 255, 250, 0.5);
+}
+
+.lounge .lounge-control--play svg:hover {
+  transform: scale(1.1);
 }
 
 .lounge .lounge-control--play:active:not(:disabled) {
-  transform: scale(0.95);
+  transform: translateY(0) scale(0.97);
 }
 
 /* --- Reactions ------------------------------------------------------------ */
@@ -832,25 +908,51 @@
   align-items: center;
   justify-content: center;
   gap: 8px;
-  min-height: 42px;
-  padding: 0 18px;
-  border: 1px solid var(--lu-border-medium);
-  border-radius: var(--lu-radius-button);
-  background: var(--lu-surface-strong);
-  color: var(--lu-text);
+  min-height: 46px;
+  padding: 0 20px;
+  border: 1px solid rgba(217, 154, 167, 0.35);
+  border-radius: 16px;
+  background: rgba(255, 250, 248, 0.85);
+  backdrop-filter: blur(12px) saturate(1.1);
+  -webkit-backdrop-filter: blur(12px) saturate(1.1);
+  color: var(--lu-plum);
   font-family: var(--lu-font);
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
   white-space: nowrap;
-  transition: transform var(--t-fast) var(--ease-out), background-color var(--t-base) var(--ease-out), border-color var(--t-base) var(--ease-out), box-shadow var(--t-base) var(--ease-out);
+  position: relative;
+  overflow: hidden;
+  transition:
+    transform 250ms cubic-bezier(0.4, 0, 0.2, 1),
+    background-color 250ms var(--ease-out),
+    border-color 250ms var(--ease-out),
+    box-shadow 250ms var(--ease-out);
+  box-shadow:
+    0 4px 16px rgba(217, 154, 167, 0.10),
+    inset 0 1px 0 rgba(255, 255, 250, 0.8);
+}
+
+.lounge .lounge-btn::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  border: 1px solid rgba(255, 255, 250, 0.7);
+  pointer-events: none;
 }
 
 .lounge .lounge-btn:hover:not(:disabled) {
-  background: #fff;
-  border-color: rgba(232, 183, 173, 0.4);
-  box-shadow: var(--lu-shadow-sm);
-  transform: translateY(-1px);
+  transform: translateY(-2px);
+  background: rgba(255, 250, 248, 0.95);
+  border-color: rgba(217, 154, 167, 0.6);
+  box-shadow:
+    0 8px 24px rgba(217, 154, 167, 0.14),
+    inset 0 1px 0 rgba(255, 255, 250, 0.9);
+}
+
+.lounge .lounge-btn svg:hover {
+  transform: scale(1.08);
 }
 
 .lounge .lounge-btn:active:not(:disabled) {
@@ -860,18 +962,28 @@
 .lounge .lounge-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
 }
 
 .lounge .lounge-btn--primary {
   background: linear-gradient(135deg, var(--lu-peach), var(--lu-rose));
   border-color: transparent;
-  color: var(--lu-twilight);
-  box-shadow: var(--shadow-accent);
+  color: #fff;
+  box-shadow:
+    0 10px 26px rgba(217, 154, 167, 0.22),
+    inset 0 1px 0 rgba(255, 255, 250, 0.4);
 }
 
 .lounge .lounge-btn--primary:hover:not(:disabled) {
-  filter: brightness(1.05);
-  box-shadow: 0 14px 30px rgba(232, 183, 173, 0.28);
+  transform: translateY(-2px);
+  box-shadow:
+    0 16px 32px rgba(217, 154, 167, 0.28),
+    inset 0 1px 0 rgba(255, 255, 250, 0.5);
+}
+
+.lounge .lounge-btn--primary svg {
+  fill: #fff;
 }
 
 /* --- Add to queue form ---------------------------------------------------- */
@@ -943,36 +1055,58 @@
 }
 
 .lounge .lounge-add-btn,
-.lounge .lounge-load-btn {
+.lounge .lounge-load-btn,
+.lounge .lounge-action-search,
+.lounge .lounge-action-add,
+.lounge .lounge-action-load {
   flex: none;
   flex-shrink: 0;
   min-height: 52px;
   padding: 0 22px;
-  border-radius: var(--lu-radius-badge);
+  border-radius: 16px;
 }
 
 .lounge .lounge-load-btn {
-  background: var(--lu-rose);
-  border: 1px solid var(--lu-border-hover);
+  min-height: 48px;
+  padding: 0 24px;
+  border-radius: 28px;
+  background: linear-gradient(135deg, rgba(229, 154, 184, 0.5), rgba(143, 141, 200, 0.45));
+  border: 1px solid rgba(217, 154, 167, 0.45);
   color: var(--lu-plum);
   font-weight: 600;
   display: inline-flex;
   align-items: center;
   gap: 8px;
   justify-content: center;
+  backdrop-filter: blur(12px) saturate(1.1);
+  -webkit-backdrop-filter: blur(12px) saturate(1.1);
+  box-shadow:
+    0 4px 16px rgba(217, 154, 167, 0.10),
+    inset 0 1px 0 rgba(255, 255, 250, 0.7);
 }
 
 .lounge .lounge-load-btn:hover:not(:disabled) {
-  background: var(--lu-peach);
+  transform: translateY(-2px);
+  background: linear-gradient(135deg, rgba(229, 154, 184, 0.7), rgba(143, 141, 200, 0.65));
+  border-color: rgba(217, 154, 167, 0.65);
   color: var(--lu-plum);
-  box-shadow: var(--lu-shadow-sm);
-  transform: translateY(-1px);
+  box-shadow:
+    0 8px 24px rgba(217, 154, 167, 0.16),
+    inset 0 1px 0 rgba(255, 255, 250, 0.8);
+}
+
+.lounge .lounge-load-btn svg:hover {
+  transform: scale(1.08);
+}
+
+.lounge .lounge-load-btn:active:not(:disabled) {
+  transform: translateY(0) scale(0.98);
 }
 
 .lounge .lounge-load-btn:disabled {
-  opacity: 0.6;
+  opacity: 0.5;
   cursor: not-allowed;
-  background: var(--lu-rose);
+  background: rgba(217, 154, 167, 0.3);
   color: var(--lu-plum);
   transform: none;
   box-shadow: none;
@@ -989,22 +1123,6 @@
   min-height: 52px;
   padding: 0 20px;
   flex-shrink: 0;
-}
-
-.lounge .lounge-action-load {
-  background: transparent;
-  border-color: var(--lu-border-medium);
-  color: var(--lu-plum);
-}
-
-.lounge .lounge-action-load:hover:not(:disabled) {
-  background: var(--lu-rose-wash);
-  border-color: var(--lu-rose);
-}
-
-.lounge .lounge-action-load:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
 }
 
 .lounge .lounge-error-text {
@@ -1061,21 +1179,40 @@
   display: inline-flex;
   align-items: center;
   gap: 7px;
-  border: 1px solid var(--lu-border-medium);
-  border-radius: var(--lu-radius-button);
-  background: var(--lu-surface-strong);
+  border: 1px solid rgba(217, 154, 167, 0.4);
+  border-radius: 16px;
+  background: rgba(255, 250, 248, 0.85);
+  backdrop-filter: blur(12px) saturate(1.1);
+  -webkit-backdrop-filter: blur(12px) saturate(1.1);
   color: var(--lu-rose);
   font-family: var(--lu-font);
   font-size: 12.5px;
   font-weight: 600;
   padding: 10px 14px;
   cursor: pointer;
-  transition: background-color var(--t-base) var(--ease-out), border-color var(--t-base) var(--ease-out);
+  position: relative;
+  overflow: hidden;
+  transition:
+    transform 250ms cubic-bezier(0.4, 0, 0.2, 1),
+    background-color 250ms var(--ease-out),
+    border-color 250ms var(--ease-out),
+    box-shadow 250ms var(--ease-out);
+  box-shadow:
+    0 4px 16px rgba(217, 154, 167, 0.10),
+    inset 0 1px 0 rgba(255, 255, 250, 0.8);
 }
 
 .lounge .lounge-dedication-toggle:hover {
-  background: #fff;
-  border-color: rgba(232, 183, 173, 0.45);
+  transform: translateY(-2px);
+  background: rgba(255, 250, 248, 0.95);
+  border-color: rgba(217, 154, 167, 0.6);
+  box-shadow:
+    0 8px 24px rgba(217, 154, 167, 0.14),
+    inset 0 1px 0 rgba(255, 255, 250, 0.9);
+}
+
+.lounge .lounge-dedication-toggle:active {
+  transform: translateY(0) scale(0.98);
 }
 
 .lounge .lounge-dedication-editor {
@@ -1124,24 +1261,76 @@
   height: 32px;
   display: grid;
   place-items: center;
-  border: 1px solid var(--lu-border-medium);
-  border-radius: var(--lu-radius-button);
-  background: var(--lu-surface-strong);
-  color: var(--lu-muted);
+  border: 1px solid rgba(217, 154, 167, 0.4);
+  border-radius: 12px;
+  background: rgba(255, 250, 248, 0.85);
+  backdrop-filter: blur(12px) saturate(1.1);
+  -webkit-backdrop-filter: blur(12px) saturate(1.1);
+  color: var(--lu-plum);
   cursor: pointer;
-  transition: background-color var(--t-fast) var(--ease-out), color var(--t-fast) var(--ease-out), border-color var(--t-fast) var(--ease-out);
+  position: relative;
+  overflow: hidden;
+  transition:
+    transform 250ms cubic-bezier(0.4, 0, 0.2, 1),
+    background-color 250ms var(--ease-out),
+    border-color 250ms var(--ease-out),
+    box-shadow 250ms var(--ease-out);
+  box-shadow:
+    0 4px 14px rgba(217, 154, 167, 0.10),
+    inset 0 1px 0 rgba(255, 255, 250, 0.8);
+}
+
+.lounge .lounge-icon-btn::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  border: 1px solid rgba(255, 255, 250, 0.7);
+  pointer-events: none;
 }
 
 .lounge .lounge-icon-btn:hover:not(:disabled) {
-  background: #fff;
-  border-color: rgba(232, 183, 173, 0.45);
-  color: var(--lu-text);
+  transform: translateY(-2px);
+  background: rgba(255, 250, 248, 0.95);
+  border-color: rgba(217, 154, 167, 0.6);
+  box-shadow:
+    0 8px 20px rgba(217, 154, 167, 0.14),
+    inset 0 1px 0 rgba(255, 255, 250, 0.9);
+}
+
+.lounge .lounge-icon-btn svg:hover {
+  transform: scale(1.08);
+}
+
+.lounge .lounge-icon-btn:active:not(:disabled) {
+  transform: translateY(0) scale(0.96);
 }
 
 .lounge .lounge-icon-btn.is-primary {
   background: linear-gradient(135deg, var(--lu-peach), var(--lu-rose));
   border-color: transparent;
-  color: var(--lu-twilight);
+  color: #fff;
+  box-shadow:
+    0 8px 20px rgba(217, 154, 167, 0.20),
+    inset 0 1px 0 rgba(255, 255, 250, 0.4);
+}
+
+.lounge .lounge-icon-btn.is-primary:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow:
+    0 12px 24px rgba(217, 154, 167, 0.25),
+    inset 0 1px 0 rgba(255, 255, 250, 0.5);
+}
+
+.lounge .lounge-icon-btn.is-primary svg {
+  fill: #fff;
+}
+
+.lounge .lounge-icon-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
 }
 
 /* --- Queue panel ---------------------------------------------------------- */
@@ -1320,19 +1509,49 @@
   height: 38px;
   display: grid;
   place-items: center;
-  border: 1px solid var(--lu-border-medium);
-  border-radius: var(--lu-radius-button);
-  background: var(--lu-surface-strong);
-  color: var(--lu-muted);
+  border: 1px solid rgba(217, 154, 167, 0.4);
+  border-radius: 16px;
+  background: rgba(255, 250, 248, 0.85);
+  backdrop-filter: blur(12px) saturate(1.1);
+  -webkit-backdrop-filter: blur(12px) saturate(1.1);
+  color: var(--lu-plum);
   cursor: pointer;
-  transition: background-color var(--t-fast) var(--ease-out), color var(--t-fast) var(--ease-out), border-color var(--t-fast) var(--ease-out), transform var(--t-fast) var(--ease-out);
+  position: relative;
+  overflow: hidden;
+  transition:
+    transform 250ms cubic-bezier(0.4, 0, 0.2, 1),
+    background-color 250ms var(--ease-out),
+    border-color 250ms var(--ease-out),
+    box-shadow 250ms var(--ease-out);
+  box-shadow:
+    0 4px 16px rgba(217, 154, 167, 0.10),
+    inset 0 1px 0 rgba(255, 255, 250, 0.8);
+}
+
+.lounge .lounge-queue-icon-btn::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  border: 1px solid rgba(255, 255, 250, 0.7);
+  pointer-events: none;
 }
 
 .lounge .lounge-queue-icon-btn:hover:not(:disabled) {
-  background: #fff;
-  border-color: var(--lu-peach);
-  color: var(--lu-plum);
-  transform: translateY(-1.5px);
+  transform: translateY(-2px);
+  background: rgba(255, 250, 248, 0.95);
+  border-color: rgba(217, 154, 167, 0.6);
+  box-shadow:
+    0 8px 24px rgba(217, 154, 167, 0.14),
+    inset 0 1px 0 rgba(255, 255, 250, 0.9);
+}
+
+.lounge .lounge-queue-icon-btn svg:hover {
+  transform: scale(1.08);
+}
+
+.lounge .lounge-queue-icon-btn:active:not(:disabled) {
+  transform: translateY(0) scale(0.96);
 }
 
 .lounge .lounge-queue-icon-btn.is-primary {
@@ -1344,13 +1563,18 @@
 }
 
 .lounge .lounge-queue-icon-btn.is-danger:hover:not(:disabled) {
-  background: var(--lu-rose-wash);
+  background: rgba(255, 248, 245, 0.95);
   border-color: var(--lu-rose);
+  color: var(--lu-rose);
+  box-shadow:
+    0 8px 24px rgba(217, 154, 167, 0.14);
 }
 
 .lounge .lounge-queue-icon-btn:disabled {
-  opacity: 0.45;
+  opacity: 0.5;
   cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
 }
 
 .lounge .lounge-queue-drag-handle {
