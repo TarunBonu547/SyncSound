@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Menu, X, ArrowLeft, LogOut, Settings, CircleUserRound, Library, House, Search, MessageCircle, Heart, Plus, Link2, UsersRound } from 'lucide-react';
+import { X, ArrowLeft, LogOut, Settings, CircleUserRound, House, Search, MessageCircle, Heart, Plus, Link2, UsersRound } from 'lucide-react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useYouTubePlayer, extractVideoId } from './hooks/useYouTubePlayer';
 import { useSocket } from './hooks/useSocket';
@@ -19,15 +19,13 @@ import {
 import { avatarFor } from './utils/avatar';
 import { normalizeDisplayName, readDisplayName, saveDisplayName } from './utils/displayName';
 import RoomHeader from './components/layout/RoomHeader';
+import Header from './components/layout/Header';
 import MainPlayer from './components/player/MainPlayer';
 import ChatPanel from './components/chat/ChatPanel';
 import Toast from './components/common/Toast';
 import LiquidScrollbar from './components/common/LiquidScrollbar';
 import FloatingCallWindow from './features/call/FloatingCallWindow';
 import { useVideoCall } from './features/call/useVideoCall';
-import DrawingOverlay from './components/drawing/DrawingOverlay';
-import type { CreativeTool } from './components/creative/CreativeToolbar';
-import FloatingCreativeMenu from './components/creative/FloatingCreativeMenu';
 import CreateRoom from './pages/CreateRoom';
 import JoinRoom from './pages/JoinRoom';
 import SearchView from './pages/SearchView';
@@ -137,8 +135,6 @@ export default function App() {
   const [chatOpen, setChatOpen] = useState(false);
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
   const [callOpen, setCallOpen] = useState(false);
-  /** The active creative space tool. */
-  const [activeCreativeTool, setActiveCreativeTool] = useState<CreativeTool | null>(null);
   /** The dedication card shown when a dedicated song starts playing. */
   const [showDedication, setShowDedication] = useState<{
     dedication: SongDedication;
@@ -1007,95 +1003,23 @@ export default function App() {
             />
           ))}
         </div>
-        <header className="navbar">
-          <div className="navbar-left">
-            <button
-              className="btn icon ghost menu-btn"
-              onClick={() => setMobileNav(true)}
-              title="Open the menu"
-              aria-label="Open the menu"
-            >
-              <Menu size={20} aria-hidden="true" />
-            </button>
-            <button className="wordmark-btn" onClick={goHome} title="Back to the start" aria-label="SyncSound home">
-              <span className="waveform-icon" aria-hidden="true">
-                <span className="bar" />
-                <span className="bar" />
-                <span className="bar" />
-                <span className="bar" />
-                <span className="bar" />
-              </span>
-              <span className="wordmark">
-                <em>Sync</em>Sound
-              </span>
-            </button>
-          </div>
-
-          <nav className="navbar-center" aria-label="Main navigation">
-            <button className={`nav-link ${view === 'home' ? 'is-active' : ''}`} onClick={goHome}>
-              <House size={16} aria-hidden="true" />
-              <span>Home</span>
-            </button>
-            <button className={`nav-link ${view === 'search' ? 'is-active' : ''}`} onClick={goSearch}>
-              <Search size={16} aria-hidden="true" />
-              <span>Search</span>
-            </button>
-            <button
-              className={`nav-link ${view === 'library' ? 'is-active' : ''}`}
-              onClick={() => goLibrary('liked')}
-            >
-              <Library size={16} aria-hidden="true" />
-              <span>Your Library</span>
-            </button>
-          </nav>
-
-          <div className="navbar-right">
-            {isNarrow && room.roomCode && (
-              <button
-                className="btn icon mobile-chat-btn"
-                onClick={() => setChatOpen(true)}
-                title="On Air Chat"
-                aria-label="Open the room chat"
-              >
-                <MessageCircle size={16} aria-hidden="true" />
-              </button>
-            )}
-            <div className="profile-dropdown">
-              <button
-                className="navbar-avatar"
-                style={{ background: profile.color }}
-                title={displayName ? `You are ${displayName}` : 'You'}
-                aria-label="Profile menu"
-                aria-expanded={profileOpen}
-                aria-haspopup="true"
-                onClick={() => setProfileOpen(!profileOpen)}
-              >
-                {profile.initials}
-              </button>
-              {profileOpen && (
-                <div className="profile-dropdown-menu" role="menu">
-                  <div className="profile-dropdown-header">
-                    <div className="profile-dropdown-name">{displayName || 'You'}</div>
-                    <div className="profile-dropdown-email">Listener</div>
-                  </div>
-                  <div className="profile-dropdown-divider" />
-                  <button className="profile-dropdown-item" role="menuitem" onClick={() => { setProfileOpen(false); goLibrary('liked'); }}>
-                    <CircleUserRound size={18} /> Your Library
-                  </button>
-                  <button className="profile-dropdown-item" role="menuitem" onClick={() => { setProfileOpen(false); setSettingsOpen(true); }}>
-                    <Settings size={18} /> Settings
-                  </button>
-                  <div className="profile-dropdown-divider" />
-                  {room.roomCode && (
-                    <button className="profile-dropdown-item danger" role="menuitem" onClick={() => { setProfileOpen(false); leaveRoom(); }}>
-                      <LogOut size={18} /> Leave Room
-                    </button>
-                  )}
-                </div>
-              )}
-            </div>
-          </div>
-        </header>
+        <Header
+          view={view}
+          onHome={goHome}
+          onLibrary={() => goLibrary('liked')}
+          notice={ytNotice}
+          setNotice={setYtNotice}
+          profile={profile}
+          displayName={displayName}
+          profileOpen={profileOpen}
+          onProfileToggle={() => setProfileOpen(!profileOpen)}
+          onLeaveRoom={leaveRoom}
+          onSettings={() => setSettingsOpen(true)}
+          roomCode={room.roomCode}
+          isNarrow={isNarrow}
+          mobileNav={mobileNav}
+          onMobileNavToggle={() => setMobileNav(true)}
+        />
 
         <main ref={mainRef} className="main" id="main-content">
           <RoomHeader
@@ -1406,14 +1330,6 @@ export default function App() {
         ))}
       </div>
 
-      <DrawingOverlay
-        socket={socket}
-        roomCode={room.roomCode}
-        clientId={clientId}
-        clientName={displayName || 'You'}
-        initialState={room.drawings}
-      />
-
       {/* ------------------------------ Mobile menu -------------------------- */}
       {mobileNav && (
         <div className="drawer" onClick={() => setMobileNav(false)}>
@@ -1516,11 +1432,6 @@ export default function App() {
         </div>
         </div>
       )}
-
-      <FloatingCreativeMenu
-        activeTool={activeCreativeTool}
-        onToolChange={setActiveCreativeTool}
-      />
 
     </div>
   );
