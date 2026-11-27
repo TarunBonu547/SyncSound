@@ -5,6 +5,7 @@ import { formatTime } from '../../utils/avatar';
 import { MAX_CHAT_LENGTH } from '../../hooks/useRoom';
 import StatusIndicator from '../common/StatusIndicator';
 import ChatEmojiPicker from './EmojiPicker';
+import LiquidScrollbar from '../common/LiquidScrollbar';
 
 type ChatPanelProps = {
   roomCode: string | null;
@@ -247,17 +248,18 @@ export default function ChatPanel({
         )}
       </div>
 
-      <div className="lounge-chat-messages" ref={scrollRef} role="log" aria-live="polite" aria-label="Messages of the room">
-        {messages.length === 0 ? (
-          <div className="lounge-chat-empty">
-            <span className="lounge-chat-empty-icon" aria-hidden="true">
-              <MessageCircle size={32} />
-            </span>
-            <h3 className="lounge-chat-empty-title">No messages yet</h3>
-            <p className="lounge-chat-empty-hint">Say hello to the people in the room.</p>
-          </div>
-        ) : (
-          messages.map((m, i) => {
+      <div className="lounge-chat-conversation" role="log" aria-live="polite" aria-label="Messages of the room">
+        <div className="lounge-chat-messages" ref={scrollRef} id="lounge-chat-messages">
+          {messages.length === 0 ? (
+            <div className="lounge-chat-empty">
+              <span className="lounge-chat-empty-icon" aria-hidden="true">
+                <MessageCircle size={32} />
+              </span>
+              <h3 className="lounge-chat-empty-title">No messages yet</h3>
+              <p className="lounge-chat-empty-hint">Say hello to the people in the room.</p>
+            </div>
+          ) : (
+            messages.map((m, i) => {
             const quote = m.replyTo;
             const isReplyingToMe = Boolean(replyTo && replyTo.messageId === m.id);
             const prev = messages[i - 1];
@@ -350,8 +352,10 @@ export default function ChatPanel({
               </div>
             );
           })
-        )}
-      </div>
+)}
+          </div>
+          <LiquidScrollbar contentRef={scrollRef} />
+        </div>
 
       {Object.values(typing).length > 0 && (
         <div className="lounge-chat-typing" role="status" aria-live="polite">

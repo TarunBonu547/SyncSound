@@ -14,6 +14,7 @@ import {
   GripHorizontal,
 } from 'lucide-react';
 import type { VideoCall } from './useVideoCall';
+import LiquidScrollbar from '../../components/common/LiquidScrollbar';
 import './call.css';
 
 type FloatingCallWindowProps = {
@@ -75,6 +76,7 @@ export default function FloatingCallWindow({
 
   const remoteVideoRef = useRef<HTMLVideoElement | null>(null);
   const localVideoRef = useRef<HTMLVideoElement | null>(null);
+  const callBodyRef = useRef<HTMLDivElement>(null);
 
   // Callback refs: attach the stream as soon as the element mounts, so a
   // video element that appears after its stream was set still receives it.
@@ -464,7 +466,7 @@ export default function FloatingCallWindow({
         </div>
       </div>
 
-      <div className="floating-call-body">
+      <div ref={callBodyRef} className="floating-call-body" id="floating-call-body">
         {error && (
           <p className="call-error" role="alert">
             {error.message}
@@ -608,6 +610,7 @@ export default function FloatingCallWindow({
             </div>
           </div>
         )}
+        <LiquidScrollbar contentRef={callBodyRef} contentId="floating-call-body" autoHide />
       </div>
 
       <div className="resize-handle nw" onPointerDown={(e) => startGesture(e, 'nw')} />

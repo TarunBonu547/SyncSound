@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { Socket } from 'socket.io-client';
 import { Pencil, Eraser, Undo2, Trash2, X, Minus, Plus } from 'lucide-react';
+import LiquidScrollbar from '../common/LiquidScrollbar';
 import './DrawingOverlay.css';
 
 type Tool = 'pencil' | 'eraser';
@@ -98,6 +99,7 @@ export default function DrawingOverlay({
   initialState,
 }: DrawingOverlayProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const toolbarWrapperRef = useRef<HTMLDivElement>(null);
   const [active, setActive] = useState(false);
   const [tool, setTool] = useState<Tool>('pencil');
   const [color, setColor] = useState(DEFAULT_COLOR);
@@ -462,8 +464,9 @@ export default function DrawingOverlay({
 
       <div className={`drawing-ui ${active ? 'is-open' : ''}`}>
         {active && (
-          <div className="drawing-toolbar" role="toolbar" aria-label="Drawing tools">
-            <div className="drawing-tools">
+          <div ref={toolbarWrapperRef} className="drawing-toolbar-wrapper" style={{ position: 'relative', maxHeight: '60vh', overflow: 'auto' }}>
+            <div className="drawing-toolbar" role="toolbar" aria-label="Drawing tools">
+              <div className="drawing-tools">
               <button
                 type="button"
                 className={`drawing-tool-btn ${tool === 'pencil' ? 'is-selected' : ''}`}
@@ -557,6 +560,8 @@ export default function DrawingOverlay({
                 </label>
               </div>
             </div>
+          </div>
+            <LiquidScrollbar contentRef={toolbarWrapperRef} autoHide />
           </div>
         )}
 

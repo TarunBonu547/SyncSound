@@ -22,6 +22,7 @@ import RoomHeader from './components/layout/RoomHeader';
 import MainPlayer from './components/player/MainPlayer';
 import ChatPanel from './components/chat/ChatPanel';
 import Toast from './components/common/Toast';
+import LiquidScrollbar from './components/common/LiquidScrollbar';
 import FloatingCallWindow from './features/call/FloatingCallWindow';
 import { useVideoCall } from './features/call/useVideoCall';
 import DrawingOverlay from './components/drawing/DrawingOverlay';
@@ -156,6 +157,9 @@ export default function App() {
   const library = useLibrary();
   /** On narrow screens the chat lives in a drawer instead of a side column. */
   const isNarrow = useMediaQuery('(max-width: 1024px)');
+  /** Refs for liquid scrollbars */
+  const drawerPanelRef = useRef<HTMLDivElement>(null);
+  const mainRef = useRef<HTMLDivElement>(null);
 
   /** Load recent rooms from localStorage on mount. */
   useEffect(() => {
@@ -1093,7 +1097,7 @@ export default function App() {
           </div>
         </header>
 
-        <main className="main">
+        <main ref={mainRef} className="main" id="main-content">
           <RoomHeader
             roomCode={room.roomCode}
             roomName={room.roomName}
@@ -1182,6 +1186,7 @@ export default function App() {
               )}
             </div>
           </div>
+          <LiquidScrollbar contentRef={mainRef} contentId="main-content" autoHide />
         </main>
       </div>
 
@@ -1412,8 +1417,9 @@ export default function App() {
       {/* ------------------------------ Mobile menu -------------------------- */}
       {mobileNav && (
         <div className="drawer" onClick={() => setMobileNav(false)}>
-          <div className="drawer-panel" onClick={(e) => e.stopPropagation()}>
-            <div className="drawer-head">
+          <div className="drawer-panel-wrapper" style={{ position: 'relative', height: '100%', overflow: 'hidden' }}>
+            <div className="drawer-panel" ref={drawerPanelRef} onClick={(e) => e.stopPropagation()}>
+              <div className="drawer-head">
               <span className="wordmark">
                 <em>Sync</em>Sound
               </span>
@@ -1506,6 +1512,8 @@ export default function App() {
               </button>
             )}
           </div>
+          <LiquidScrollbar contentRef={drawerPanelRef} autoHide />
+        </div>
         </div>
       )}
 

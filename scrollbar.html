@@ -1,0 +1,729 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SyncSound — Liquid Scroll Demo</title>
+
+  <style>
+    :root {
+      --cream: #f6ede7;
+      --ivory: #fffcf8;
+      --aqua: #55b9cf;
+      --aqua-light: #b4f0f4;
+      --aqua-dark: #349bb8;
+      --plum: #755568;
+      --rose: #d99aa7;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      padding: 20px;
+      background: var(--cream);
+      color: #4b3747;
+      font-family: Inter, "Segoe UI", sans-serif;
+    }
+
+    .chat {
+      width: min(440px, 100%);
+      height: min(700px, 90vh);
+      min-height: 450px;
+      display: flex;
+      flex-direction: column;
+      padding: 24px;
+      background: var(--ivory);
+      border: 1px solid #efcdd0;
+      border-radius: 28px;
+      box-shadow: 0 15px 45px #75556812;
+    }
+
+    .header {
+      flex-shrink: 0;
+      padding-bottom: 18px;
+      border-bottom: 1px solid #f0d4d3;
+    }
+
+    .eyebrow {
+      color: #987588;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 2px;
+    }
+
+    h2 {
+      margin: 10px 0;
+      font-size: 25px;
+      font-weight: 600;
+    }
+
+    .status {
+      color: #987588;
+      font-size: 12px;
+    }
+
+    /* Conversation container */
+
+    .conversation {
+      position: relative;
+      display: flex;
+      flex: 1;
+      min-height: 0;
+      overflow: hidden;
+    }
+
+    .messages {
+      display: flex;
+      flex: 1;
+      flex-direction: column;
+      gap: 14px;
+      min-height: 0;
+      padding: 20px 32px 20px 0;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      scrollbar-width: none;
+    }
+
+    .messages::-webkit-scrollbar {
+      display: none;
+    }
+
+    .message {
+      width: fit-content;
+      max-width: 85%;
+      padding: 12px 16px;
+      border-radius: 20px;
+      font-size: 14px;
+      line-height: 1.5;
+      overflow-wrap: anywhere;
+    }
+
+    .received {
+      align-self: flex-start;
+      background: #f1e9f6;
+    }
+
+    .sent {
+      align-self: flex-end;
+      background: #f7e9e7;
+    }
+
+    /* Liquid glass tube */
+
+    .liquid-scrollbar {
+      position: absolute;
+      top: 16px;
+      right: 0;
+      bottom: 16px;
+      width: 26px;
+      overflow: hidden;
+      border: 1px solid #c6e3e8;
+      border-radius: 30px;
+      background: linear-gradient(
+        90deg,
+        #f5e8e7,
+        #fff9f5 50%,
+        #f4e5e5
+      );
+      box-shadow:
+        inset 1px 0 3px #ffffff,
+        0 2px 6px #75556808;
+      cursor: pointer;
+      touch-action: none;
+      user-select: none;
+    }
+
+    /* Aqua-blue water */
+
+    .water {
+      position: absolute;
+      right: 0;
+      bottom: 0;
+      left: 0;
+      height: 0%;
+      overflow: hidden;
+      border-radius: 0 0 30px 30px;
+
+      background: linear-gradient(
+        90deg,
+        #55b9cf,
+        #9be3ed 45%,
+        #4caec7
+      );
+
+      box-shadow: inset 2px 0 4px #ffffff40;
+      will-change: height;
+    }
+
+    /* Moving water surface */
+
+    .water::before,
+    .water::after {
+      content: "";
+      position: absolute;
+      top: -8px;
+      left: -50%;
+      width: 200%;
+      height: 16px;
+      border-radius: 45%;
+      pointer-events: none;
+    }
+
+    .water::before {
+      background: #b4f0f4;
+      animation: water-wave 2.2s ease-in-out infinite;
+    }
+
+    .water::after {
+      top: -4px;
+      background: #e0fbfc;
+      opacity: 0.7;
+      animation: water-wave 3s ease-in-out infinite reverse;
+    }
+
+    /* Glass reflection */
+
+    .water-highlight {
+      position: absolute;
+      top: 12px;
+      left: 5px;
+      width: 3px;
+      height: calc(100% - 24px);
+      min-height: 0;
+      border-radius: 10px;
+      background: #ffffff65;
+      pointer-events: none;
+      z-index: 2;
+    }
+
+    /* Bubbles */
+
+    .bubble {
+      position: absolute;
+      bottom: -12px;
+      left: 25%;
+      width: 5px;
+      height: 5px;
+      border: 1px solid #ffffff80;
+      border-radius: 50%;
+
+      background: radial-gradient(
+        circle at 30% 25%,
+        #ffffff,
+        #d5faff 35%,
+        #7bd0e3 100%
+      );
+
+      box-shadow:
+        0 0 5px #ffffff70,
+        inset -1px -1px 2px #45a6c480;
+
+      animation: bubble-grow 3.5s linear infinite;
+      pointer-events: none;
+    }
+
+    .bubble:nth-child(3) {
+      left: 65%;
+      width: 4px;
+      height: 4px;
+      animation-delay: 0.8s;
+      animation-duration: 4s;
+    }
+
+    .bubble:nth-child(4) {
+      left: 40%;
+      width: 3px;
+      height: 3px;
+      animation-delay: 1.6s;
+      animation-duration: 3s;
+    }
+
+    .bubble:nth-child(5) {
+      left: 75%;
+      width: 4px;
+      height: 4px;
+      animation-delay: 2.2s;
+      animation-duration: 4.5s;
+    }
+
+    @keyframes bubble-grow {
+      0% {
+        transform: translateY(0) scale(0.15);
+        opacity: 0;
+      }
+
+      15% {
+        transform: translateY(-20px) scale(0.45);
+        opacity: 0.9;
+      }
+
+      40% {
+        transform: translateY(-65px) scale(0.8);
+        opacity: 0.8;
+      }
+
+      70% {
+        transform: translateY(-120px) scale(1.2);
+        opacity: 0.65;
+      }
+
+      90% {
+        transform: translateY(-165px) scale(1.5);
+        opacity: 0.3;
+      }
+
+      100% {
+        transform: translateY(-200px) scale(1.8);
+        opacity: 0;
+      }
+    }
+
+    @keyframes water-wave {
+      0%, 100% {
+        transform: translateX(-8%) rotate(-4deg);
+      }
+
+      50% {
+        transform: translateX(8%) rotate(4deg);
+      }
+    }
+
+    /* Directional movement */
+
+    .water.rising {
+      animation: rise-impact 0.45s ease-out;
+    }
+
+    .water.falling {
+      animation: fall-impact 0.45s ease-out;
+    }
+
+    @keyframes rise-impact {
+      0% {
+        filter: brightness(1);
+      }
+
+      45% {
+        filter: brightness(1.15);
+      }
+
+      100% {
+        filter: brightness(1);
+      }
+    }
+
+    @keyframes fall-impact {
+      0% {
+        filter: brightness(1);
+      }
+
+      45% {
+        filter: brightness(0.92);
+      }
+
+      100% {
+        filter: brightness(1);
+      }
+    }
+
+    /* Message input */
+
+    .composer {
+      display: flex;
+      flex-shrink: 0;
+      gap: 10px;
+      padding-top: 16px;
+      border-top: 1px solid #f0d4d3;
+    }
+
+    .composer input {
+      flex: 1;
+      min-width: 0;
+      height: 46px;
+      padding: 0 16px;
+      border: 1px solid #e7cbd2;
+      border-radius: 25px;
+      background: #fffaf7;
+      color: #4b3747;
+      font: inherit;
+      font-size: 14px;
+      outline: none;
+    }
+
+    .composer input:focus {
+      border-color: var(--rose);
+    }
+
+    .composer button {
+      width: 46px;
+      height: 46px;
+      flex-shrink: 0;
+      border: 0;
+      border-radius: 50%;
+      background: var(--rose);
+      color: white;
+      font-size: 18px;
+      cursor: pointer;
+      transition: background 180ms ease, transform 180ms ease;
+    }
+
+    .composer button:hover {
+      background: #bd7f94;
+      transform: scale(1.04);
+    }
+
+    @media (max-width: 480px) {
+      .chat {
+        padding: 18px;
+        border-radius: 22px;
+      }
+
+      .messages {
+        padding-right: 30px;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .water::before,
+      .water::after,
+      .bubble {
+        animation: none;
+      }
+
+      .composer button {
+        transition: none;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <main class="chat">
+    <header class="header">
+      <div class="eyebrow">● ON AIR / LIVE CHAT</div>
+      <h2>Our little space ♡</h2>
+      <div class="status">Connected · 2 listeners</div>
+    </header>
+
+    <section class="conversation">
+      <div class="messages" id="messages">
+        <div class="message received">
+          Hey, what are you listening to?
+        </div>
+
+        <div class="message sent">
+          This song reminded me of you.
+        </div>
+
+        <div class="message received">
+          Play it for me ♡
+        </div>
+
+        <div class="message sent">
+          Okay, listen to this part.
+        </div>
+
+        <div class="message received">
+          I love this one.
+        </div>
+
+        <div class="message sent">
+          We should add it to our playlist.
+        </div>
+
+        <div class="message received">
+          Yes! Add it.
+        </div>
+
+        <div class="message sent">
+          Done. It's our song now.
+        </div>
+
+        <div class="message received">
+          When are we listening together?
+        </div>
+
+        <div class="message sent">
+          Tonight, just you and me.
+        </div>
+
+        <div class="message received">
+          That sounds perfect.
+        </div>
+
+        <div class="message sent">
+          I'll save this conversation too.
+        </div>
+
+        <div class="message received">
+          Don't forget the song notes!
+        </div>
+
+        <div class="message sent">
+          Never. Every song has a memory.
+        </div>
+
+        <div class="message received">
+          This is my favorite part.
+        </div>
+
+        <div class="message sent">
+          Mine too. Stay a little longer.
+        </div>
+      </div>
+
+      <div
+        class="liquid-scrollbar"
+        id="rail"
+        role="scrollbar"
+        aria-label="Chat scroll position"
+        aria-controls="messages"
+        aria-orientation="vertical"
+        aria-valuemin="0"
+        aria-valuemax="100"
+        aria-valuenow="0"
+        tabindex="0"
+      >
+        <div class="water" id="water">
+          <div class="water-highlight"></div>
+
+          <span class="bubble"></span>
+          <span class="bubble"></span>
+          <span class="bubble"></span>
+          <span class="bubble"></span>
+        </div>
+      </div>
+    </section>
+
+    <form class="composer" id="composer">
+      <input
+        id="input"
+        type="text"
+        placeholder="Message the room..."
+        autocomplete="off"
+        aria-label="Write a message"
+      >
+
+      <button type="submit" aria-label="Send message">
+        ➤
+      </button>
+    </form>
+  </main>
+
+  <script>
+    const messages = document.getElementById("messages");
+    const rail = document.getElementById("rail");
+    const water = document.getElementById("water");
+    const input = document.getElementById("input");
+    const composer = document.getElementById("composer");
+
+    const reducedMotion = window.matchMedia(
+      "(prefers-reduced-motion: reduce)"
+    );
+
+    let currentLevel = 0;
+    let targetLevel = 0;
+    let previousLevel = 0;
+    let animationFrame = null;
+    let dragging = false;
+    let lastDirection = 0;
+
+    /*
+      Calculate the water level from the actual
+      scroll position of the chat.
+    */
+
+    function getScrollProgress() {
+      const maxScroll =
+        messages.scrollHeight - messages.clientHeight;
+
+      if (maxScroll <= 0) return 0;
+
+      return Math.max(
+        0,
+        Math.min(1, messages.scrollTop / maxScroll)
+      );
+    }
+
+    function updateWater() {
+      const progress = getScrollProgress();
+
+      targetLevel = progress * 100;
+
+      const direction =
+        targetLevel > currentLevel ? 1 :
+        targetLevel < currentLevel ? -1 : 0;
+
+      if (direction !== 0 && direction !== lastDirection) {
+        water.classList.remove("rising", "falling");
+
+        // Restart the directional animation.
+        void water.offsetWidth;
+
+        water.classList.add(
+          direction > 0 ? "rising" : "falling"
+        );
+
+        lastDirection = direction;
+      }
+
+      rail.setAttribute(
+        "aria-valuenow",
+        Math.round(targetLevel)
+      );
+
+      if (reducedMotion.matches) {
+        currentLevel = targetLevel;
+        water.style.height = currentLevel + "%";
+        return;
+      }
+
+      if (!animationFrame) {
+        animationFrame = requestAnimationFrame(animateWater);
+      }
+    }
+
+    /*
+      Smoothly ease the liquid toward its
+      actual scroll position.
+    */
+
+    function animateWater() {
+      const difference = targetLevel - currentLevel;
+
+      currentLevel += difference * 0.14;
+
+      if (Math.abs(difference) < 0.05) {
+        currentLevel = targetLevel;
+      }
+
+      water.style.height = currentLevel + "%";
+
+      if (currentLevel !== targetLevel) {
+        animationFrame = requestAnimationFrame(animateWater);
+      } else {
+        animationFrame = null;
+      }
+    }
+
+    /*
+      Convert a pointer position on the glass tube
+      into a real chat scroll position.
+    */
+
+    function scrollToPointer(clientY) {
+      const rect = rail.getBoundingClientRect();
+
+      const progress = Math.max(
+        0,
+        Math.min(1, (clientY - rect.top) / rect.height)
+      );
+
+      const maxScroll =
+        messages.scrollHeight - messages.clientHeight;
+
+      messages.scrollTop = progress * maxScroll;
+    }
+
+    rail.addEventListener("pointerdown", event => {
+      dragging = true;
+
+      rail.setPointerCapture(event.pointerId);
+      scrollToPointer(event.clientY);
+    });
+
+    rail.addEventListener("pointermove", event => {
+      if (dragging) {
+        scrollToPointer(event.clientY);
+      }
+    });
+
+    function stopDragging() {
+      dragging = false;
+    }
+
+    rail.addEventListener("pointerup", stopDragging);
+    rail.addEventListener("pointercancel", stopDragging);
+
+    /*
+      Keyboard accessibility.
+    */
+
+    rail.addEventListener("keydown", event => {
+      if (event.key === "ArrowDown") {
+        messages.scrollTop += 50;
+        event.preventDefault();
+      }
+
+      if (event.key === "ArrowUp") {
+        messages.scrollTop -= 50;
+        event.preventDefault();
+      }
+
+      if (event.key === "Home") {
+        messages.scrollTop = 0;
+        event.preventDefault();
+      }
+
+      if (event.key === "End") {
+        messages.scrollTop = messages.scrollHeight;
+        event.preventDefault();
+      }
+    });
+
+    /*
+      Keep the water synchronized when scrolling
+      or when the message area changes size.
+    */
+
+    messages.addEventListener("scroll", updateWater);
+
+    const resizeObserver = new ResizeObserver(updateWater);
+    resizeObserver.observe(messages);
+
+    /*
+      Demo message input.
+    */
+
+    composer.addEventListener("submit", event => {
+      event.preventDefault();
+
+      const text = input.value.trim();
+
+      if (!text) return;
+
+      const message = document.createElement("div");
+      message.className = "message sent";
+      message.textContent = text;
+
+      messages.appendChild(message);
+      input.value = "";
+
+      messages.scrollTop = messages.scrollHeight;
+      updateWater();
+      input.focus();
+    });
+
+    /*
+      Initialize at the latest message.
+    */
+
+    function initialize() {
+      messages.scrollTop = messages.scrollHeight;
+      updateWater();
+    }
+
+    window.addEventListener("load", initialize);
+    initialize();
+  </script>
+
+</body>
+</html>
