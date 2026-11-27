@@ -231,20 +231,21 @@ export default function MainPlayer({
 
           {/* Right column: Song title, artist, status, favorite */}
           <div className="player-meta">
-            <span
-              className={`lounge-sync-indicator ${playing ? 'is-playing' : 'is-paused'}`}
-              title="Playback is synchronised across the room"
-            >
-              {statusText}
-            </span>
-
-            <div className="track-text">
-              <h2 className="lounge-song-title">
-                {hasTrack ? current.title : 'Waiting for the first song'}
-              </h2>
-              <p className="lounge-artist">
-                {hasTrack ? current.channel || 'Unknown artist' : 'Add a song below to begin'}
-              </p>
+            <div className="track-status-wrap">
+              <span
+                className={`lounge-sync-indicator ${playing ? 'is-playing' : 'is-paused'}`}
+                title="Playback is synchronised across the room"
+              >
+                {statusText}
+              </span>
+              <div className="track-text">
+                <h2 className="lounge-song-title">
+                  {hasTrack ? current.title : 'Waiting for the first song'}
+                </h2>
+                <p className="lounge-artist">
+                  {hasTrack ? current.channel || 'Unknown artist' : 'Add a song below to begin'}
+                </p>
+              </div>
             </div>
 
             <button

@@ -235,16 +235,23 @@ export default function App() {
   });
   const { editDedication } = room;
 
+  /** Room code extracted from the URL path (/room/SS-XXXX) for shared links. */
+  const urlPathCode = (() => {
+    const match = window.location.pathname.match(/\/room\/([A-Za-z0-9-]+)\/?$/);
+    return match ? match[1].toUpperCase() : null;
+  })();
+
   /* --- Auto-enter room from URL --- */
   useEffect(() => {
-    if (urlRoomCode && !room.roomCode) {
-      const code = urlRoomCode.toUpperCase();
+    if (room.roomCode) return;
+    const code = urlRoomCode || urlPathCode;
+    if (code) {
       room.enterRoom(code);
       setView('room');
       setHomeFocus(null);
       setMobileNav(false);
     }
-  }, [urlRoomCode, room]);
+  }, [urlRoomCode, urlPathCode, room]);
 
   /** The two person call. It only uses the socket, never the music protocol. */
   const call = useVideoCall({ socket, roomCode: room.roomCode, clientId });
@@ -1101,9 +1108,9 @@ export default function App() {
             onCopyLink={copyRoomLink}
           />
 
-          <div className="lounge-grid">
-            <div className="lounge-main-column">
-              <MainPlayer
+            <div className={`lounge-grid ${!isNarrow && !chatOpen ? 'lounge-grid--single' : ''}`}>
+              <div className="lounge-main-column">
+                <MainPlayer
                 stageRef={stageVideoRef}
                 current={current}
                 yt={yt}
@@ -1157,8 +1164,8 @@ export default function App() {
               />
             </div>
 
-            <div className="lounge-creative-column">
-              {!isNarrow && (
+            {!isNarrow && chatOpen && (
+              <div className="lounge-creative-column">
                 <ChatPanel
                   roomCode={room.roomCode}
                   roomName={room.roomName}
@@ -1177,8 +1184,8 @@ export default function App() {
                   onSelectReply={room.selectReply}
                   onCancelReply={room.cancelReply}
                 />
-              )}
-            </div>
+              </div>
+            )}
           </div>
           <LiquidScrollbar contentRef={mainRef} contentId="main-content" autoHide />
         </main>

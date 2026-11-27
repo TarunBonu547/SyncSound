@@ -78,6 +78,11 @@
   align-items: start;
 }
 
+.lounge .lounge-grid--single {
+  grid-template-columns: 1fr;
+  gap: 0;
+}
+
 .lounge .lounge-main-column {
   min-width: 0;
   display: flex;
@@ -2625,17 +2630,72 @@
   .lounge .lounge-queue-item {
     gap: 10px;
     padding: 10px 12px;
-    min-height: 88px;
+    min-height: unset;
+    display: flex;
+    align-items: center;
   }
 
   .lounge .lounge-queue-thumb {
-    width: 104px;
-    height: 58px;
+    width: 88px;
+    height: 88px;
+    border-radius: var(--lu-radius-card);
+    flex: none;
+    object-fit: cover;
   }
 
   .lounge .lounge-queue-art {
     width: 48px;
     height: 48px;
+    border-radius: var(--lu-radius-card);
+  }
+
+  .lounge .lounge-queue-details {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .lounge .lounge-queue-details strong {
+    font-size: 15px;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .lounge .lounge-queue-details small {
+    font-size: 13px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .lounge .lounge-queue-actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex: none;
+  }
+
+  .lounge .lounge-queue-icon-btn {
+    width: 36px;
+    height: 36px;
+  }
+}
+
+@media (max-width: 480px) {
+  .lounge .lounge-queue-item {
+    padding: 8px 10px;
+    gap: 8px;
+  }
+
+  .lounge .lounge-queue-thumb {
+    width: 72px;
+    height: 72px;
+  }
+
+  .lounge .lounge-queue-art {
+    width: 44px;
+    height: 44px;
   }
 
   .lounge .lounge-queue-details strong {
@@ -2647,8 +2707,18 @@
   }
 
   .lounge .lounge-queue-icon-btn {
-    width: 34px;
-    height: 34px;
+    width: 32px;
+    height: 32px;
+  }
+
+  .lounge .lounge-queue-icon-btn svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  .lounge .lounge-queue-drag-handle {
+    width: 30px;
+    height: 30px;
   }
 }
 
