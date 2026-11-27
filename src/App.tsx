@@ -9,6 +9,7 @@ import { useMediaQuery } from './hooks/useMediaQuery';
 import { useChatNotification } from './hooks/useChatNotification';
 import { syncDebug } from './utils/syncDebug';
 import { readClientId } from './utils/clientId';
+import { useBackgroundPlayback } from './hooks/useBackgroundPlayback';
 import { fetchVideoMeta } from './utils/youtubeMeta';
 import {
   createSearchRequest,
@@ -438,6 +439,18 @@ export default function App() {
     );
   };
 
+  /** Background playback: resume at the room position and tell the server. */
+  const onBackgroundPlay = useCallback(() => {
+    yt.play();
+    sendCommand({ playing: true });
+  }, [yt, sendCommand]);
+
+  /** Background playback: pause at the room position and tell the server. */
+  const onBackgroundPause = useCallback(() => {
+    yt.pause();
+    sendCommand({ playing: false });
+  }, [yt, sendCommand]);
+
   useEffect(() => {
     // Drift correction. The room timeline is authoritative, so a client that
     // fell behind corrects itself instead of pulling the room back. The refs
@@ -856,6 +869,60 @@ export default function App() {
     if (previous) room.playQueueItem(previous.id);
   };
 
+  /**
+   * Mobile background playback and lifecycle handling.
+   *
+   * Keeps the Socket.IO connection alive across backgrounding, never pauses
+   * merely because the page became hidden, sets up the Web Media Session API
+   * for lock screen / notification controls, and reconciles the local player
+   * with the authoritative server state on return to the foreground.
+   *
+   * Limitation: the YouTube IFrame API does not support true background audio
+   * on mobile browsers. Chrome on Android pauses <video> elements in
+   * background tabs, and iOS Safari suspends background pages entirely. This
+   * hook cannot override that browser enforcement. On return, the local
+   * player is realigned with the room timeline so playback resumes at the
+   * correct position.
+   */
+  const {
+    isVisible: bgIsVisible,
+    hasFocus: bgHasFocus,
+    wasStale: bgWasStale,
+    reconcile: bgReconcile,
+    setMediaMetadata,
+  } = useBackgroundPlayback({
+    onPlay: onBackgroundPlay,
+    onPause: onBackgroundPause,
+    onPrevious: playPrevious,
+    onNext: playNext,
+    roomPb,
+    yt,
+    sendCommand,
+  });
+
+  // Expose background state to the template so it can inform the UI if desired.
+  // (Currently the hook operates silently; the values are kept for future use.)
+  void bgIsVisible;
+  void bgHasFocus;
+  void bgWasStale;
+  void bgReconcile;
+
+  /**
+   * Media Session metadata: keeps the lock screen / notification UI in sync
+   * with the current track and playback state. Media Session controls call
+   * back into the existing command path (onBackgroundPlay/onBackgroundPause,
+   * playPrevious/playNext), so the server stays authoritative.
+   */
+  useEffect(() => {
+    if (!current) return;
+    setMediaMetadata({
+      title: current.title,
+      artist: current.channel,
+      artwork: current.thumbnail,
+      playing: roomPlaying,
+    });
+  }, [current, roomPlaying, setMediaMetadata]);
+
   const togglePlayback = () => {
     const player = ytRef.current;
     const pb = roomPbRef.current;
@@ -1019,6 +1086,9 @@ export default function App() {
           isNarrow={isNarrow}
           mobileNav={mobileNav}
           onMobileNavToggle={() => setMobileNav(true)}
+          chatOpen={chatOpen}
+          onChatToggle={() => setChatOpen(true)}
+          hasUnread={room.messages.length > 0}
         />
 
         <main ref={mainRef} className="main" id="main-content">
