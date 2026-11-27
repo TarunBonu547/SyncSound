@@ -1,0 +1,610 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SyncSound — All Buttons Demo</title>
+
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&display=swap');
+
+:root {
+  --cream: #fffdf9;
+  --rose: #d99aa7;
+  --rose-dark: #bd7186;
+  --rose-light: #f8e5ea;
+  --plum: #755568;
+  --muted: #a58b98;
+  --border: #f0d4dc;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  padding: 32px 20px;
+
+  font-family: 'Outfit', sans-serif;
+  color: var(--plum);
+
+  background:
+    radial-gradient(ellipse at 10% 10%, #fce8ed, transparent 45%),
+    radial-gradient(ellipse at 90% 90%, #f7e6df, transparent 45%),
+    var(--cream);
+}
+
+button {
+  font-family: inherit;
+}
+
+.demo {
+  width: min(100%, 900px);
+  margin: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+.section {
+  padding: 26px;
+  border: 1px solid rgba(217, 154, 167, 0.22);
+  border-radius: 24px;
+  background: rgba(255, 253, 249, 0.75);
+
+  box-shadow:
+    0 15px 40px rgba(117, 85, 104, 0.045),
+    inset 0 1px 0 white;
+
+  backdrop-filter: blur(18px);
+}
+
+.heading {
+  margin: 0 0 22px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 1.6px;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+/* =========================================
+   BASE BUTTON
+========================================= */
+
+.btn {
+  --button-bg: rgba(255, 253, 249, 0.88);
+
+  min-width: 52px;
+  height: 52px;
+  padding: 0 19px;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+
+  border: 1px solid var(--border);
+  border-radius: 17px;
+
+  background: var(--button-bg);
+  color: var(--plum);
+
+  font-size: 14px;
+  font-weight: 600;
+  white-space: nowrap;
+
+  cursor: pointer;
+
+  box-shadow:
+    0 3px 10px rgba(117, 85, 104, 0.035),
+    inset 0 1px 0 white;
+
+  transition:
+    transform 220ms ease,
+    background 220ms ease,
+    box-shadow 220ms ease,
+    border-color 220ms ease,
+    color 220ms ease;
+}
+
+.btn svg {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+
+  transition: transform 220ms ease;
+}
+
+.btn:hover {
+  transform: translateY(-2px);
+  border-color: #e5b7c4;
+  background: #fff7f9;
+
+  box-shadow:
+    0 8px 20px rgba(196, 117, 142, 0.11),
+    inset 0 1px 0 white;
+}
+
+.btn:active {
+  transform: translateY(1px) scale(0.96);
+}
+
+.btn:focus-visible {
+  outline: 3px solid rgba(217, 154, 167, 0.35);
+  outline-offset: 4px;
+}
+
+.btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+/* Icon-only buttons */
+
+.icon-btn {
+  width: 52px;
+  height: 52px;
+  padding: 0;
+  border-radius: 18px;
+}
+
+/* =========================================
+   PRIMARY PLAY BUTTON
+========================================= */
+
+.primary {
+  color: white;
+  background: linear-gradient(140deg, #e8a8b8, #ca7b92);
+  border-color: rgba(205, 129, 150, 0.5);
+
+  box-shadow:
+    0 6px 16px rgba(196, 117, 142, 0.19),
+    inset 0 1px 0 rgba(255, 255, 255, 0.45);
+}
+
+.primary:hover {
+  color: white;
+  background: linear-gradient(140deg, #efb5c3, #c36e87);
+
+  box-shadow:
+    0 10px 24px rgba(196, 117, 142, 0.27),
+    0 0 16px rgba(217, 154, 167, 0.14);
+}
+
+/* =========================================
+   FAVORITE
+========================================= */
+
+.favorite:hover,
+.favorite.active {
+  color: #ce718b;
+  background: #fff0f4;
+}
+
+.favorite.active svg {
+  fill: #e7a2b3;
+}
+
+/* =========================================
+   ADD TO QUEUE
+========================================= */
+
+.add:hover svg {
+  transform: rotate(90deg);
+}
+
+.add.added {
+  color: #a66b83;
+  background: #fcecf1;
+  border-color: #e8bdcb;
+}
+
+/* =========================================
+   SEARCH
+========================================= */
+
+.search {
+  color: white;
+  background: linear-gradient(140deg, #e7aab8, #d18a9d);
+  border-color: #e3a6b6;
+
+  box-shadow:
+    0 5px 14px rgba(196, 117, 142, 0.15),
+    inset 0 1px 0 rgba(255, 255, 255, 0.5);
+}
+
+.search:hover {
+  color: white;
+  background: linear-gradient(140deg, #edb6c3, #c87b92);
+  box-shadow: 0 9px 22px rgba(196, 117, 142, 0.25);
+}
+
+/* =========================================
+   LOAD BUTTONS
+========================================= */
+
+.load {
+  color: #a58b98;
+  background: rgba(255, 253, 249, 0.65);
+}
+
+.load:hover {
+  color: var(--rose-dark);
+  background: #fff4f7;
+}
+
+.load.loading svg {
+  animation: spin 700ms linear infinite;
+}
+
+.load-more {
+  border: 1px solid rgba(217, 154, 167, 0.2);
+  border-radius: 999px;
+  background: linear-gradient(135deg, #f7dce3, #e7b1bf);
+  color: var(--plum);
+  padding: 0 24px;
+}
+
+.load-more:hover {
+  background: linear-gradient(135deg, #f9e5ea, #e5a9ba);
+  box-shadow: 0 8px 20px rgba(196, 117, 142, 0.15);
+}
+
+.load-more svg {
+  width: 18px;
+  height: 18px;
+}
+
+/* =========================================
+   QUEUE ACTIONS
+========================================= */
+
+.queue-action:hover {
+  background: #fff4f7;
+  color: var(--rose-dark);
+}
+
+.remove:hover {
+  color: #c56f87;
+  background: #fff0f3;
+}
+
+/* =========================================
+   ANIMATIONS
+========================================= */
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (max-width: 520px) {
+  body {
+    padding: 18px 12px;
+  }
+
+  .section {
+    padding: 20px;
+  }
+
+  .row {
+    gap: 9px;
+  }
+
+  .btn {
+    height: 46px;
+    min-width: 46px;
+    padding: 0 14px;
+    border-radius: 15px;
+    font-size: 13px;
+  }
+
+  .icon-btn {
+    width: 46px;
+    padding: 0;
+  }
+
+  .btn svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  .load-more {
+    padding: 0 19px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+</style>
+</head>
+
+<body>
+
+<main class="demo">
+
+  <!-- SONG ACTIONS -->
+  <section class="section">
+    <h2 class="heading">Song Actions</h2>
+
+    <div class="row">
+
+      <button class="btn icon-btn favorite"
+              aria-label="Add to favorites"
+              aria-pressed="false"
+              title="Favorite">
+
+        <svg viewBox="0 0 24 24">
+          <path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1.1-1.1a5.5 5.5 0 0 0-7.8 7.8l1.1 1.1L12 21l7.8-7.5 1.1-1.1a5.5 5.5 0 0 0-.1-7.8Z"/>
+        </svg>
+
+      </button>
+
+      <button class="btn icon-btn add"
+              aria-label="Add to queue"
+              aria-pressed="false"
+              title="Add to queue">
+
+        <svg viewBox="0 0 24 24">
+          <path d="M12 5v14M5 12h14"/>
+        </svg>
+
+      </button>
+
+      <button class="btn icon-btn primary play-toggle"
+              aria-label="Play"
+              aria-pressed="false"
+              title="Play">
+
+        <svg viewBox="0 0 24 24">
+          <path d="m8 5 12 7-12 7z"/>
+        </svg>
+
+      </button>
+
+    </div>
+  </section>
+
+  <!-- SEARCH ACTIONS -->
+  <section class="section">
+    <h2 class="heading">Search Actions</h2>
+
+    <div class="row">
+
+      <button class="btn search" id="searchBtn">
+
+        <svg viewBox="0 0 24 24">
+          <circle cx="11" cy="11" r="7"/>
+          <path d="m16 16 4 4"/>
+        </svg>
+
+        <span>Search</span>
+
+      </button>
+
+      <button class="btn add" id="queueBtn">
+
+        <svg viewBox="0 0 24 24">
+          <path d="M12 5v14M5 12h14"/>
+        </svg>
+
+        <span>Add to Queue</span>
+
+      </button>
+
+      <button class="btn load" id="loadBtn">
+
+        <svg viewBox="0 0 24 24">
+          <path d="M10 13a5 5 0 0 0 7.07 0l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.72"/>
+          <path d="M14 11a5 5 0 0 0-7.07 0l-3 3A5 5 0 0 0 11 21.07l1.72-1.72"/>
+        </svg>
+
+        <span>Load</span>
+
+      </button>
+
+    </div>
+  </section>
+
+  <!-- QUEUE CONTROLS -->
+  <section class="section">
+    <h2 class="heading">Queue Controls</h2>
+
+    <div class="row">
+
+      <button class="btn icon-btn primary play-toggle"
+              aria-label="Play"
+              aria-pressed="false"
+              title="Play">
+
+        <svg viewBox="0 0 24 24">
+          <path d="m8 5 12 7-12 7z"/>
+        </svg>
+
+      </button>
+
+      <button class="btn icon-btn queue-action"
+              aria-label="Move up"
+              title="Move up">
+
+        <svg viewBox="0 0 24 24">
+          <path d="M12 19V5M5 12l7-7 7 7"/>
+        </svg>
+
+      </button>
+
+      <button class="btn icon-btn queue-action"
+              aria-label="Move down"
+              title="Move down">
+
+        <svg viewBox="0 0 24 24">
+          <path d="M12 5v14M5 12l7 7 7-7"/>
+        </svg>
+
+      </button>
+
+      <button class="btn icon-btn remove"
+              aria-label="Remove from queue"
+              title="Remove">
+
+        <svg viewBox="0 0 24 24">
+          <path d="m18 6-12 12M6 6l12 12"/>
+        </svg>
+
+      </button>
+
+    </div>
+  </section>
+
+  <!-- LOAD MORE -->
+  <section class="section">
+    <h2 class="heading">Search Results</h2>
+
+    <div class="row">
+
+      <button class="btn load-more" id="loadMoreBtn">
+
+        <svg viewBox="0 0 24 24">
+          <path d="m7 10 5 5 5-5"/>
+        </svg>
+
+        <span>Load more results</span>
+
+      </button>
+
+    </div>
+  </section>
+
+</main>
+
+<script>
+/* FAVORITE BUTTONS */
+
+document.querySelectorAll('.favorite').forEach(button => {
+  button.addEventListener('click', () => {
+    const active = button.classList.toggle('active');
+
+    button.setAttribute('aria-pressed', active);
+    button.setAttribute(
+      'aria-label',
+      active ? 'Remove from favorites' : 'Add to favorites'
+    );
+  });
+});
+
+/* PLAY / PAUSE BUTTONS */
+
+document.querySelectorAll('.play-toggle').forEach(button => {
+  button.addEventListener('click', () => {
+    const playing = button.classList.toggle('playing');
+
+    button.setAttribute('aria-pressed', playing);
+    button.setAttribute('aria-label', playing ? 'Pause' : 'Play');
+
+    button.innerHTML = playing
+      ? `<svg viewBox="0 0 24 24">
+           <path d="M8 5h3v14H8zM15 5h3v14h-3z"/>
+         </svg>`
+      : `<svg viewBox="0 0 24 24">
+           <path d="m8 5 12 7-12 7z"/>
+         </svg>`;
+  });
+});
+
+/* ADD TO QUEUE */
+
+document.querySelectorAll('.add').forEach(button => {
+  button.addEventListener('click', () => {
+    const added = button.classList.toggle('added');
+
+    button.setAttribute('aria-pressed', added);
+
+    const label = button.querySelector('span');
+
+    if (label) {
+      label.textContent = added ? 'Added to Queue' : 'Add to Queue';
+    }
+
+    const icon = button.querySelector('svg');
+
+    if (icon) {
+      icon.innerHTML = added
+        ? '<path d="m5 12 5 5L19 7"/>'
+        : '<path d="M12 5v14M5 12h14"/>';
+    }
+  });
+});
+
+/* SEARCH DEMO */
+
+document.getElementById('searchBtn').addEventListener('click', () => {
+  const button = document.getElementById('searchBtn');
+
+  button.style.transform = 'scale(0.97)';
+
+  setTimeout(() => {
+    button.style.transform = '';
+  }, 150);
+});
+
+/* LOAD BUTTON DEMO */
+
+document.getElementById('loadBtn').addEventListener('click', () => {
+  const button = document.getElementById('loadBtn');
+
+  if (button.classList.contains('loading')) return;
+
+  button.classList.add('loading');
+  button.querySelector('span').textContent = 'Loading';
+
+  setTimeout(() => {
+    button.classList.remove('loading');
+    button.querySelector('span').textContent = 'Load';
+  }, 1000);
+});
+
+/* LOAD MORE DEMO */
+
+document.getElementById('loadMoreBtn').addEventListener('click', () => {
+  const button = document.getElementById('loadMoreBtn');
+
+  if (button.classList.contains('loading')) return;
+
+  button.classList.add('loading');
+  button.querySelector('span').textContent = 'Loading results...';
+
+  setTimeout(() => {
+    button.classList.remove('loading');
+    button.querySelector('span').textContent = 'Load more results';
+  }, 1000);
+});
+</script>
+
+</body>
+</html>
