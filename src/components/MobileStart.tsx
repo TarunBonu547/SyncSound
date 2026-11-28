@@ -11,12 +11,13 @@ function detectCode(): string {
 
 type MobileStartProps = {
   displayName: string;
+  onDisplayNameChange: (value: string) => void;
   onRoomEntered: (code: string, name?: string | null) => void;
 };
 
 let linkJoinStarted = false;
 
-export default function MobileStart({ displayName, onRoomEntered }: MobileStartProps) {
+export default function MobileStart({ displayName, onDisplayNameChange, onRoomEntered }: MobileStartProps) {
   const { socket } = useSocket();
   const [joinCode, setJoinCode] = useState(detectCode());
   const [joinStatus, setJoinStatus] = useState<'idle' | 'joining' | 'error' | 'joined'>('idle');
@@ -24,14 +25,29 @@ export default function MobileStart({ displayName, onRoomEntered }: MobileStartP
   const [showJoinPanel, setShowJoinPanel] = useState(false);
   const [createdRoom, setCreatedRoom] = useState<{ code: string; name?: string } | null>(null);
   const [isCreating, setIsCreating] = useState(false);
+  const [username, setUsername] = useState(displayName);
   const linkCode = useRef(detectCode());
   const clientId = useRef(readClientId());
   const roomCodeInputRef = useRef<HTMLInputElement>(null);
 
+  // Sync username with parent displayName
+  useEffect(() => {
+    if (displayName && displayName !== username) {
+      setUsername(displayName);
+    }
+  }, [displayName]);
+
+  // Persist username to localStorage
+  useEffect(() => {
+    if (username.trim()) {
+      saveDisplayName(username);
+    }
+  }, [username]);
+
   const handleCreateRoom = () => {
-    const who = normalizeDisplayName(displayName);
+    const who = normalizeDisplayName(username);
     if (!who) {
-      setJoinMessage('Please enter the name the others will see');
+      setJoinMessage('Please enter your name');
       return;
     }
     if (!socket) {
@@ -41,6 +57,7 @@ export default function MobileStart({ displayName, onRoomEntered }: MobileStartP
     setIsCreating(true);
     setJoinMessage('');
     saveDisplayName(who);
+    onDisplayNameChange(who);
     socket.emit('create-room', { name: 'Mobile Room', clientId: clientId.current, displayName: who }, (res: any) => {
       setIsCreating(false);
       if (!res?.ok) {
@@ -59,10 +76,10 @@ export default function MobileStart({ displayName, onRoomEntered }: MobileStartP
       setJoinMessage('Room code is required');
       return;
     }
-    const who = normalizeDisplayName(displayName);
+    const who = normalizeDisplayName(username);
     if (!who) {
       setJoinStatus('error');
-      setJoinMessage('Please enter the name the others will see');
+      setJoinMessage('Please enter your name');
       return;
     }
     if (!socket) {
@@ -73,6 +90,7 @@ export default function MobileStart({ displayName, onRoomEntered }: MobileStartP
     setJoinStatus('joining');
     setJoinMessage('');
     saveDisplayName(who);
+    onDisplayNameChange(who);
     socket.emit('join-room', { code: target, clientId: clientId.current, displayName: who }, (res: any) => {
       if (!res?.ok) {
         setJoinStatus('error');
@@ -86,6 +104,27 @@ export default function MobileStart({ displayName, onRoomEntered }: MobileStartP
     });
   };
 
+  const handleEnterRoom = () => {
+    const who = normalizeDisplayName(username);
+    if (!who) {
+      setJoinMessage('Please enter your name');
+      return;
+    }
+    if (createdRoom) {
+      onRoomEntered(createdRoom.code, createdRoom.name);
+    } else if (joinStatus === 'joined') {
+      // Already joined via link, room should be entered
+      const code = linkCode.current || joinCode;
+      if (code) {
+        onRoomEntered(code.toUpperCase());
+      } else {
+        setJoinMessage('No room to enter. Create or join a room first.');
+      }
+    } else {
+      setJoinMessage('Please create or join a room first.');
+    }
+  };
+
   const formatRoomCode = (value: string) => {
     const raw = value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 6);
     let formatted = raw;
@@ -97,16 +136,16 @@ export default function MobileStart({ displayName, onRoomEntered }: MobileStartP
 
   useEffect(() => {
     if (!linkCode.current || !socket) return;
-    const who = normalizeDisplayName(displayName);
+    const who = normalizeDisplayName(username);
     if (!who) {
-      setJoinMessage('Please enter the name the others will see');
+      setJoinMessage('Please enter your name');
       return;
     }
     if (linkJoinStarted) return;
     linkJoinStarted = true;
     setJoinMessage('');
     handleJoinRoom(linkCode.current);
-  }, [socket, displayName]);
+  }, [socket, username]);
 
   useEffect(() => {
     if (showJoinPanel && roomCodeInputRef.current) {
@@ -115,6 +154,7 @@ export default function MobileStart({ displayName, onRoomEntered }: MobileStartP
   }, [showJoinPanel]);
 
   const displayCode = createdRoom?.code || joinCode || 'SS-XXXX';
+  const hasActiveRoom = createdRoom || joinStatus === 'joined';
 
   return (
     <div className="ms-page">
@@ -168,6 +208,28 @@ export default function MobileStart({ displayName, onRoomEntered }: MobileStartP
           </div>
         </div>
 
+        {/* Username field */}
+        <div className="ms-username-field">
+          <label htmlFor="ms-username" className="ms-username-label">
+            Your name
+          </label>
+          <input
+            id="ms-username"
+            type="text"
+            className="ms-username-input"
+            placeholder="Enter your name"
+            value={username}
+            onChange={(e) => {
+              const val = e.target.value;
+              setUsername(val);
+              onDisplayNameChange(val);
+            }}
+            autoComplete="name"
+            spellCheck={false}
+            maxLength={20}
+          />
+        </div>
+
         <div className="ms-actions">
           <button className="ms-primary-btn" onClick={handleCreateRoom} disabled={isCreating}>
             <span className="ms-btn-icon">
@@ -189,6 +251,23 @@ export default function MobileStart({ displayName, onRoomEntered }: MobileStartP
             Join a room
           </button>
         </div>
+
+        {/* Enter Room button */}
+        <button
+          className={`ms-enter-btn ${hasActiveRoom ? 'ready' : ''}`}
+          onClick={handleEnterRoom}
+          disabled={!hasActiveRoom}
+        >
+          <span className="ms-enter-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M15 3h6v6" />
+              <path d="M10 14 21 3" />
+              <path d="M21 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h6" />
+            </svg>
+          </span>
+          <span>Enter Room</span>
+          {hasActiveRoom && <span className="ms-enter-badge">Ready</span>}
+        </button>
 
         <div className={`ms-join-panel ${showJoinPanel ? 'show' : ''}`}>
           <div className="ms-join-heading">Come on in</div>
@@ -219,7 +298,7 @@ export default function MobileStart({ displayName, onRoomEntered }: MobileStartP
           )}
         </div>
 
-        {(createdRoom || joinStatus === 'joined') && (
+        {hasActiveRoom && (
           <div className="ms-room-preview show">
             <div className="ms-room-top">
               <div>
@@ -238,6 +317,12 @@ export default function MobileStart({ displayName, onRoomEntered }: MobileStartP
               </div>
               Your little listening space is ready.
             </div>
+          </div>
+        )}
+
+        {joinMessage && joinStatus !== 'joined' && joinStatus !== 'error' && !showJoinPanel && !createdRoom && (
+          <div className="ms-message error" role="alert" style={{ marginTop: '16px', animation: 'msFloatIn 0.3s ease' }}>
+            {joinMessage}
           </div>
         )}
       </main>

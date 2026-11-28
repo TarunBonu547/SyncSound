@@ -522,7 +522,7 @@ export default function MobileRoom({ displayName, onLeaveRoom, onBackToHome }: M
       </div>
 
       <h1 className="mr-title">Our listening room</h1>
-      <p className="mr-subtitle">Find a song, add it to your queue, and listen together.</p>
+      <p className="mr-subtitle">Listening with {displayName || 'a friend'}</p>
 
       {/* Search */}
       <form id="searchForm" className="mr-search-form" onSubmit={handleSearchSubmit}>

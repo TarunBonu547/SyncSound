@@ -528,6 +528,134 @@
   }
 }
 
+/* Username field */
+.ms-username-field {
+  margin-bottom: 20px;
+  animation: msFloatIn 0.6s ease both;
+}
+
+.ms-username-label {
+  display: block;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.2px;
+  color: var(--ms-plum);
+  margin-bottom: 8px;
+}
+
+.ms-username-input {
+  width: 100%;
+  height: 54px;
+  padding: 0 16px;
+  border: 1px solid #d8c7d4;
+  border-radius: 18px;
+  outline: none;
+  background: linear-gradient(145deg, #ffffffb8, #ffffff60);
+  color: var(--ms-twilight);
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: 0.2px;
+  transition: border 0.2s, box-shadow 0.2s, background 0.2s;
+  box-shadow: inset 0 2px 6px #75556808;
+}
+
+.ms-username-input::placeholder {
+  color: #b8a8b4;
+  font-size: 14px;
+  font-weight: 400;
+}
+
+.ms-username-input:focus {
+  border-color: var(--ms-plum);
+  box-shadow: 0 0 0 3px #75556814, inset 0 2px 6px #75556808;
+  background: #ffffffd0;
+}
+
+/* Enter Room button */
+.ms-enter-btn {
+  position: relative;
+  width: 100%;
+  min-height: 60px;
+  border: none;
+  border-radius: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ms-twilight);
+  background: linear-gradient(120deg, var(--ms-lavender), var(--ms-peach));
+  box-shadow: 0 8px 22px #b8acde40;
+  transition: transform 0.2s, box-shadow 0.2s, background 0.2s;
+  margin-top: 10px;
+  overflow: hidden;
+}
+
+.ms-enter-btn:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+.ms-enter-btn:hover:not(:disabled) {
+  box-shadow: 0 12px 28px #b8acde55;
+}
+
+.ms-enter-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background: #d8c7d4;
+  box-shadow: none;
+}
+
+.ms-enter-btn.ready {
+  background: linear-gradient(120deg, var(--ms-peach), var(--ms-lavender));
+  box-shadow: 0 8px 22px #e8b7ad40;
+}
+
+.ms-enter-btn.ready:hover:not(:disabled) {
+  box-shadow: 0 12px 28px #e8b7ad55;
+}
+
+.ms-enter-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 9px;
+  display: grid;
+  place-items: center;
+  background: #ffffff22;
+}
+
+.ms-enter-btn.ready .ms-enter-icon {
+  background: #ffffff33;
+}
+
+.ms-enter-icon svg {
+  width: 17px;
+  height: 17px;
+}
+
+.ms-enter-badge {
+  position: absolute;
+  right: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: var(--ms-plum);
+  background: #ffffff90;
+  padding: 3px 8px;
+  border-radius: 8px;
+  animation: msPulse 1.5s ease-in-out infinite;
+}
+
+@keyframes msPulse {
+  0%, 100% { opacity: 0.7; }
+  50% { opacity: 1; }
+}
+
 /* Small screens */
 @media (max-width: 360px) {
   .ms-page {

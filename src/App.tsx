@@ -1215,6 +1215,7 @@ export default function App() {
           {view === 'home' && isMobile && homeFocus === null ? (
             <MobileStart
               displayName={displayNameInput}
+              onDisplayNameChange={setDisplayNameInput}
               onRoomEntered={handleEnterRoom}
             />
           ) : (
