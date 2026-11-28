@@ -247,7 +247,7 @@ export default function MobileRoom({ displayName, onLeaveRoom, onBackToHome }: M
     player.syncTo(expected, pb.playing);
     syncDebug('apply room position on cue', {
       local: Number(local.toFixed(2)),
-      expected: Number(expected.toFixed(2)),
+      expected: Number(local.toFixed(2)),
     });
   }, [yt.state]);
 
@@ -369,8 +369,8 @@ export default function MobileRoom({ displayName, onLeaveRoom, onBackToHome }: M
     const value = answer.value!;
     if (pageToken) {
       setResults((prev) => {
-        const known = new Set(prev.map((r: SearchResult) => r.id));
-        return [...prev, ...value.results.filter((r: SearchResult) => !known.has(r.id))];
+        const known = new Set(prev.map((r) => r.id));
+        return [...prev, ...value.results.filter((r) => !known.has(r.id))];
       });
     } else {
       setResults(value.results);
@@ -731,7 +731,7 @@ export default function MobileRoom({ displayName, onLeaveRoom, onBackToHome }: M
 
       {/* Toasts */}
       {toasts.map((toast) => (
-        <div key={toast.id} className={`mr-toast ${toast.tone} show`} role="alert">
+        <div key={toast.id} className={`mr-toast ${toast.tone}`} role="alert">
           {toast.text}
         </div>
       ))}
