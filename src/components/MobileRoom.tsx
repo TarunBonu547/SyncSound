@@ -1,12 +1,13 @@
-import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
-import { ChevronLeft, MoreHorizontal, Search, Loader2, Play, Plus, SkipBack, SkipForward, RotateCcw, RotateCw } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Loader2 } from 'lucide-react';
 import { useYouTubePlayer, extractVideoId, YT_STATE } from '../hooks/useYouTubePlayer';
 import { useSocket } from '../hooks/useSocket';
 import { useRoom } from '../hooks/useRoom';
 import { readClientId } from '../utils/clientId';
-import { createSearchRequest, searchYouTube, type SearchResult } from '../utils/youtubeSearch';
+import { createSearchRequest, searchYouTube, lookupYouTubeVideo, type SearchResult } from '../utils/youtubeSearch';
 import { fetchVideoMeta } from '../utils/youtubeMeta';
 import { syncDebug } from '../utils/syncDebug';
+import '../styles/mobile-room.css';
 
 type MobileRoomProps = {
   displayName: string;
@@ -15,6 +16,12 @@ type MobileRoomProps = {
 };
 
 const DRIFT_THRESHOLD = 1.2;
+
+function formatTime(seconds: number): string {
+  const minutes = Math.floor(seconds / 60);
+  const remaining = Math.floor(seconds % 60);
+  return minutes + ':' + String(remaining).padStart(2, '0');
+}
 
 function messageFor(error: unknown): { code: string; text: string } {
   const _code = typeof error === 'object' && error !== null && 'code' in error ? String((error as any).code) : 'unknown';
@@ -34,12 +41,13 @@ function messageFor(error: unknown): { code: string; text: string } {
   return { code: _code, text };
 }
 
-export default function MobileRoom({ displayName, onLeaveRoom, onBackToHome }: MobileRoomProps) {
+export default function MobileRoom({ displayName, onLeaveRoom: _onLeaveRoom, onBackToHome: _onBackToHome }: MobileRoomProps) {
   const { socket, connected } = useSocket();
   const [clientId] = useState(() => readClientId());
   const stageVideoRef = useRef<HTMLDivElement | null>(null);
   const yt = useYouTubePlayer(stageVideoRef);
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const progressBarRef = useRef<HTMLDivElement | null>(null);
 
   const room = useRoom({
     socket,
@@ -66,6 +74,7 @@ export default function MobileRoom({ displayName, onLeaveRoom, onBackToHome }: M
   const [activePanel, setActivePanel] = useState<'search' | 'player' | 'queue'>('player');
 
   const [toasts, setToasts] = useState<{ id: string; text: string; tone: string }[]>([]);
+  const [isLiked, setIsLiked] = useState(false);
 
   const currentVideoId = useRef<string | null>(null);
   const lastRevision = useRef(0);
@@ -90,6 +99,18 @@ export default function MobileRoom({ displayName, onLeaveRoom, onBackToHome }: M
       setToasts((prev) => prev.filter((toast) => toast.id !== id));
     }, 4200);
   }, []);
+
+  const copyRoomCode = useCallback(() => {
+    const code = room.roomCode || '';
+    if (!code) return;
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(code)
+        .then(() => pushToast('Room code copied ♡'))
+        .catch(() => pushToast('Room code: ' + code));
+    } else {
+      pushToast('Room code: ' + code);
+    }
+  }, [room.roomCode, pushToast]);
 
   const expectedPosition = (p: any) => {
     const base = typeof p.position === 'number' ? p.position : 0;
@@ -142,6 +163,7 @@ export default function MobileRoom({ displayName, onLeaveRoom, onBackToHome }: M
           }
         : { id: videoId, title: 'Loading…', channel: '', thumbnail: `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg` };
       setCurrent(track);
+      setIsLiked(false);
       yt.load(videoId, expected, p.playing);
       fetchMeta(videoId, gen);
       syncDebug('apply remote: track change', {
@@ -334,8 +356,8 @@ export default function MobileRoom({ displayName, onLeaveRoom, onBackToHome }: M
     const answer = await searchRequest.run(async (signal: AbortSignal) => {
       if (!videoId) return searchYouTube(term, { pageToken, signal });
       try {
-        const track = await searchYouTube(term, { signal });
-        return { results: track.results, nextPageToken: track.nextPageToken };
+        const track = await lookupYouTubeVideo(videoId, { signal });
+        return { results: [track], nextPageToken: null };
       } catch (err) {
         if (typeof err === 'object' && err !== null && (err as any).code === 'api_unavailable') {
           const meta = await fetchVideoMeta(videoId);
@@ -368,8 +390,8 @@ export default function MobileRoom({ displayName, onLeaveRoom, onBackToHome }: M
     const value = answer.value!;
     if (pageToken) {
       setResults((prev) => {
-        const known = new Set(prev.map((r) => r.id));
-        return [...prev, ...value.results.filter((r) => !known.has(r.id))];
+        const known = new Set(prev.map((r: SearchResult) => r.id));
+        return [...prev, ...value.results.filter((r: SearchResult) => !known.has(r.id))];
       });
     } else {
       setResults(value.results);
@@ -431,6 +453,14 @@ export default function MobileRoom({ displayName, onLeaveRoom, onBackToHome }: M
     }, 150);
   };
 
+  const handleProgressClick = (event: React.MouseEvent<HTMLDivElement>) => {
+    if (!progressBarRef.current || !yt.duration) return;
+    const rect = progressBarRef.current.getBoundingClientRect();
+    const percent = Math.max(0, Math.min(1, (event.clientX - rect.left) / rect.width));
+    const value = percent * yt.duration;
+    handleSeek(value);
+  };
+
   const playPrevious = () => {
     const activeQueueItemId = roomPb?.currentQueueItemId || currentItemId;
     const queueIndex = room.queue.findIndex((item) => item.id === activeQueueItemId);
@@ -449,16 +479,29 @@ export default function MobileRoom({ displayName, onLeaveRoom, onBackToHome }: M
     }
   };
 
-  const rewind5 = () => {
-    const t = Math.max(0, yt.getCurrentTime() - 5);
+  const seekRelative = (seconds: number) => {
+    if (!yt.duration) return;
+    const t = Math.max(0, Math.min(yt.duration, yt.currentTime + seconds));
     handleSeek(t);
   };
 
-  const forward5 = () => {
-    const dur = yt.duration;
-    const cur = yt.getCurrentTime();
-    const t = dur ? Math.min(dur, cur + 5) : cur + 5;
-    handleSeek(t);
+  const clearQueue = async () => {
+    const items = [...room.queue];
+    for (const item of items) {
+      room.removeQueueItem(item.id);
+    }
+    setCurrent(null);
+    setCurrentItemId(null);
+    setRoomPb(null);
+    currentVideoId.current = null;
+    lastRevision.current = 0;
+    yt.pause();
+    pushToast('Queue cleared');
+  };
+
+  const toggleLike = () => {
+    setIsLiked(!isLiked);
+    pushToast(isLiked ? 'Removed from favourites' : 'Added to favourites ♡');
   };
 
   const activeQueueItemId = roomPb?.currentQueueItemId || currentItemId;
@@ -473,16 +516,14 @@ export default function MobileRoom({ displayName, onLeaveRoom, onBackToHome }: M
   const loadingPlayer = hasTrack && !playerReady && !yt.error;
   const failed = hasTrack && !!yt.error;
 
-  const statusText = (() => {
-    if (!hasTrack) return 'Ready';
-    if (yt.state === YT_STATE.ended) return 'Ended';
-    if (roomPlaying) return 'Playing';
-    return 'Paused';
-  })();
+  const progress = yt.duration > 0 ? Math.min(100, (yt.currentTime / yt.duration) * 100) : 0;
+  const currentSeconds = yt.currentTime || 0;
+  const durationSeconds = yt.duration || 0;
+  const listenerCount = Math.max(1, room.members.length || room.participantCount);
 
   const scrollToPanel = (panel: 'search' | 'player' | 'queue') => {
     setActivePanel(panel);
-    const element = document.getElementById(`${panel}Panel`);
+    const element = document.getElementById(`${panel}Section`);
     if (element) {
       element.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
@@ -499,38 +540,65 @@ export default function MobileRoom({ displayName, onLeaveRoom, onBackToHome }: M
   };
 
   return (
-    <main className="mr-app" role="main">
-      {/* Header */}
-      <header className="mr-header">
-        <button className="mr-header-btn" onClick={onBackToHome} aria-label="Back to home">
-          <ChevronLeft size={24} />
-        </button>
-        <div className="mr-brand">Sync<span>Sound</span></div>
-        <button className="mr-header-btn" onClick={onLeaveRoom} aria-label="Room options">
-          <MoreHorizontal size={24} />
-        </button>
+    <main className="mobile-room" role="main">
+      {/* HEADER */}
+      <header className="header">
+        <div className="brand">
+          <div className="brand-icon">♫</div>
+          <div>
+            <div className="brand-name">SyncSound</div>
+            <div className="brand-sub">Your little shared universe</div>
+          </div>
+        </div>
+
+        <div className="header-actions">
+          <button className="icon-btn" onClick={() => pushToast('Room settings coming soon')} aria-label="Settings">⚙</button>
+          <button className="icon-btn" onClick={() => pushToast('You are in your room')} aria-label="Room">♡</button>
+        </div>
       </header>
 
-      {/* Room bar */}
-      <div className="mr-room-bar">
-        <div className="mr-room-code">ROOM {room.roomCode || '—'}</div>
-        <div className="mr-status">
-          <span className="mr-dot" style={{ background: connected ? '#91C7A7' : '#E66B91' }} />
-          {connected ? 'Connected' : 'Disconnected'}
+      {/* ROOM INFORMATION */}
+      <section className="room-info">
+        <div className="room-top">
+          <div>
+            <div className="room-label">Your listening room</div>
+            <div className="room-title">{room.roomName || 'Little Moments ♡'}</div>
+          </div>
+
+          <div className="live-pill">
+            <span className="live-dot" style={{ background: connected ? '#D7FFE0' : '#938592' }}></span>
+            {connected ? 'Connected' : 'Disconnected'}
+          </div>
         </div>
-      </div>
 
-      <h1 className="mr-title">Our listening room</h1>
-      <p className="mr-subtitle">Listening with {displayName || 'a friend'}</p>
+        <div className="room-bottom">
+          <div>
+            <div className="room-code-label">Room code</div>
+            <div className="room-code" id="roomCode">{room.roomCode || 'SS-XXXX'}</div>
+          </div>
 
-      {/* Search */}
-      <form id="searchForm" className="mr-search-form" onSubmit={handleSearchSubmit}>
-        <div className="mr-search-box">
+          <div className="listeners">♡ {listenerCount} listening</div>
+
+          <button className="copy-btn" onClick={copyRoomCode}>Copy code</button>
+        </div>
+      </section>
+
+      {/* SEARCH */}
+      <section className="section" id="searchSection">
+        <div className="section-heading">
+          <div>
+            <div className="section-title">Find your next song</div>
+            <div className="section-sub">A little music for the two of you</div>
+          </div>
+        </div>
+
+        <form className="search-box" onSubmit={handleSearchSubmit}>
+          <span className="search-icon">⌕</span>
           <input
             ref={searchInputRef}
             id="searchInput"
             type="search"
-            placeholder="Search YouTube songs, artists..."
+            placeholder="Search songs, artists..."
             autoComplete="off"
             value={query}
             onChange={(e) => {
@@ -538,202 +606,183 @@ export default function MobileRoom({ displayName, onLeaveRoom, onBackToHome }: M
               if (searchError) setSearchError(null);
             }}
           />
-          <button type="submit" className="mr-search-btn" disabled={loading}>
-            {loading ? <Loader2 size={16} className="spin" /> : <Search size={16} />}
-            <span>Search</span>
+          <button className="search-btn" type="submit" disabled={loading}>
+            {loading ? <Loader2 size={16} className="spin" /> : null} Search
           </button>
-        </div>
-      </form>
+        </form>
 
-      <p className="mr-hint">Search YouTube and tap + to add a song to your queue.</p>
-
-      {/* Search Results */}
-      <section id="resultsPanel" className={`mr-panel ${resultsVisible ? 'show' : ''}`}>
-        <div className="mr-panel-heading">
-          <h2>Search results</h2>
-          <span>{results.length} {results.length === 1 ? 'video' : 'videos'}</span>
-        </div>
-        <div id="resultList">
-          {loading && <div className="mr-empty">Searching YouTube…</div>}
-          {searchError && <div className="mr-empty" role="alert">{searchError}</div>}
-          {searchNotice && <div className="mr-empty" role="status">{searchNotice}</div>}
+        <div className={`search-results ${resultsVisible ? 'show' : ''}`} id="searchResults">
+          {loading && <div className="empty-queue">Searching YouTube…</div>}
+          {searchError && <div className="empty-queue" role="alert">{searchError}</div>}
+          {searchNotice && <div className="empty-queue" role="status">{searchNotice}</div>}
           {!loading && !searchError && results.length === 0 && !resultsVisible && (
-            <div className="mr-empty">No search yet. Enter a song or artist name.</div>
+            <div className="empty-queue">No search yet. Enter a song or artist name.</div>
           )}
           {results.map((video) => (
-            <div key={video.id} className="mr-result">
+            <div key={video.id} className="result-item">
               <img src={video.thumbnail} alt="" />
-              <div className="mr-result-info">
-                <strong>{video.title}</strong>
-                <span>{video.channel}</span>
+              <div className="result-info">
+                <div className="result-title">{video.title}</div>
+                <div className="result-channel">{video.channel}</div>
               </div>
-              <button className="mr-add-btn" onClick={() => send(onAddToQueue, video, 'Added to queue')} aria-label="Add to queue">
-                <Plus size={20} />
+              <button className="add-btn" onClick={() => send(onAddToQueue, video, 'Added to queue')} aria-label="Add to queue">
+                +
               </button>
             </div>
           ))}
           {nextPageToken && !loading && !searchError && (
-            <button className="mr-load-more" onClick={loadMore} disabled={loading}>
-              {loading ? <Loader2 size={16} className="spin" /> : 'Load more'}
+            <button className="add-btn" onClick={loadMore} disabled={loading}>
+              {loading ? <Loader2 size={16} className="spin" /> : '+'}
             </button>
           )}
         </div>
       </section>
 
-      {/* Player */}
-      <section id="playerPanel" className="mr-panel">
-        <div className="mr-panel-heading">
-          <h2>Now playing</h2>
-          <span id="playerState">{statusText}</span>
-        </div>
-
-        <div className="mr-player-frame">
-          <div ref={stageVideoRef} className="mr-yt-player" title="SyncSound player" />
-
-          {/* Placeholder */}
-          {!hasTrack && (
-            <div id="playerPlaceholder" className="mr-player-placeholder">
-              <div className="mr-youtube-icon">
-                <Play size={24} />
-              </div>
-              <strong>Your song will appear here</strong>
-              <span>Search YouTube and add a song to start listening.</span>
-            </div>
-          )}
-
-          {loadingPlayer && (
-            <div className="mr-stage-overlay" role="status">
-              <Loader2 size={20} className="spin" aria-hidden="true" />
-              <span>Loading the video…</span>
-            </div>
-          )}
-
-          {failed && (
-            <div className="mr-stage-overlay is-error" role="alert">
-              <span>{yt.error}</span>
-            </div>
-          )}
-
-          {needsGesture && !failed && (
-            <div className="mr-stage-overlay" role="status">
-              <button className="mr-btn mr-btn-primary" onClick={requestPlay}>
-                <Play size={16} aria-hidden="true" /> Play the video
-              </button>
-              <span className="mr-stage-overlay-hint">
-                The browser blocked the automatic start. One click and the room is on the same track again.
-              </span>
-            </div>
-          )}
-        </div>
-
-        <div className="mr-now-playing">
-          <div className="mr-now-playing-info">
-            <strong id="currentTitle">{hasTrack ? current.title : 'No song selected'}</strong>
-            <span id="currentArtist">{hasTrack ? current.channel : 'Search for a song to begin'}</span>
+      {/* PLAYER */}
+      <section className="section" id="playerSection">
+        <div className="section-heading">
+          <div>
+            <div className="section-title">Now playing</div>
+            <div className="section-sub">Listening together, wherever you are</div>
           </div>
+          <button className="text-btn" onClick={() => pushToast('Playback is synchronized in the room')}>Sync status ↗</button>
         </div>
 
-        <div className="mr-playback-controls">
-          <button className="mr-control" id="previousBtn" onClick={playPrevious} disabled={!hasPrevious} aria-label="Previous song">
-            <SkipBack size={19} />
-          </button>
-          <button className="mr-control" id="rewindBtn" onClick={rewind5} disabled={!hasTrack} aria-label="Rewind 5 seconds">
-            <RotateCcw size={19} />
-          </button>
-          <button className="mr-control mr-control-main" id="playBtn" onClick={togglePlayback} disabled={!hasTrack} aria-label={roomPlaying ? 'Pause' : 'Play'}>
-            {roomPlaying ? <span style={{ display: 'flex', gap: '3px' }}><span style={{ width: '4px', height: '16px', background: 'currentColor', borderRadius: '1px' }} /><span style={{ width: '4px', height: '16px', background: 'currentColor', borderRadius: '1px' }} /></span> : <Play size={23} />}
-          </button>
-          <button className="mr-control" id="forwardBtn" onClick={forward5} disabled={!hasTrack} aria-label="Forward 5 seconds">
-            <RotateCw size={19} />
-          </button>
-          <button className="mr-control" id="nextBtn" onClick={playNext} disabled={!hasNext} aria-label="Next song">
-            <SkipForward size={19} />
-          </button>
-        </div>
+        <div className="player-card">
 
-        <div className="mr-playback-status" id="playbackStatus">
-          {hasTrack ? (roomPlaying ? 'Song is playing.' : 'Playback paused.') : 'Choose a song to begin.'}
+          <div className="artwork" id="artwork">
+            <div ref={stageVideoRef} className="yt-host" title="SyncSound player" />
+
+            <div className="artwork-placeholder" id="artworkPlaceholder">
+              <div className="music-icon">♫</div>
+              <p>Your song goes here</p>
+              <small>Search for a song to begin</small>
+            </div>
+
+            {loadingPlayer && (
+              <div className="stage-overlay" role="status">
+                <Loader2 size={20} className="spin" aria-hidden="true" />
+                <span>Loading the video…</span>
+              </div>
+            )}
+
+            {failed && (
+              <div className="stage-overlay is-error" role="alert">
+                <span>{yt.error}</span>
+              </div>
+            )}
+
+            {needsGesture && !failed && (
+              <div className="stage-overlay" role="status">
+                <button className="play-btn" onClick={requestPlay} style={{ width: 48, height: 48, fontSize: 20, marginBottom: 10 }}>
+                  ▶
+                </button>
+                <span className="stage-overlay-hint">
+                  The browser blocked the automatic start. One click and the room is on the same track again.
+                </span>
+              </div>
+            )}
+          </div>
+
+          <div className="player-song">
+            <div className="song-details">
+              <div className="song-title" id="currentTitle">{hasTrack ? current.title : 'Choose a song together'}</div>
+              <div className="song-artist" id="currentArtist">{hasTrack ? current.channel : 'Your shared listening room'}</div>
+            </div>
+            <button className="heart-btn" id="heartBtn" onClick={toggleLike}>{isLiked ? '♥' : '♡'}</button>
+          </div>
+
+          <div className="progress-wrap">
+            <div className="progress" id="progressBar" ref={progressBarRef} onClick={handleProgressClick}>
+              <div className="progress-fill" id="progressFill" style={{ width: progress + '%' }} />
+            </div>
+
+            <div className="time-row">
+              <span id="currentTime">{formatTime(currentSeconds)}</span>
+              <span id="duration">{formatTime(durationSeconds)}</span>
+            </div>
+          </div>
+
+          <div className="controls">
+            <button className="control-btn" id="previousBtn" onClick={playPrevious} disabled={!hasPrevious} aria-label="Previous song">⏮</button>
+            <button className="control-btn" id="rewindBtn" onClick={() => seekRelative(-10)} disabled={!hasTrack} aria-label="Rewind 10 seconds">↶</button>
+            <button className="control-btn play-btn" id="playBtn" onClick={togglePlayback} disabled={!hasTrack} aria-label={roomPlaying ? 'Pause' : 'Play'}>
+              {roomPlaying ? 'Ⅱ' : '▶'}
+            </button>
+            <button className="control-btn" id="forwardBtn" onClick={() => seekRelative(10)} disabled={!hasTrack} aria-label="Forward 10 seconds">↷</button>
+            <button className="control-btn" id="nextBtn" onClick={playNext} disabled={!hasNext} aria-label="Next song">⏭</button>
+          </div>
+
+          <div className="sync-status">
+            <span>●</span> {hasTrack ? (roomPlaying ? 'Connected to your listening room' : 'Playback paused.') : 'Choose a song to begin.'}
+          </div>
         </div>
       </section>
 
-      {/* Queue */}
-      <section id="queuePanel" className="mr-panel">
-        <div className="mr-panel-heading">
-          <h2>Our queue</h2>
-          <span id="queueCount">{room.queue.length} {room.queue.length === 1 ? 'song' : 'songs'}</span>
+      {/* QUEUE */}
+      <section className="section" id="queueSection">
+        <div className="section-heading">
+          <div>
+            <div className="section-title">Up next</div>
+            <div className="section-sub"><span id="queueCount">{room.queue.length}</span> songs in your shared queue</div>
+          </div>
+          <button className="text-btn" onClick={clearQueue}>Clear all</button>
         </div>
-        <div id="queueList">
+
+        <div className="queue-list" id="queueList">
           {room.queue.length === 0 && (
-            <div className="mr-empty">
-              Your queue is empty.<br />
-              Search YouTube and add your first song.
-            </div>
+            <div className="empty-queue">Your queue is waiting for a little music ♡</div>
           )}
           {room.queue.map((song, index) => (
-            <div key={song.id} className={`mr-queue-item ${index === queueIndex ? 'current' : ''}`}>
-              <div className="mr-queue-number">{index + 1}</div>
-              <img src={song.thumbnail} alt="" />
-              <div className="mr-queue-info">
-                <strong>{song.title}</strong>
-                <span>{song.channel}</span>
+            <div key={song.id} className={`queue-item ${index === queueIndex ? 'active' : ''}`}>
+              <div className="queue-number">{index + 1}</div>
+              <img className="queue-thumb" src={song.thumbnail} alt="" />
+              <div className="queue-info">
+                <div className="queue-song">{song.title}</div>
+                <div className="queue-artist">{song.channel}</div>
               </div>
-              <div className="mr-queue-actions">
-                <button className="mr-queue-action" onClick={() => room.playQueueItem(song.id)} aria-label="Play song">
-                  <Play size={17} />
-                </button>
-                <button className="mr-queue-action" onClick={() => room.removeQueueItem(song.id)} aria-label="Remove song">
-                  <span style={{ fontSize: '20px', lineHeight: 1 }}>×</span>
-                </button>
-              </div>
+              <button className="queue-play" onClick={() => room.playQueueItem(song.id)} aria-label="Play song">▶</button>
+              <button className="queue-play" onClick={() => room.removeQueueItem(song.id)} aria-label="Remove song">×</button>
             </div>
           ))}
         </div>
       </section>
 
-      {/* Bottom Navigation */}
-      <nav className="mr-bottom-nav" aria-label="Mobile navigation">
+      {/* BOTTOM NAVIGATION */}
+      <nav className="bottom-nav" aria-label="Mobile navigation">
         <button
-          className={`mr-nav-btn ${activePanel === 'search' ? 'active' : ''}`}
+          className={`nav-item ${activePanel === 'search' ? 'active' : ''}`}
           onClick={() => scrollToPanel('search')}
-          data-target="searchForm"
         >
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7">
-            <circle cx="11" cy="11" r="7" />
-            <path d="m16 16 4 4" />
-          </svg>
+          <span className="nav-icon">⌕</span>
           Search
         </button>
+
         <button
-          className={`mr-nav-btn ${activePanel === 'player' ? 'active' : ''}`}
+          className={`nav-item ${activePanel === 'player' ? 'active' : ''}`}
           onClick={() => scrollToPanel('player')}
-          data-target="playerPanel"
         >
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7">
-            <path d="M9 18V5l12-2v13" />
-            <circle cx="6" cy="18" r="3" />
-            <circle cx="18" cy="16" r="3" />
-          </svg>
+          <span className="nav-icon">♫</span>
           Player
         </button>
+
         <button
-          className={`mr-nav-btn ${activePanel === 'queue' ? 'active' : ''}`}
+          className={`nav-item ${activePanel === 'queue' ? 'active' : ''}`}
           onClick={() => scrollToPanel('queue')}
-          data-target="queuePanel"
         >
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7">
-            <path d="M8 6h13M8 12h13M8 18h13" />
-            <path d="M3 6h.01M3 12h.01M3 18h.01" />
-          </svg>
+          <span className="nav-icon">☷</span>
           Queue
         </button>
       </nav>
 
-      {/* Toasts */}
-      {toasts.map((toast) => (
-        <div key={toast.id} className={`mr-toast ${toast.tone}`} role="alert">
-          {toast.text}
-        </div>
-      ))}
+      {/* TOASTS */}
+      <div className="toast-container">
+        {toasts.map((toast) => (
+          <div key={toast.id} className={`toast show ${toast.tone}`} role="alert">
+            {toast.text}
+          </div>
+        ))}
+      </div>
     </main>
   );
 }
