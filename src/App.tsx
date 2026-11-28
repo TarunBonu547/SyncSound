@@ -32,6 +32,7 @@ import JoinRoom from './pages/JoinRoom';
 import SearchView from './pages/SearchView';
 import LibraryView, { type LibrarySection } from './pages/LibraryView';
 import MobileStart from './components/MobileStart';
+import MobileRoom from './components/MobileRoom';
 import type {
   PlaybackState,
   SongDedication,
@@ -1042,6 +1043,7 @@ export default function App() {
   return (
     <div className="app-root">
       {/* ------------------------------ Listening room ---------------------- */}
+      {!isMobile && (
       <div className={`sunday-room lounge app ${view !== 'room' ? 'is-hidden' : ''}`} inert={view !== 'room'}>
         {/* Floating Sunday Radio background decor, kept behind the interface. */}
         <div className="sr-room-bg" aria-hidden="true">
@@ -1184,6 +1186,10 @@ export default function App() {
           <LiquidScrollbar contentRef={mainRef} contentId="main-content" autoHide />
         </main>
       </div>
+      )}
+      {isMobile && view === 'room' && (
+        <MobileRoom displayName={displayNameInput} onLeaveRoom={leaveRoom} onBackToHome={goHome} />
+      )}
 
       {/*
         The call window lives outside the room shell: it floats above the
