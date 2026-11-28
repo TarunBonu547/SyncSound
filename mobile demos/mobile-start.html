@@ -1,0 +1,788 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SyncSound — Listen Together</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+<style>
+:root {
+  --cream: #F6EDE7;
+  --peach: #E8B7AD;
+  --rose: #D99AA7;
+  --lavender: #B8ACDE;
+  --dusk: #879DBA;
+  --plum: #755568;
+  --twilight: #332C3B;
+  --muted: #887C87;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  min-height: 100vh;
+  font-family: 'Inter', sans-serif;
+  color: var(--twilight);
+  background:
+    radial-gradient(ellipse at 10% 10%, #f1d8d7 0%, transparent 40%),
+    radial-gradient(ellipse at 90% 90%, #e2d9ef 0%, transparent 45%),
+    var(--cream);
+  overflow-x: hidden;
+}
+
+button, input {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.page {
+  width: 100%;
+  max-width: 480px;
+  min-height: 100dvh;
+  margin: auto;
+  padding: 24px 22px 32px;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Ambient decoration */
+
+.orb {
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+  filter: blur(1px);
+  z-index: 0;
+}
+
+.orb.one {
+  width: 180px;
+  height: 180px;
+  background: #e8b7ad55;
+  top: 170px;
+  right: -100px;
+}
+
+.orb.two {
+  width: 160px;
+  height: 160px;
+  background: #b8acde45;
+  bottom: 80px;
+  left: -110px;
+}
+
+header, main, footer {
+  position: relative;
+  z-index: 1;
+}
+
+/* Header */
+
+header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 48px;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+}
+
+.brand-icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 15px;
+  background: linear-gradient(145deg, #e8b7ad, #d99aa7);
+  display: grid;
+  place-items: center;
+  color: white;
+  box-shadow: 0 5px 18px #d99aa744;
+}
+
+.brand-icon svg {
+  width: 22px;
+  height: 22px;
+}
+
+.brand-name {
+  font-size: 19px;
+  font-weight: 800;
+  letter-spacing: -0.8px;
+}
+
+.brand-name span {
+  color: var(--plum);
+}
+
+.status {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 12px;
+  border: 1px solid #ffffffb8;
+  background: #ffffff6b;
+  border-radius: 30px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--plum);
+}
+
+.status-dot {
+  width: 7px;
+  height: 7px;
+  background: #88b99c;
+  border-radius: 50%;
+  box-shadow: 0 0 0 3px #88b99c22;
+}
+
+/* Main content */
+
+main {
+  flex: 1;
+}
+
+.eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--plum);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1.8px;
+  text-transform: uppercase;
+  margin-bottom: 17px;
+}
+
+.eyebrow-line {
+  width: 22px;
+  height: 1px;
+  background: var(--rose);
+}
+
+h1 {
+  font-size: clamp(39px, 11vw, 52px);
+  line-height: 1.12;
+  letter-spacing: -2.8px;
+  font-weight: 700;
+  margin-bottom: 16px;
+}
+
+h1 span {
+  color: var(--plum);
+  font-family: Georgia, serif;
+  font-weight: 400;
+  font-style: italic;
+}
+
+.description {
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.8;
+  max-width: 320px;
+  margin-bottom: 28px;
+}
+
+/* Listening card */
+
+.listening-card {
+  position: relative;
+  border: 1px solid #ffffffa8;
+  background: linear-gradient(145deg, #ffffff91, #ffffff45);
+  border-radius: 25px;
+  padding: 20px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 25px;
+  box-shadow: 0 12px 35px #7555680b;
+  backdrop-filter: blur(16px);
+  animation: floatIn .8s ease both;
+}
+
+.artwork {
+  width: 78px;
+  height: 78px;
+  flex-shrink: 0;
+  border-radius: 19px;
+  overflow: hidden;
+  background: linear-gradient(145deg, #d99aa7, #b8acde);
+  display: grid;
+  place-items: center;
+  position: relative;
+}
+
+.artwork::before,
+.artwork::after {
+  content: "";
+  position: absolute;
+  border-radius: 50%;
+  border: 1px solid #ffffff55;
+}
+
+.artwork::before {
+  width: 95px;
+  height: 95px;
+}
+
+.artwork::after {
+  width: 60px;
+  height: 60px;
+}
+
+.artwork svg {
+  width: 30px;
+  color: white;
+  z-index: 1;
+}
+
+.listening-info {
+  min-width: 0;
+}
+
+.listening-label {
+  color: var(--plum);
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.2px;
+  margin-bottom: 7px;
+}
+
+.listening-title {
+  font-size: 16px;
+  font-weight: 700;
+  margin-bottom: 5px;
+  letter-spacing: -.4px;
+}
+
+.listening-subtitle {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+/* Action buttons */
+
+.actions {
+  display: flex;
+  flex-direction: column;
+  gap: 13px;
+}
+
+.primary-btn,
+.secondary-btn {
+  width: 100%;
+  min-height: 60px;
+  border-radius: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 11px;
+  font-size: 14px;
+  font-weight: 700;
+  transition: transform .2s, box-shadow .2s, background .2s;
+}
+
+.primary-btn {
+  border: 1px solid #ffffff55;
+  color: white;
+  background: linear-gradient(120deg, #755568, #92728e);
+  box-shadow: 0 8px 22px #75556830;
+}
+
+.primary-btn:active,
+.secondary-btn:active {
+  transform: scale(.98);
+}
+
+.primary-btn:hover {
+  box-shadow: 0 12px 28px #75556845;
+}
+
+.secondary-btn {
+  color: var(--twilight);
+  background: #ffffff6b;
+  border: 1px solid #ffffffb8;
+}
+
+.btn-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 9px;
+  display: grid;
+  place-items: center;
+  background: #ffffff22;
+}
+
+.secondary-btn .btn-icon {
+  background: #75556812;
+}
+
+.btn-icon svg {
+  width: 17px;
+  height: 17px;
+}
+
+/* Join room */
+
+.join-panel {
+  display: none;
+  margin-top: 15px;
+  padding: 18px;
+  border: 1px solid #ffffffb8;
+  background: #ffffff70;
+  border-radius: 20px;
+  animation: floatIn .3s ease;
+}
+
+.join-panel.show {
+  display: block;
+}
+
+.join-heading {
+  font-size: 14px;
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+
+.join-description {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.6;
+  margin-bottom: 15px;
+}
+
+.code-input {
+  width: 100%;
+  height: 54px;
+  padding: 0 15px;
+  border: 1px solid #d8c7d4;
+  border-radius: 14px;
+  outline: none;
+  background: #ffffffa8;
+  color: var(--twilight);
+  text-align: center;
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  transition: border .2s, box-shadow .2s;
+}
+
+.code-input::placeholder {
+  color: #b8a8b4;
+  font-size: 12px;
+  letter-spacing: 1px;
+}
+
+.code-input:focus {
+  border-color: var(--plum);
+  box-shadow: 0 0 0 3px #75556814;
+}
+
+.join-submit {
+  width: 100%;
+  height: 48px;
+  border: none;
+  border-radius: 14px;
+  margin-top: 10px;
+  background: var(--peach);
+  color: var(--twilight);
+  font-weight: 700;
+  font-size: 13px;
+}
+
+.message {
+  font-size: 12px;
+  text-align: center;
+  margin-top: 12px;
+  color: var(--plum);
+  min-height: 16px;
+}
+
+/* Footer */
+
+footer {
+  margin-top: 35px;
+  text-align: center;
+}
+
+.footer-line {
+  width: 35px;
+  height: 1px;
+  background: #75556830;
+  margin: 0 auto 15px;
+}
+
+.footer-text {
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.8;
+}
+
+.footer-text span {
+  color: var(--plum);
+  font-weight: 600;
+}
+
+/* Room preview */
+
+.room-preview {
+  display: none;
+  margin-top: 18px;
+  border-radius: 18px;
+  padding: 18px;
+  background: #ffffff75;
+  border: 1px solid #ffffffb8;
+  animation: floatIn .4s ease;
+}
+
+.room-preview.show {
+  display: block;
+}
+
+.room-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 13px;
+}
+
+.room-label {
+  font-size: 10px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 1.2px;
+}
+
+.room-code {
+  color: var(--plum);
+  font-weight: 800;
+  font-size: 17px;
+  letter-spacing: 1px;
+}
+
+.room-people {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.avatar-stack {
+  display: flex;
+}
+
+.avatar {
+  width: 27px;
+  height: 27px;
+  border: 2px solid var(--cream);
+  border-radius: 50%;
+  background: linear-gradient(135deg, #e8b7ad, #b8acde);
+  margin-left: -7px;
+}
+
+.avatar:first-child {
+  margin-left: 0;
+}
+
+@keyframes floatIn {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 360px) {
+  .page {
+    padding: 20px 17px 25px;
+  }
+
+  header {
+    margin-bottom: 38px;
+  }
+
+  h1 {
+    font-size: 38px;
+  }
+
+  .listening-card {
+    padding: 15px;
+    gap: 12px;
+  }
+
+  .artwork {
+    width: 66px;
+    height: 66px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .01ms !important;
+    transition-duration: .01ms !important;
+  }
+}
+</style>
+</head>
+
+<body>
+
+<div class="page">
+
+  <div class="orb one"></div>
+  <div class="orb two"></div>
+
+  <header>
+    <div class="brand">
+      <div class="brand-icon">
+        <svg viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" stroke-width="1.8"
+          stroke-linecap="round" stroke-linejoin="round">
+          <path d="M9 18V5l12-2v13"/>
+          <circle cx="6" cy="18" r="3"/>
+          <circle cx="18" cy="16" r="3"/>
+        </svg>
+      </div>
+
+      <div class="brand-name">Sync<span>Sound</span></div>
+    </div>
+
+    <div class="status">
+      <span class="status-dot"></span>
+      Together
+    </div>
+  </header>
+
+  <main>
+
+    <div class="eyebrow">
+      <span class="eyebrow-line"></span>
+      A little closer, wherever you are
+    </div>
+
+    <h1>
+      Your songs.<br>
+      Our <span>moments.</span>
+    </h1>
+
+    <p class="description">
+      Some songs feel different when you listen
+      together. Create your little space and
+      let the music bring you closer.
+    </p>
+
+    <div class="listening-card">
+      <div class="artwork">
+        <svg viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" stroke-width="1.5"
+          stroke-linecap="round" stroke-linejoin="round">
+          <path d="M9 18V5l12-2v13"/>
+          <circle cx="6" cy="18" r="3"/>
+          <circle cx="18" cy="16" r="3"/>
+        </svg>
+      </div>
+
+      <div class="listening-info">
+        <div class="listening-label">Your own little space</div>
+        <div class="listening-title">Listen together</div>
+        <div class="listening-subtitle">
+          One song, two hearts, the same moment.
+        </div>
+      </div>
+    </div>
+
+    <div class="actions">
+
+      <button class="primary-btn" id="createBtn">
+        <span class="btn-icon">
+          <svg viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2"
+            stroke-linecap="round">
+            <path d="M12 5v14M5 12h14"/>
+          </svg>
+        </span>
+        Create a room
+      </button>
+
+      <button class="secondary-btn" id="joinBtn">
+        <span class="btn-icon">
+          <svg viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="1.8"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path d="M15 3h6v6"/>
+            <path d="M10 14 21 3"/>
+            <path d="M21 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h6"/>
+          </svg>
+        </span>
+        Join a room
+      </button>
+
+    </div>
+
+    <div class="join-panel" id="joinPanel">
+
+      <div class="join-heading">Come on in</div>
+
+      <p class="join-description">
+        Enter the room code your person shared with you.
+      </p>
+
+      <form id="joinForm">
+        <input
+          type="text"
+          id="roomCode"
+          class="code-input"
+          placeholder="ENTER ROOM CODE"
+          maxlength="7"
+          autocomplete="off"
+          spellcheck="false"
+        >
+
+        <button type="submit" class="join-submit">
+          Join our room
+        </button>
+      </form>
+
+      <div class="message" id="joinMessage"></div>
+
+    </div>
+
+    <div class="room-preview" id="roomPreview">
+      <div class="room-top">
+        <div>
+          <div class="room-label">Your room code</div>
+          <div class="room-code" id="displayCode">SS-XXXX</div>
+        </div>
+        <div class="status">
+          <span class="status-dot"></span>
+          Connected
+        </div>
+      </div>
+
+      <div class="room-people">
+        <div class="avatar-stack">
+          <div class="avatar"></div>
+          <div class="avatar"></div>
+        </div>
+        Your little listening space is ready.
+      </div>
+    </div>
+
+  </main>
+
+  <footer>
+    <div class="footer-line"></div>
+    <p class="footer-text">
+      Made for the moments<br>
+      <span>you wish could last a little longer.</span>
+    </p>
+  </footer>
+
+</div>
+
+<script>
+const createBtn = document.getElementById("createBtn");
+const joinBtn = document.getElementById("joinBtn");
+const joinPanel = document.getElementById("joinPanel");
+const joinForm = document.getElementById("joinForm");
+const roomCode = document.getElementById("roomCode");
+const joinMessage = document.getElementById("joinMessage");
+const roomPreview = document.getElementById("roomPreview");
+const displayCode = document.getElementById("displayCode");
+
+function generateRoomCode() {
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  let code = "";
+
+  for (let i = 0; i < 4; i++) {
+    code += chars[Math.floor(Math.random() * chars.length)];
+  }
+
+  return "SS-" + code;
+}
+
+function showRoom(code) {
+  displayCode.textContent = code;
+  roomPreview.classList.add("show");
+  joinPanel.classList.remove("show");
+
+  roomPreview.scrollIntoView({
+    behavior: "smooth",
+    block: "nearest"
+  });
+}
+
+createBtn.addEventListener("click", () => {
+  const code = generateRoomCode();
+  showRoom(code);
+});
+
+joinBtn.addEventListener("click", () => {
+  joinPanel.classList.toggle("show");
+
+  if (joinPanel.classList.contains("show")) {
+    roomCode.focus();
+  }
+});
+
+roomCode.addEventListener("input", () => {
+  const raw = roomCode.value
+    .toUpperCase()
+    .replace(/[^A-Z0-9]/g, "")
+    .slice(0, 6);
+
+  let formatted = raw;
+
+  if (raw.length > 2) {
+    formatted = raw.slice(0, 2) + "-" + raw.slice(2);
+  }
+
+  roomCode.value = formatted;
+});
+
+joinForm.addEventListener("submit", (event) => {
+  event.preventDefault();
+
+  const code = roomCode.value.trim().toUpperCase();
+
+  if (!/^SS-[A-Z0-9]{4}$/.test(code)) {
+    joinMessage.textContent = "Enter a valid room code, like SS-AB12.";
+    return;
+  }
+
+  joinMessage.textContent = "Joining room...";
+
+  // Demo only. Connect this to your existing
+  // Socket.IO room-joining function later.
+  setTimeout(() => {
+    showRoom(code);
+  }, 500);
+});
+</script>
+
+</body>
+</html>

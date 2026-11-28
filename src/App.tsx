@@ -31,6 +31,7 @@ import CreateRoom from './pages/CreateRoom';
 import JoinRoom from './pages/JoinRoom';
 import SearchView from './pages/SearchView';
 import LibraryView, { type LibrarySection } from './pages/LibraryView';
+import MobileStart from './components/MobileStart';
 import type {
   PlaybackState,
   SongDedication,
@@ -40,6 +41,7 @@ import type {
 } from './types/music';
 import './App.css';
 import './App.lounge.css';
+import './styles/mobile-start.css';
 
 /** Ignore a drift below this many seconds. */
 const DRIFT_THRESHOLD = 1.2;
@@ -154,6 +156,8 @@ export default function App() {
   const library = useLibrary();
   /** On narrow screens the chat lives in a drawer instead of a side column. */
   const isNarrow = useMediaQuery('(max-width: 1024px)');
+  /** Mobile viewport for dedicated mobile starting page. */
+  const isMobile = useMediaQuery('(max-width: 767px)');
   /** Refs for liquid scrollbars */
   const drawerPanelRef = useRef<HTMLDivElement>(null);
   const mainRef = useRef<HTMLDivElement>(null);
@@ -1197,98 +1201,107 @@ export default function App() {
       {/* ------------------------------ Lobby ------------------------------ */}
       {view !== 'room' && (
         <div className="sunday-home">
-          {view === 'home' && (
-            <div className="ss-home">
-              <div className="ss-wrap">
-                <header className="ss-nav">
-                  <div className="ss-logo">syncsound<span>.</span></div>
-                  <nav className="ss-nav-links">
-                    <a href="#connect">Rooms</a>
-                    <a href="#about">About</a>
-                  </nav>
-                  <button className="ss-nav-cta" onClick={goCreate}>
-                    Get Started
-                  </button>
-                </header>
+          {view === 'home' && isMobile && homeFocus === null ? (
+            <MobileStart
+              displayName={displayNameInput}
+              onRoomEntered={handleEnterRoom}
+            />
+          ) : (
+            <>
+              {view === 'home' && (
+                <div className="ss-home">
+                  <div className="ss-wrap">
+                    <header className="ss-nav">
+                      <div className="ss-logo">syncsound<span>.</span></div>
+                      <nav className="ss-nav-links">
+                        <a href="#connect">Rooms</a>
+                        <a href="#about">About</a>
+                      </nav>
+                      <button className="ss-nav-cta" onClick={goCreate}>
+                        Get Started
+                      </button>
+                    </header>
 
-                <div className="ss-split">
-                  <section className="ss-hero" id="about">
-                    <div className="ss-eyebrow">
-                      <span className="ss-dot" aria-hidden="true" />
-                      YOUR SPACE. YOUR SOUND.
-                    </div>
-                    <h1>
-                      <span className="ss-line">Music brings us</span>
-                      <span className="ss-line ss-highlight">closer.</span>
-                    </h1>
-                    <p className="ss-description">
-                      Create a room, invite someone and listen together. Every song, every moment, in sync.
-                    </p>
-                    <div className="ss-wave-area">
-                      <div className="ss-wave" aria-hidden="true">
-                        {[13, 22, 34, 25, 43, 27, 17, 37, 47, 23, 34, 18, 29, 12].map((h, i) => {
-                          const colors = ['#C58B71', '#B87358', '#A5A68A'];
-                          const durations = ['.8s', '1s', '.9s', '1.1s', '.8s', '1.2s', '.9s', '1s', '.8s', '1.1s', '.9s', '1s', '.8s', '1.1s'];
-                          const style: Record<string, string> = {
-                            '--height': `${h}px`,
-                            '--color': colors[i % 3],
-                            '--delay': `${i * 0.1}s`,
-                            '--duration': durations[i],
-                          };
-                          return <span key={`w-${i}`} style={style as unknown as React.CSSProperties} />;
-                        })}
-                      </div>
-                      <span className="ss-wave-caption">IN PERFECT SYNC</span>
-                    </div>
-                  </section>
-
-                  <section className="ss-rooms" id="connect">
-                    <div className="ss-section-head">
-                      <h2>How would you like to listen?</h2>
-                      <span className="ss-section-index">01 — 02 / CONNECT</span>
-                    </div>
-                    <div className="ss-cards">
-                      <article className="ss-card ss-card--host">
-                        <div className="ss-card-top">
-                          <span className="ss-card-number">01 / HOST</span>
-                          <div className="ss-card-icon">↗</div>
+                    <div className="ss-split">
+                      <section className="ss-hero" id="about">
+                        <div className="ss-eyebrow">
+                          <span className="ss-dot" aria-hidden="true" />
+                          YOUR SPACE. YOUR SOUND.
                         </div>
-                        <h3>Create a room.</h3>
-                        <p className="ss-card-description">
-                          Start a new listening session and bring someone along.
+                        <h1>
+                          <span className="ss-line">Music brings us</span>
+                          <span className="ss-line ss-highlight">closer.</span>
+                        </h1>
+                        <p className="ss-description">
+                          Create a room, invite someone and listen together. Every song, every moment, in sync.
                         </p>
-                        <CreateRoom
-                          displayName={displayNameInput}
-                          onDisplayNameChange={setDisplayNameInput}
-                          onCreated={handleEnterRoom}
-                        />
-                      </article>
-
-                      <article className="ss-card ss-card--guest">
-                        <div className="ss-card-top">
-                          <span className="ss-card-number">02 / GUEST</span>
-                          <div className="ss-card-icon">⌁</div>
+                        <div className="ss-wave-area">
+                          <div className="ss-wave" aria-hidden="true">
+                            {[13, 22, 34, 25, 43, 27, 17, 37, 47, 23, 34, 18, 29, 12].map((h, i) => {
+                              const colors = ['#C58B71', '#B87358', '#A5A68A'];
+                              const durations = ['.8s', '1s', '.9s', '1.1s', '.8s', '1.2s', '.9s', '1s', '.8s', '1.1s', '.9s', '1s', '.8s', '1.1s'];
+                              const style: Record<string, string> = {
+                                '--height': `${h}px`,
+                                '--color': colors[i % 3],
+                                '--delay': `${i * 0.1}s`,
+                                '--duration': durations[i],
+                              };
+                              return <span key={`w-${i}`} style={style as unknown as React.CSSProperties} />;
+                            })}
+                          </div>
+                          <span className="ss-wave-caption">IN PERFECT SYNC</span>
                         </div>
-                        <h3>Join a room.</h3>
-                        <p className="ss-card-description">
-                          Have a room code already? Enter it and tune in.
-                        </p>
-                        <JoinRoom
-                          displayName={displayNameInput}
-                          onDisplayNameChange={setDisplayNameInput}
-                          onJoined={handleEnterRoom}
-                        />
-                      </article>
+                      </section>
+
+                      <section className="ss-rooms" id="connect">
+                        <div className="ss-section-head">
+                          <h2>How would you like to listen?</h2>
+                          <span className="ss-section-index">01 — 02 / CONNECT</span>
+                        </div>
+                        <div className="ss-cards">
+                          <article className="ss-card ss-card--host">
+                            <div className="ss-card-top">
+                              <span className="ss-card-number">01 / HOST</span>
+                              <div className="ss-card-icon">↗</div>
+                            </div>
+                            <h3>Create a room.</h3>
+                            <p className="ss-card-description">
+                              Start a new listening session and bring someone along.
+                            </p>
+                            <CreateRoom
+                              displayName={displayNameInput}
+                              onDisplayNameChange={setDisplayNameInput}
+                              onCreated={handleEnterRoom}
+                            />
+                          </article>
+
+                          <article className="ss-card ss-card--guest">
+                            <div className="ss-card-top">
+                              <span className="ss-card-number">02 / GUEST</span>
+                              <div className="ss-card-icon">⌁</div>
+                            </div>
+                            <h3>Join a room.</h3>
+                            <p className="ss-card-description">
+                              Have a room code already? Enter it and tune in.
+                            </p>
+                            <JoinRoom
+                              displayName={displayNameInput}
+                              onDisplayNameChange={setDisplayNameInput}
+                              onJoined={handleEnterRoom}
+                            />
+                          </article>
+                        </div>
+                      </section>
                     </div>
-                  </section>
+
+                    <footer className="ss-footer" id="about">
+                      <span>© 2026 SYNCSOUND</span>
+                      <span>MADE FOR SHARED LISTENING.</span>
+                    </footer>
+                  </div>
                 </div>
-
-                <footer className="ss-footer" id="about">
-                  <span>© 2026 SYNCSOUND</span>
-                  <span>MADE FOR SHARED LISTENING.</span>
-                </footer>
-              </div>
-            </div>
+              )}
+            </>
           )}
 
           {view === 'search' && (
