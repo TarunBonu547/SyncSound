@@ -32,7 +32,6 @@ import JoinRoom from './pages/JoinRoom';
 import SearchView from './pages/SearchView';
 import LibraryView, { type LibrarySection } from './pages/LibraryView';
 import MobileStart from './components/MobileStart';
-import MobileRoom from './components/MobileRoom';
 import type {
   PlaybackState,
   SongDedication,
@@ -43,7 +42,6 @@ import type {
 import './App.css';
 import './App.lounge.css';
 import './styles/mobile-start.css';
-import './styles/mobile-room.css';
 
 /** Ignore a drift below this many seconds. */
 const DRIFT_THRESHOLD = 1.2;
@@ -1044,7 +1042,7 @@ export default function App() {
   return (
     <div className="app-root">
       {/* ------------------------------ Listening room ---------------------- */}
-      <div className={`sunday-room lounge app ${view !== 'room' ? 'is-hidden' : ''}`} inert={view !== 'room' || (isMobile && view === 'room')}>
+      <div className={`sunday-room lounge app ${view !== 'room' ? 'is-hidden' : ''}`} inert={view !== 'room'}>
         {/* Floating Sunday Radio background decor, kept behind the interface. */}
         <div className="sr-room-bg" aria-hidden="true">
           {bgMusicNotes.map((note, i) => (
@@ -1186,15 +1184,6 @@ export default function App() {
           <LiquidScrollbar contentRef={mainRef} contentId="main-content" autoHide />
         </main>
       </div>
-
-      {/* ------------------------------ Mobile Room --------------------------- */}
-      {isMobile && view === 'room' && (
-        <MobileRoom
-          displayName={displayNameInput}
-          onLeaveRoom={leaveRoom}
-          onBackToHome={goHome}
-        />
-      )}
 
       {/*
         The call window lives outside the room shell: it floats above the
