@@ -86,15 +86,12 @@
 
 .sunday-room .menu-button:hover,
 .sunday-room .icon-button:hover,
-.sunday-room .avatar:hover,
-.sunday-room .chat-button:hover {
+.sunday-room .avatar:hover {
   transform: translateY(-2px);
 }
 
 .sunday-room .menu-button svg,
-.sunday-room .icon-button svg,
-.sunday-room .avatar svg,
-.sunday-room .chat-button svg {
+.sunday-room .icon-button svg {
   width: 22px;
   height: 22px;
 
@@ -488,31 +485,26 @@
   .sunday-room .app-header {
     min-height: 72px;
     padding: 12px 16px;
-    gap: 10px;
+    gap: 12px;
     border-radius: 20px;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     align-items: center;
-    justify-content: center;
   }
 
   .sunday-room .header-left {
-    gap: 10px;
+    gap: 12px;
     align-items: center;
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
   }
 
   .sunday-room .menu-button,
   .sunday-room .icon-button,
   .sunday-room .avatar,
   .sunday-room .chat-button {
-    width: 42px;
-    height: 42px;
+    width: 44px;
+    height: 44px;
     border-radius: 14px;
     box-shadow: 0 3px 10px rgba(117, 85, 104, 0.08),
                 inset 0 1px 0 rgba(255, 255, 255, 0.7);
-    flex: none;
   }
 
   .sunday-room .menu-button svg,
@@ -523,66 +515,18 @@
     stroke-width: 1.6;
   }
 
-  .sunday-room .brand {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    flex-shrink: 1;
-    min-width: 0;
-  }
-
   .sunday-room .brand-name {
-    font-size: 21px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    max-width: 120px;
+    font-size: 22px;
   }
 
   .sunday-room .brand-wave {
-    width: 30px;
-    height: 30px;
-    flex: none;
+    width: 32px;
+    height: 32px;
   }
 
   /* Hide center navigation on mobile (lives in the drawer) */
   .sunday-room .navigation {
     display: none;
-  }
-
-  .sunday-room .header-right {
-    gap: 8px;
-    align-items: center;
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-  }
-
-  /* --- Very narrow screens (320px - 480px) --- */
-  @media (max-width: 480px) {
-    .sunday-room .app-header {
-      padding: 10px 14px;
-      gap: 8px;
-    }
-
-    .sunday-room .menu-button,
-    .sunday-room .icon-button,
-    .sunday-room .avatar,
-    .sunday-room .chat-button {
-      width: 40px;
-      height: 40px;
-      border-radius: 12px;
-    }
-
-    .sunday-room .brand-name {
-      font-size: 19px;
-      max-width: 100px;
-    }
-
-    .sunday-room .brand-wave {
-      width: 28px;
-      height: 28px;
-    }
   }
 
   /* --- Mobile chat button --- */
@@ -641,7 +585,6 @@
   .sunday-room .main {
     padding: 12px 16px calc(var(--mini-player-height) + 24px);
     gap: 14px;
-    overflow-x: hidden;
   }
 
   /* --- Mobile room header --- */
@@ -649,28 +592,11 @@
     padding: 12px 16px;
   }
 
-  /* Mobile safe area support */
-  .sunday-room .app-header {
-    padding-left: max(16px, env(safe-area-inset-left));
-    padding-right: max(16px, env(safe-area-inset-right));
-  }
-
-  .sunday-room .main {
-    padding-left: max(16px, env(safe-area-inset-left));
-    padding-right: max(16px, env(safe-area-inset-right));
-    padding-bottom: max(calc(var(--mini-player-height) + 24px), env(safe-area-inset-bottom));
-  }
-
-  /* Prevent any mobile element from overflowing the viewport */
-  .sunday-room * {
-    max-width: 100%;
-  }
-
   /* --- Mobile player --- */
   .sunday-room .player-grid {
     grid-template-columns: 1fr;
     grid-template-rows: auto auto 1fr auto auto;
-    gap: 14px;
+    gap: 16px;
     padding: 0;
   }
 
@@ -683,28 +609,17 @@
     grid-row: 2;
     grid-column: 1;
     display: flex;
-    flex-direction: row;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-    width: 100%;
-    padding: 0 4px;
-  }
-
-  .sunday-room .track-status-wrap {
-    display: flex;
     flex-direction: column;
-    align-items: flex-start;
-    gap: 4px;
-    flex: 1;
-    min-width: 0;
+    align-items: center;
+    text-align: center;
+    gap: 12px;
   }
 
   .sunday-room .track-text {
     display: flex;
     flex-direction: column;
-    align-items: flex-start;
-    gap: 2px;
+    align-items: center;
+    gap: 4px;
   }
 
   .sunday-room .lounge-sync-indicator {
@@ -713,26 +628,19 @@
     border-radius: var(--r-pill);
     background: rgba(255, 255, 255, 0.6);
     border: 1px solid var(--border-soft);
-    white-space: nowrap;
   }
 
   .sunday-room .lounge-song-title {
-    font-size: 18px;
+    font-size: 20px;
     font-weight: 700;
     letter-spacing: -0.02em;
     margin: 0;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
   }
 
   .sunday-room .lounge-artist {
     font-size: 14px;
     color: var(--text-muted);
     margin: 0;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
   }
 
   .sunday-room .lounge-heart-btn {
@@ -744,7 +652,6 @@
     background: rgba(255, 255, 255, 0.82);
     border: 1px solid #f0d4dc;
     color: var(--lu-plum);
-    flex: none;
   }
 
   .sunday-room .lounge-heart-btn:hover:not(:disabled) {
@@ -806,111 +713,9 @@
     font-size: 14px;
   }
 
-  /* --- Mobile search results: consistent artwork + ellipsis text --- */
-  .sunday-room .lounge-queue-thumb {
-    width: 88px;
-    height: 88px;
-    border-radius: var(--r-md);
-    flex: none;
-    object-fit: cover;
-    background: linear-gradient(135deg, #f2d7cb, #e3d4f5);
-    box-shadow: var(--shadow-xs);
-  }
-
-  .sunday-room .lounge-queue-item {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 10px 12px;
-    min-height: unset;
-  }
-
-  .sunday-room .lounge-queue-details {
-    flex: 1;
-    min-width: 0;
-  }
-
-  .sunday-room .lounge-queue-details strong {
-    display: block;
-    font-size: 15px;
-    font-weight: 600;
-    color: var(--text);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
-  .sunday-room .lounge-queue-details small {
-    display: block;
-    font-size: 13px;
-    color: var(--text-muted);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
-  .sunday-room .lounge-queue-actions {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    flex: none;
-  }
-
-  .sunday-room .lounge-queue-icon-btn {
-    width: 36px;
-    height: 36px;
-    display: grid;
-    place-items: center;
-    border: 1px solid #f0d4dc;
-    border-radius: 12px;
-    background: rgba(255, 253, 249, 0.88);
-    backdrop-filter: blur(12px) saturate(1.1);
-    -webkit-backdrop-filter: blur(12px) saturate(1.1);
-    color: var(--lu-plum);
-    cursor: pointer;
-    flex: none;
-  }
-
-  .sunday-room .lounge-queue-icon-btn svg {
-    width: 18px;
-    height: 18px;
-    fill: none;
-    stroke: currentColor;
-    stroke-width: 1.6;
-    stroke-linecap: round;
-    stroke-linejoin: round;
-    flex: none;
-  }
-
-  /* --- Very narrow screens: smaller artwork + buttons --- */
-  @media (max-width: 480px) {
-    .sunday-room .lounge-queue-thumb {
-      width: 72px;
-      height: 72px;
-    }
-
-    .sunday-room .lounge-queue-details strong {
-      font-size: 14px;
-    }
-
-    .sunday-room .lounge-queue-details small {
-      font-size: 12px;
-    }
-
-    .sunday-room .lounge-queue-icon-btn {
-      width: 32px;
-      height: 32px;
-    }
-
-    .sunday-room .lounge-queue-icon-btn svg {
-      width: 16px;
-      height: 16px;
-    }
-  }
-
   /* --- Mobile queue --- */
   .sunday-room .lounge-queue-panel {
-    padding: 14px 16px;
+    padding: 16px;
     border-radius: var(--r-lg);
   }
 
@@ -918,9 +723,8 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 12px;
+    margin-bottom: 14px;
     gap: 10px;
-    flex-wrap: wrap;
   }
 
   .sunday-room .lounge-section-title {
@@ -935,163 +739,6 @@
 
   .sunday-room .lounge-queue-list {
     gap: 10px;
-  }
-
-  .sunday-room .lounge-queue-item {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    background: rgba(255, 255, 250, 0.7);
-    border: 1px solid var(--border-medium);
-    border-radius: var(--r-md);
-    padding: 10px 12px;
-    min-height: unset;
-    transition: background-color var(--t-base) var(--ease-out), border-color var(--t-base) var(--ease-out);
-  }
-
-  .sunday-room .lounge-queue-item.is-current {
-    border-color: var(--peach);
-    background: var(--peach-wash);
-  }
-
-  .sunday-room .lounge-queue-drag-handle {
-    width: 32px;
-    height: 32px;
-    display: grid;
-    place-items: center;
-    color: var(--text-muted);
-    cursor: grab;
-    border-radius: var(--r-sm);
-    flex: none;
-  }
-
-  .sunday-room .lounge-queue-art {
-    width: 48px;
-    height: 48px;
-    flex: none;
-    border-radius: var(--r-sm);
-    object-fit: cover;
-    background: linear-gradient(135deg, #f2d7cb, #e3d4f5);
-    box-shadow: var(--shadow-xs);
-  }
-
-  .sunday-room .lounge-queue-art.is-current {
-    position: relative;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-  }
-
-  .sunday-room .lounge-queue-details {
-    flex: 1;
-    min-width: 0;
-  }
-
-  .sunday-room .lounge-queue-details strong {
-    display: block;
-    font-size: 15px;
-    font-weight: 600;
-    color: var(--text);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
-  .sunday-room .lounge-queue-details small {
-    display: block;
-    font-size: 13px;
-    color: var(--text-muted);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
-  .sunday-room .lounge-queue-actions {
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    flex: none;
-  }
-
-  .sunday-room .lounge-queue-icon-btn {
-    width: 34px;
-    height: 34px;
-    display: grid;
-    place-items: center;
-    border: 1px solid #f0d4dc;
-    border-radius: 12px;
-    background: rgba(255, 253, 249, 0.88);
-    backdrop-filter: blur(12px) saturate(1.1);
-    -webkit-backdrop-filter: blur(12px) saturate(1.1);
-    color: var(--lu-plum);
-    cursor: pointer;
-    flex: none;
-  }
-
-  .sunday-room .lounge-queue-icon-btn svg {
-    width: 18px;
-    height: 18px;
-    fill: none;
-    stroke: currentColor;
-    stroke-width: 1.6;
-    stroke-linecap: round;
-    stroke-linejoin: round;
-    flex: none;
-  }
-
-  .sunday-room .lounge-queue-icon-btn.is-primary {
-    color: var(--lu-rose);
-  }
-
-  .sunday-room .lounge-queue-icon-btn.is-primary svg {
-    fill: var(--lu-rose);
-    stroke: var(--lu-rose);
-  }
-
-  .sunday-room .lounge-queue-icon-btn.is-danger {
-    color: var(--lu-plum);
-  }
-
-  .sunday-room .lounge-queue-icon-btn.is-danger:hover:not(:disabled) {
-    background: rgba(255, 248, 245, 0.95);
-    border-color: var(--lu-rose);
-    color: var(--lu-rose);
-  }
-
-  /* --- Very narrow screens: smaller queue elements --- */
-  @media (max-width: 480px) {
-    .sunday-room .lounge-queue-item {
-      padding: 8px 10px;
-      gap: 8px;
-    }
-
-    .sunday-room .lounge-queue-drag-handle {
-      width: 30px;
-      height: 30px;
-    }
-
-    .sunday-room .lounge-queue-art {
-      width: 44px;
-      height: 44px;
-    }
-
-    .sunday-room .lounge-queue-details strong {
-      font-size: 14px;
-    }
-
-    .sunday-room .lounge-queue-details small {
-      font-size: 12px;
-    }
-
-    .sunday-room .lounge-queue-icon-btn {
-      width: 32px;
-      height: 32px;
-    }
-
-    .sunday-room .lounge-queue-icon-btn svg {
-      width: 16px;
-      height: 16px;
-    }
   }
 
   /* --- Mobile chat drawer (full screen) --- */
