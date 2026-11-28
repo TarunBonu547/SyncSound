@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Bell, BookOpen, CircleUserRound, House, LogOut, Menu, MessageCircle, Settings, X } from 'lucide-react';
+import { Bell, BookOpen, CircleUserRound, House, LogOut, Menu, Settings, X } from 'lucide-react';
 
 type HeaderView = 'home' | 'room' | 'search' | 'library';
 
@@ -24,9 +24,6 @@ type HeaderProps = {
   isNarrow: boolean;
   mobileNav: boolean;
   onMobileNavToggle: () => void;
-  chatOpen: boolean;
-  onChatToggle: () => void;
-  hasUnread: boolean;
 };
 
 const NAV_ITEMS: { id: HeaderView; icon: React.ReactNode; label: string }[] = [
@@ -50,9 +47,6 @@ export default function Header({
   isNarrow,
   mobileNav,
   onMobileNavToggle,
-  chatOpen,
-  onChatToggle,
-  hasUnread,
 }: HeaderProps) {
   const [noticeOpen, setNoticeOpen] = useState(false);
 
@@ -166,16 +160,6 @@ export default function Header({
             </button>
           </div>
         )}
-
-        <button
-          className={`chat-button ${hasUnread ? 'has-unread' : ''}`}
-          onClick={onChatToggle}
-          aria-label="Open chat"
-          aria-pressed={chatOpen}
-        >
-          <MessageCircle size={20} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" />
-          {hasUnread && <span className="chat-badge" aria-hidden="true"> </span>}
-        </button>
 
         <div className="profile-dropdown">
           <button

@@ -78,11 +78,6 @@
   align-items: start;
 }
 
-.lounge .lounge-grid--single {
-  grid-template-columns: 1fr;
-  gap: 0;
-}
-
 .lounge .lounge-main-column {
   min-width: 0;
   display: flex;

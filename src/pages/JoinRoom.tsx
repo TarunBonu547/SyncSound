@@ -3,37 +3,9 @@ import { useSocket } from '../hooks/useSocket';
 import { readClientId } from '../utils/clientId';
 import { normalizeDisplayName, saveDisplayName } from '../utils/displayName';
 
-/** Room codes are short and only have letters, digits and dashes. */
-const CODE_RE = /^[A-Za-z0-9-]{2,64}$/;
-
 function detectCode(): string {
   const params = new URLSearchParams(window.location.search);
   return params.get('code') || params.get('room') || '';
-}
-
-/**
- * Normalises a room input that may be a bare room code (SS-XXXX) or a full
- * room URL (https://sync-sound-lime.vercel.app/room/SS-XXXX), with optional
- * query parameters, fragments, trailing slashes, and surrounding whitespace.
- * Returns the extracted room code, or null when the input is invalid.
- */
-function normalizeRoomInput(input: string): string | null {
-  const trimmed = input.trim();
-  if (!trimmed) return null;
-
-  let code: string;
-
-  try {
-    const url = new URL(trimmed);
-    const pathMatch = url.pathname.match(/\/room\/([A-Za-z0-9-]+)\/?$/);
-    if (!pathMatch) return null;
-    code = pathMatch[1];
-  } catch {
-    code = trimmed;
-  }
-
-  code = code.trim().toUpperCase();
-  return CODE_RE.test(code) ? code : null;
 }
 
 type JoinRoomProps = {
@@ -57,10 +29,10 @@ export default function JoinRoom({ displayName, onDisplayNameChange, onJoined }:
   const clientId = useRef(readClientId());
 
   const join = (wanted?: string) => {
-    const target = normalizeRoomInput(wanted ?? code);
+    const target = (wanted ?? code).trim();
     if (!target) {
       setStatus('error');
-      setMessage('Enter a valid room code (SS-XXXX) or a full room URL');
+      setMessage('Room code is required');
       return;
     }
     const who = normalizeDisplayName(displayName);
@@ -139,17 +111,27 @@ export default function JoinRoom({ displayName, onDisplayNameChange, onJoined }:
 
       <div className="ss-field">
         <label className="ss-label" htmlFor="join-room-code">
-          Room code or link
+          Room code
         </label>
         <input
           id="join-room-code"
           className="ss-input"
-          placeholder="SS-1234 or https://sync-sound-lime.vercel.app/room/SS-1234"
+          placeholder="SS-1234"
           value={code}
-          onChange={(e) => setCode(e.target.value)}
+          onChange={(e) => {
+            let value = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+            if (value.startsWith('SS')) {
+              value = 'SS-' + value.slice(2, 6);
+            } else {
+              value = value.slice(0, 6);
+            }
+            setCode(value);
+          }}
+          maxLength={7}
         />
         <div className="ss-helper">
-          <span>Paste a room code or a shared room link.</span>
+          <span>Enter the room code shared by the host.</span>
+          <span className="ss-counter" aria-hidden="true">{code.length}/7</span>
         </div>
       </div>
 

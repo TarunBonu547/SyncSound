@@ -235,23 +235,16 @@ export default function App() {
   });
   const { editDedication } = room;
 
-  /** Room code extracted from the URL path (/room/SS-XXXX) for shared links. */
-  const urlPathCode = (() => {
-    const match = window.location.pathname.match(/\/room\/([A-Za-z0-9-]+)\/?$/);
-    return match ? match[1].toUpperCase() : null;
-  })();
-
   /* --- Auto-enter room from URL --- */
   useEffect(() => {
-    if (room.roomCode) return;
-    const code = urlRoomCode || urlPathCode;
-    if (code) {
+    if (urlRoomCode && !room.roomCode) {
+      const code = urlRoomCode.toUpperCase();
       room.enterRoom(code);
       setView('room');
       setHomeFocus(null);
       setMobileNav(false);
     }
-  }, [urlRoomCode, urlPathCode, room]);
+  }, [urlRoomCode, room]);
 
   /** The two person call. It only uses the socket, never the music protocol. */
   const call = useVideoCall({ socket, roomCode: room.roomCode, clientId });
@@ -1093,9 +1086,6 @@ export default function App() {
           isNarrow={isNarrow}
           mobileNav={mobileNav}
           onMobileNavToggle={() => setMobileNav(true)}
-          chatOpen={chatOpen}
-          onChatToggle={() => setChatOpen(true)}
-          hasUnread={room.messages.length > 0}
         />
 
         <main ref={mainRef} className="main" id="main-content">
@@ -1108,9 +1098,9 @@ export default function App() {
             onCopyLink={copyRoomLink}
           />
 
-            <div className={`lounge-grid ${!isNarrow && !chatOpen ? 'lounge-grid--single' : ''}`}>
-              <div className="lounge-main-column">
-                <MainPlayer
+          <div className="lounge-grid">
+            <div className="lounge-main-column">
+              <MainPlayer
                 stageRef={stageVideoRef}
                 current={current}
                 yt={yt}
@@ -1164,8 +1154,8 @@ export default function App() {
               />
             </div>
 
-            {!isNarrow && chatOpen && (
-              <div className="lounge-creative-column">
+            <div className="lounge-creative-column">
+              {!isNarrow && (
                 <ChatPanel
                   roomCode={room.roomCode}
                   roomName={room.roomName}
@@ -1184,8 +1174,8 @@ export default function App() {
                   onSelectReply={room.selectReply}
                   onCancelReply={room.cancelReply}
                 />
-              </div>
-            )}
+              )}
+            </div>
           </div>
           <LiquidScrollbar contentRef={mainRef} contentId="main-content" autoHide />
         </main>
